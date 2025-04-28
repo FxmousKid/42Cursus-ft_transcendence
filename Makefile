@@ -1,31 +1,60 @@
 NAME = ft_transcendence
 DOCC = docker compose
-DOCC_FILE = ./app/docker-compose.yml
+DEV_DOCC_FILE = ./app/docker-compose.dev.yml
+PROD_DOCC_FILE = ./app/docker-compose.prod.yml
 
-all: build up
 
-build:
-	$(DOCC) -f $(DOCC_FILE) build
+all-dev: build-dev up-dev
+all-prod: build-prod up-prod
 
-up:
-	$(DOCC) -f $(DOCC_FILE) up
+# Development
 
-down:
-	$(DOCC) -f $(DOCC_FILE) down
+build-dev:
+	$(DOCC) -f $(DEV_DOCC_FILE) build
 
-stop:
-	$(DOCC) -f $(DOCC_FILE) stop
+up-dev:
+	$(DOCC) -f $(DEV_DOCC_FILE) up
 
-restart:
-	$(DOCC) -f $(DOCC_FILE) restart
+down-dev:
+	$(DOCC) -f $(DEV_DOCC_FILE) down
 
-logs:
-	$(DOCC) -f $(DOCC_FILE) logs
+logs-dev:
+	$(DOCC) -f $(DEV_DOCC_FILE) logs
 
-logs-f:
-	$(DOCC) -f $(DOCC_FILE) logs -f
+ps-dev:
+	$(DOCC) -f $(DEV_DOCC_FILE) ps
 
-re:
-	$(DOCC) -f $(DOCC_FILE) build --no-cache
+clean-dev:
+	$(DOCC) -f $(DEV_DOCC_FILE) down --rmi all
+	$(DOCC) -f $(DEV_DOCC_FILE) rm -f
+	$(DOCC) -f $(DEV_DOCC_FILE) volume rm -f
+	$(DOCC) -f $(DEV_DOCC_FILE) network rm -f
 
-.PHONY: all build up down stop restart logs logs-f re
+
+# Production
+
+build-prod:
+	$(DOCC) -f $(PROD_DOCC_FILE) build
+
+up-prod:
+	$(DOCC) -f $(PROD_DOCC_FILE) up
+
+down-prod:
+	$(DOCC) -f $(PROD_DOCC_FILE) down
+
+logs-prod:
+	$(DOCC) -f $(PROD_DOCC_FILE) logs
+
+ps-prod:
+	$(DOCC) -f $(PROD_DOCC_FILE) ps
+
+clean-prod:
+	$(DOCC) -f $(PROD_DOCC_FILE) down --rmi all
+	$(DOCC) -f $(PROD_DOCC_FILE) rm -f
+	$(DOCC) -f $(PROD_DOCC_FILE) volume rm -f
+	$(DOCC) -f $(PROD_DOCC_FILE) network rm -f
+	
+
+.PHONY: all-dev all-prod build-dev up-dev down-dev logs-dev build-prod up-prod down-prod logs-prod
+.PHONY: clean-dev clean-prod ps-dev ps-prod
+.DEFAULT_GOAL := all-dev
