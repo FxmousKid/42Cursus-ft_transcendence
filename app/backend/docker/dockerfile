@@ -4,13 +4,16 @@ FROM node:20
 # Install pnpm globally
 RUN corepack enable
 
+# Install NestJS CLI globally
+RUN npm install -g @nestjs/cli
+
 # Set working directory
 WORKDIR /app
 
 # Copy package.json, pnpm-lock.yaml and other pnpm files
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies
+# Install dependencies explicitly
 RUN pnpm install --frozen-lockfile
 
 # Copy the rest of your application code
@@ -23,4 +26,4 @@ RUN pnpm run build
 EXPOSE 3000
 
 # Start the app
-CMD ["pnpm", "start"]
+CMD ["pnpm", "run", "start:prod"]
