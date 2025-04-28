@@ -16,13 +16,26 @@ services:
       - ./backend:/app
     # depends_on:
     #  - db
+    
+  vault:
+    build:
+      context: ./vault/
+      dockerfile: Dockerfile
+    container_name: vault
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+    volumes:
+      - ./vault/config/vault.prod.hcl:/vault/config/vault.hcl:ro
+      - vault-prod-file:/vault/file
 
-
+volumes:
+  vault-prod-file:
 
 networks:
   backend:
     driver: bridge
 
-
-volumes:
-  data:

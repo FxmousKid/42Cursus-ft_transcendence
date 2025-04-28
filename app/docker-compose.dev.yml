@@ -1,0 +1,43 @@
+services:
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ./docker/dockerfile
+    container_name: backend
+    ports:
+      - "3000:3000"
+    # env_file:
+    #   - ./backend/Docker/.env
+    restart: unless-stopped
+    networks:
+      - backend
+    volumes:
+      - ./backend:/app
+    # depends_on:
+    #  - db
+    
+  vault:
+    build:
+      context: ./vault
+      dockerfile: dockerfile
+    container_name: vault-dev
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_ADDRESS: "http://0.0.0.0:8200"
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - vault-dev-file:/vault/file
+      - ./vault/config/vault.dev.hcl:/vault/config/vault.hcl:ro
+
+
+
+networks:
+  backend:
+    driver: bridge
+
+
+volumes:
+  vault-dev-file:
