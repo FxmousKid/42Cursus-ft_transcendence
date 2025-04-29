@@ -14,7 +14,8 @@ services:
       - backend
     volumes:
       - ./backend:/app
-      # - sqlite-data:/app/data
+      - sqlite-data:/app/data
+      - /app/backend/node_modules # Exclure node_modules du montage pour utiliser ceux du conteneur
     # depends_on:
     #  - db
     
