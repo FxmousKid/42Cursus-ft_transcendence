@@ -5,11 +5,14 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { readFileSync } from 'fs';
 
 async function bootstrap() {
+
+	//creating app
 	const app = await NestFactory.create<NestFastifyApplication>(
 		AppModule,
-		new FastifyAdapter(),
+		new FastifyAdapter(), // For fastify and not express
 	);
 
+	// Swagger setup
 	const config = new DocumentBuilder()
 		.setTitle('API Documentation')
 		.setDescription('Description of the APIs')
@@ -17,6 +20,7 @@ async function bootstrap() {
 		.addTag('api')
 		.build();
 
+	// Swagger theme setup
 	const document = SwaggerModule.createDocument(app, config);
 	SwaggerModule.setup('api', app, document, {
 		  customCss: readFileSync('./swagger/SwaggerDark.css', 'utf8'),
@@ -29,6 +33,7 @@ async function bootstrap() {
 		allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
 	});
 	
+	// Starting app
 	await app.listen(3000, '0.0.0.0');
 }
 bootstrap();

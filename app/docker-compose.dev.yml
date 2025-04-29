@@ -30,11 +30,8 @@ services:
     networks:
       - backend
     volumes:
-      - ./backend:/app
-      - /app/node_modules # Exclure node_modules du montage pour utiliser ceux du conteneur
-    # depends_on:
-    #  - db
-    
+      - sqlite-data:/app/data   # Only this volume!
+
   vault:
     build:
       context: ./vault
@@ -50,9 +47,12 @@ services:
       - vault-dev-file:/vault/file
       - ./vault/config/vault.dev.hcl:/vault/config/vault.hcl:ro
 
+
+volumes:
+  vault-dev-file:
+  sqlite-data:
+
 networks:
   backend:
     driver: bridge
 
-volumes:
-  vault-dev-file:

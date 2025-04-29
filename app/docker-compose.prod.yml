@@ -14,8 +14,6 @@ services:
       - backend
     volumes:
       - ./backend:/app
-    # depends_on:
-    #  - db
     
   vault:
     build:
@@ -33,7 +31,7 @@ services:
       - vault-prod-file:/vault/file
 
 volumes:
-  vault-prod-file:
+  vault-dev-file:
 
 networks:
   backend:
