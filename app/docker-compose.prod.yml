@@ -14,7 +14,6 @@ services:
       - backend
     volumes:
       - ./backend:/app
-      - sqlite-data:/app/data
     
   vault:
     build:
@@ -31,12 +30,10 @@ services:
       - ./vault/config/vault.prod.hcl:/vault/config/vault.hcl:ro
       - vault-prod-file:/vault/file
 
-
 volumes:
   vault-dev-file:
-  sqlite-data:
-    driver: local
-    driver_opts:
-      type: none
-      device: ./backend/data
-      o: bind
+
+networks:
+  backend:
+    driver: bridge
+

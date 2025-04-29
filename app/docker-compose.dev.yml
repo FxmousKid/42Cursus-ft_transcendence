@@ -1,5 +1,4 @@
 services:
-
   backend:
     build:
       context: ./backend
@@ -7,15 +6,12 @@ services:
     container_name: backend
     ports:
       - "3000:3000"
-    # env_file:
-    #   - ./backend/Docker/.env
     restart: unless-stopped
     networks:
       - backend
     volumes:
-      - ./backend:/app
-      - sqlite-data:/app/data
-    
+      - sqlite-data:/app/data   # Only this volume!
+
   vault:
     build:
       context: ./vault
@@ -32,17 +28,11 @@ services:
       - ./vault/config/vault.dev.hcl:/vault/config/vault.hcl:ro
 
 
+volumes:
+  vault-dev-file:
+  sqlite-data:
 
 networks:
   backend:
     driver: bridge
 
-
-volumes:
-  vault-dev-file:
-  sqlite-data:
-    driver: local
-    driver_opts:
-      type: none
-      device: ./backend/data
-      o: bind
