@@ -10,7 +10,7 @@ all-prod: build-prod up-prod
 # Development
 
 build-dev:
-	$(DOCC) -f $(DEV_DOCC_FILE) build
+	$(DOCC) -f $(DEV_DOCC_FILE) build 
 
 up-dev:
 	$(DOCC) -f $(DEV_DOCC_FILE) up

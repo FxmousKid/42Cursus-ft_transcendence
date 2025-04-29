@@ -10,7 +10,7 @@ ENV PNPM_HOME=/root/.local/share/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 
 # Install NestJS CLI globally
-RUN npm install -g @nestjs/cli
+RUN pnpm install -g @nestjs/cli
 
 # Set working directory
 WORKDIR /app
