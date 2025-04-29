@@ -5,7 +5,7 @@ FROM node:20
 RUN corepack enable
 
 # Install NestJS CLI globally
-RUN npm install -g @nestjs/cli
+RUN pnpm install -g @nestjs/cli
 
 # Set working directory
 WORKDIR /app
