@@ -14,6 +14,7 @@ services:
       - backend
     volumes:
       - ./backend:/app
+      # - sqlite-data:/app/data
     # depends_on:
     #  - db
     
