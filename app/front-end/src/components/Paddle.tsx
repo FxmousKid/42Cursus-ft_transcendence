@@ -18,12 +18,13 @@ const Paddle: React.FC<PaddleProps> = ({ position, width, height, isPlayer = fal
     paddle.style.transform = `translate(${position.x}px, ${position.y}px)`;
   }, [position]);
 
-  const gradientColor = isPlayer ? 'primary' : 'secondary';
+  // Colors for player 1 and player 2 paddles
+  const paddleColor = isPlayer ? '#0056d3' : '#2c84ff';
 
   return (
     <div
       ref={paddleRef}
-      className={`pong-paddle absolute`}
+      className="pong-paddle absolute z-10"
       style={{
         width: `${width}px`,
         height: `${height}px`,
@@ -32,37 +33,27 @@ const Paddle: React.FC<PaddleProps> = ({ position, width, height, isPlayer = fal
     >
       {/* Main paddle body */}
       <div 
-        className="absolute inset-0 rounded-lg"
+        className="absolute inset-0 rounded-md"
         style={{
-          background: `linear-gradient(90deg, hsl(var(--${gradientColor})), hsl(var(--${gradientColor}) / 0.8))`,
+          backgroundColor: paddleColor,
+          boxShadow: gameActive ? `0 0 15px ${paddleColor}` : 'none',
+          transition: 'box-shadow 0.3s ease'
         }}
       />
       
       {/* Shine effect */}
       <div 
-        className="absolute inset-0 rounded-lg opacity-50"
+        className="absolute inset-0 rounded-md"
         style={{
-          background: `linear-gradient(90deg, rgba(255,255,255,0.3) 0%, transparent 50%)`,
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 50%)',
+          opacity: 0.7
         }}
       />
       
-      {/* Glow effect */}
-      <div 
-        className="absolute inset-0 rounded-lg opacity-30"
-        style={{
-          boxShadow: `0 0 20px hsl(var(--${gradientColor}))`,
-        }}
+      {/* Border */}
+      <div
+        className="absolute inset-0 rounded-md border border-white/30"
       />
-      
-      {/* Active state indicator */}
-      {gameActive && (
-        <div 
-          className="absolute inset-0 rounded-lg animate-pulse"
-          style={{
-            background: `linear-gradient(90deg, transparent, hsl(var(--${gradientColor}) / 0.2))`,
-          }}
-        />
-      )}
     </div>
   );
 };

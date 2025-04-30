@@ -18,10 +18,13 @@ const Ball: React.FC<BallProps> = ({ position, radius }) => {
   return (
     <div
       ref={ballRef}
-      className="pong-ball absolute"
+      className="pong-ball absolute z-10"
       style={{
         width: `${radius * 2}px`,
         height: `${radius * 2}px`,
+        borderRadius: '50%',
+        backgroundColor: 'white',
+        boxShadow: '0 0 10px rgba(255, 255, 255, 0.7)',
         transform: `translate(${position.x}px, ${position.y}px)`,
       }}
     >
@@ -29,14 +32,7 @@ const Ball: React.FC<BallProps> = ({ position, radius }) => {
       <div 
         className="absolute inset-0 rounded-full opacity-70"
         style={{
-          background: `radial-gradient(circle at 30% 30%, hsl(var(--accent)), transparent)`,
-        }}
-      />
-      {/* Shine effect */}
-      <div 
-        className="absolute inset-0 rounded-full opacity-50"
-        style={{
-          background: `linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)`,
+          background: `radial-gradient(circle at 30% 30%, white, transparent)`,
         }}
       />
     </div>
