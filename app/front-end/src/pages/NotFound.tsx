@@ -1,39 +1,27 @@
-
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Navbar } from "@/components/Navbar";
+import { Home } from "lucide-react";
 
-const NotFound = () => {
-  const location = useLocation();
+export default function NotFoundPage() {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
-  }, [location.pathname]);
-
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      <div className="flex-1 flex items-center justify-center px-4">
-        <div className="elegant-card text-center max-w-md">
-          <h1 className="text-6xl font-bold mb-4 elegant-text-primary">404</h1>
-          <p className="text-xl text-muted-foreground mb-8">Oops! Page not found</p>
-          <Button 
-            onClick={() => navigate("/")}
-            className="elegant-button-primary"
-            size="lg"
-          >
-            Return to Home
-          </Button>
-        </div>
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-8 px-4 text-center">
+      <div className="space-y-4">
+        <h1 className="text-9xl font-bold tracking-tighter text-primary">404</h1>
+        <h2 className="text-3xl font-semibold tracking-tight">Page not found</h2>
+        <p className="text-lg text-muted-foreground">
+          The page you're looking for doesn't exist or has been moved.
+        </p>
       </div>
+      <Button
+        onClick={() => navigate("/")}
+        size="lg"
+        className="gap-2"
+      >
+        <Home className="h-5 w-5" />
+        Return Home
+      </Button>
     </div>
   );
-};
-
-export default NotFound;
+}

@@ -1,112 +1,199 @@
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { GamepadIcon, Trophy, Users, Zap, ArrowRight, Github, User } from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { Navbar } from '@/components/Navbar';
+const features = [
+  {
+    icon: <GamepadIcon className="h-6 w-6" />,
+    title: "Real-time Gameplay",
+    description: "Experience smooth and responsive Pong gameplay with modern controls"
+  },
+  {
+    icon: <Users className="h-6 w-6" />,
+    title: "Multiplayer Matches",
+    description: "Challenge friends or random opponents in exciting matches"
+  },
+  {
+    icon: <Zap className="h-6 w-6" />,
+    title: "Instant Matchmaking",
+    description: "Quick and efficient matchmaking system for seamless gaming"
+  }
+];
+
+const contributors = [
+  {
+    name: "John Doe",
+    role: "Frontend Developer",
+    github: "johndoe",
+    avatar: "J"
+  },
+  {
+    name: "Jane Smith",
+    role: "Backend Developer",
+    github: "janesmith",
+    avatar: "J"
+  },
+  {
+    name: "Mike Johnson",
+    role: "Game Developer",
+    github: "mikejohnson",
+    avatar: "M"
+  },
+  {
+    name: "Sarah Wilson",
+    role: "UI/UX Designer",
+    github: "sarahwilson",
+    avatar: "S"
+  }
+];
 
 const HomePage = () => {
-  const navigate = useNavigate();
-  
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      
-      {/* Hero section */}
-      <section className="flex-1 flex flex-col md:flex-row items-center justify-center px-4 md:px-10 py-16 relative">
-        <div className="blob blob-primary w-80 h-80 -left-20 top-0 -z-10"></div>
-        <div className="blob blob-secondary w-96 h-96 -right-20 bottom-0 -z-10"></div>
-        
-        <div className="md:w-1/2 text-center md:text-left mb-10 md:mb-0">
-          <h1 className="text-5xl md:text-6xl font-bold">
-            <span className="elegant-text-primary">PONG</span>
-            <span className="elegant-text-secondary"> ARCADE</span>
-          </h1>
-          <p className="mt-6 text-xl text-muted-foreground max-w-lg mx-auto md:mx-0">
-            Experience the classic arcade game that started it all. Simple, addictive, and now with modern controls!
-          </p>
-          <div className="mt-10 flex flex-wrap gap-4 justify-center md:justify-start">
-            <Button 
-              onClick={() => navigate('/game')} 
-              className="elegant-button-primary text-lg px-8"
-              size="lg"
-            >
-              Play Now
-            </Button>
-            <Button 
-              onClick={() => navigate('/about')} 
-              variant="outline"
-              className="text-lg border-primary/40 hover:bg-primary/10 hover:text-primary"
-              size="lg"
-            >
-              Learn More
-            </Button>
-          </div>
+    <div className="min-h-screen flex flex-col">
+      {/* Hero Section */}
+      <section className="relative py-20 overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-background" />
+          <div className="blob blob-primary w-[800px] h-[800px] -top-[400px] -left-[400px]" />
+          <div className="blob blob-secondary w-[600px] h-[600px] -bottom-[300px] -right-[300px]" />
+          <div className="blob blob-accent w-[400px] h-[400px] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
         </div>
-        <div className="md:w-1/2 max-w-md md:max-w-xl animate-float">
-          <div className="aspect-[4/3] bg-card/30 backdrop-blur-sm border border-primary/20 rounded-lg overflow-hidden shadow-lg">
-            <div className="w-full h-full relative">
-              {/* Simplified pong visual */}
-              <div className="absolute top-1/2 left-[10%] h-[30%] w-[3%] bg-primary rounded-md"></div>
-              <div className="absolute top-[40%] left-[50%] h-6 w-6 bg-white rounded-full shadow-lg animate-pulse"></div>
-              <div className="absolute top-[40%] right-[10%] h-[30%] w-[3%] bg-secondary rounded-md"></div>
-              
-              {/* Center line */}
-              <div className="absolute left-1/2 top-0 h-full w-0.5 border-l border-dashed border-muted-foreground opacity-50"></div>
-              
-              {/* Scores */}
-              <div className="absolute top-[10%] left-[30%] text-3xl font-mono font-bold text-primary">3</div>
-              <div className="absolute top-[10%] right-[30%] text-3xl font-mono font-bold text-secondary">2</div>
+
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+              Welcome to{" "}
+              <span className="elegant-text-primary">Pong</span>{" "}
+              <span className="elegant-text-secondary">Transcendence</span>
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8">
+              Experience the classic game reimagined for the modern era.
+              Challenge players, climb the ranks, and become a Pong master.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link to="/game">
+                <Button className="elegant-button-primary text-lg px-8 py-6 rounded-full group">
+                  <GamepadIcon className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                  Play Now
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button variant="outline" className="text-lg px-8 py-6 rounded-full border-primary text-primary hover:bg-primary/10">
+                  <User className="mr-2 h-5 w-5" />
+                  Sign In
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </section>
-      
-      {/* Features section */}
-      <section className="bg-card/5 backdrop-blur-sm py-16 px-4 border-t border-border/20">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center elegant-text-accent">Game Features</h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-card/30 backdrop-blur-sm p-6 rounded-xl border border-primary/20 shadow-lg transition-shadow duration-300 hover:shadow-primary/10">
-              <h3 className="text-xl font-bold mb-3 elegant-text-primary">Classic Gameplay</h3>
-              <p className="text-muted-foreground">Experience the timeless gameplay that revolutionized the gaming industry, now with modern visual enhancements.</p>
-            </div>
+
+      {/* Features Section */}
+      <section className="py-20 bg-card/30 backdrop-blur-sm">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Game <span className="elegant-text-primary">Features</span>
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <div
+                key={feature.title}
+                className="elegant-card group hover:scale-105 transition-all"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="mb-4 p-3 rounded-lg bg-primary/10 w-fit group-hover:bg-primary/20 transition-colors">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold text-center mb-4">
+              About <span className="elegant-text-primary">The Project</span>
+            </h2>
+            <p className="text-lg text-muted-foreground text-center mb-12">
+              Pong Transcendence is a modern take on the classic Pong game, developed as part of the 42 school curriculum.
+              Our team has reimagined this timeless game with contemporary features while maintaining its iconic gameplay.
+            </p>
             
-            <div className="bg-card/30 backdrop-blur-sm p-6 rounded-xl border border-secondary/20 shadow-lg transition-shadow duration-300 hover:shadow-secondary/10">
-              <h3 className="text-xl font-bold mb-3 elegant-text-secondary">Keyboard Controls</h3>
-              <p className="text-muted-foreground">Player 1 uses W/S keys while Player 2 uses Arrow Up/Down for intuitive paddle control.</p>
-            </div>
-            
-            <div className="bg-card/30 backdrop-blur-sm p-6 rounded-xl border border-accent/20 shadow-lg transition-shadow duration-300 hover:shadow-accent/10">
-              <h3 className="text-xl font-bold mb-3 elegant-text-accent">Modern Design</h3>
-              <p className="text-muted-foreground">Immerse yourself in a sleek, elegant interface that enhances the classic gameplay experience.</p>
+            <h3 className="text-2xl font-bold text-center mb-8">
+              Meet <span className="elegant-text-secondary">The Team</span>
+            </h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {contributors.map((contributor, index) => (
+                <div
+                  key={contributor.name}
+                  className="elegant-card group hover:scale-105 transition-all text-center"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="mb-4 flex justify-center">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-primary via-secondary to-accent p-1">
+                      <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                        <span className="text-2xl font-bold elegant-text-primary">
+                          {contributor.avatar}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <h4 className="text-lg font-semibold mb-1">{contributor.name}</h4>
+                  <p className="text-sm text-muted-foreground mb-3">{contributor.role}</p>
+                  <a
+                    href={`https://github.com/${contributor.github}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    <Github className="h-4 w-4" />
+                    @{contributor.github}
+                  </a>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
-      
-      {/* Call to action */}
-      <section className="py-20 px-4 text-center bg-gradient-to-b from-background to-card/5 border-t border-border/20">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-4xl font-bold mb-6 elegant-text-primary">Ready to Play?</h2>
-          <p className="text-xl text-muted-foreground mb-10">Challenge your friend or beat your own high score!</p>
-          <Button 
-            onClick={() => navigate('/game')} 
-            className="elegant-button-primary text-xl px-10"
-            size="lg"
-          >
-            Start Playing Now
-          </Button>
+
+      {/* Call to Action */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+              Ready to Start Your <span className="elegant-text-primary">Journey</span>?
+            </h2>
+            <p className="text-xl text-muted-foreground mb-8">
+              Join thousands of players already enjoying Pong Transcendence.
+              Create your account now and start playing!
+            </p>
+            <Link to="/profile">
+              <Button className="elegant-button-primary text-lg px-8 py-6 rounded-full group">
+                Get Started
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
-      
+
       {/* Footer */}
-      <footer className="bg-card/10 backdrop-blur-sm py-8 px-4 border-t border-border/20">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
-          <div className="mb-6 md:mb-0">
-            <span className="text-xl font-bold elegant-text-primary">PONG ARCADE</span>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Pong Arcade. All rights reserved.
+      <footer className="py-8 border-t border-border/10 bg-card/30 backdrop-blur-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-primary via-secondary to-accent" />
+              <span className="text-xl font-bold elegant-text-primary">PONG TRANSCENDENCE</span>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Pong Transcendence. All rights reserved.
+            </div>
           </div>
         </div>
       </footer>

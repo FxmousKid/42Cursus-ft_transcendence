@@ -10,6 +10,7 @@ import {
   handleKeyDown, 
   handleKeyUp 
 } from '@/utils/gameEngine';
+import { Expand, Minimize, Play, Pause, RotateCcw } from 'lucide-react';
 
 interface PongGameProps {
   width?: number;
@@ -152,7 +153,14 @@ const PongGame: React.FC<PongGameProps> = ({
   }, []);
   
   return (
-    <div className="flex flex-col items-center w-full max-w-4xl mx-auto">
+    <div className="flex flex-col items-center w-full max-w-4xl mx-auto relative">
+      {/* Background blobs */}
+      <div className="absolute -z-10 w-full h-full overflow-hidden pointer-events-none">
+        <div className="blob blob-primary w-64 h-64 -top-32 -left-32"></div>
+        <div className="blob blob-secondary w-64 h-64 -bottom-32 -right-32"></div>
+        <div className="blob blob-accent w-48 h-48 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+      </div>
+
       <Scoreboard 
         playerScore={gameState.playerScore} 
         computerScore={gameState.computerScore} 
@@ -160,9 +168,12 @@ const PongGame: React.FC<PongGameProps> = ({
       
       <div 
         ref={gameRef}
-        className="game-board w-full aspect-[16/10]"
+        className="game-board w-full aspect-[16/10] relative"
         tabIndex={0}
       >
+        {/* Center line */}
+        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-primary/20 transform -translate-x-1/2"></div>
+        
         <Ball
           position={{ 
             x: gameState.ball.x - gameState.ball.radius, 
@@ -192,17 +203,22 @@ const PongGame: React.FC<PongGameProps> = ({
         />
         
         {!gameState.isGameActive && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-card/70 backdrop-blur-sm rounded-2xl">
-            <h2 className="text-3xl md:text-5xl font-bold text-primary mb-8 animate-pulsate text-center px-4">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-card/70 backdrop-blur-sm rounded-xl">
+            <h2 className="text-3xl md:text-5xl font-bold mb-8 animate-pulsate elegant-text-primary">
               PONG ARCADE
             </h2>
-            <p className="text-muted-foreground text-lg mb-8 text-center px-6">
-              Player 1: W (up) / S (down) | Player 2: ↑ (up) / ↓ (down)
+            <p className="text-muted-foreground text-lg mb-8 text-center px-6 max-w-md">
+              Use <span className="text-primary">W/S</span> for Player 1 and <span className="text-secondary">↑/↓</span> for Player 2
             </p>
             <Button 
               onClick={toggleGame} 
-              className="elegant-button-primary text-lg md:text-xl"
+              className="elegant-button-primary text-lg md:text-xl px-8 py-6 rounded-full group"
             >
+              {gameState.isGameActive ? (
+                <Pause className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+              ) : (
+                <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+              )}
               {gameState.isGameActive ? 'Pause' : 'Play'}
             </Button>
           </div>
@@ -213,23 +229,44 @@ const PongGame: React.FC<PongGameProps> = ({
         <Button 
           onClick={toggleGame} 
           variant="outline"
-          className="border-primary text-primary hover:bg-primary/10"
+          className="border-primary text-primary hover:bg-primary/10 group"
         >
-          {gameState.isGameActive ? 'Pause' : 'Play'}
+          {gameState.isGameActive ? (
+            <>
+              <Pause className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+              Pause
+            </>
+          ) : (
+            <>
+              <Play className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+              Play
+            </>
+          )}
         </Button>
         <Button 
           onClick={resetGame} 
           variant="outline"
-          className="border-secondary text-secondary hover:bg-secondary/10"
+          className="border-secondary text-secondary hover:bg-secondary/10 group"
         >
+          <RotateCcw className="mr-2 h-4 w-4 group-hover:rotate-180 transition-transform" />
           Reset
         </Button>
         <Button 
           onClick={toggleFullscreen} 
           variant="outline"
-          className="border-accent text-accent hover:bg-accent/10"
+          className="border-accent text-accent hover:bg-accent/10 group"
         >
-          {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+          {isFullscreen ? (
+            <>
+              <Minimize className="mr-2 h-4 w-4 group-hover:scale-90 transition-transform" />
+              Exit
+            </>
+          ) : (
+            <>
+              <Expand className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+              Fullscreen
+            </>
+          )}
         </Button>
       </div>
     </div>

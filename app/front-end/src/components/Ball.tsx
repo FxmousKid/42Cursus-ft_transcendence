@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 
 interface BallProps {
@@ -24,10 +23,23 @@ const Ball: React.FC<BallProps> = ({ position, radius }) => {
         width: `${radius * 2}px`,
         height: `${radius * 2}px`,
         transform: `translate(${position.x}px, ${position.y}px)`,
-        background: "linear-gradient(135deg, #fff, #ccc)",
-        boxShadow: "0 0 10px rgba(255, 255, 255, 0.7)",
       }}
-    />
+    >
+      {/* Inner glow effect */}
+      <div 
+        className="absolute inset-0 rounded-full opacity-70"
+        style={{
+          background: `radial-gradient(circle at 30% 30%, hsl(var(--accent)), transparent)`,
+        }}
+      />
+      {/* Shine effect */}
+      <div 
+        className="absolute inset-0 rounded-full opacity-50"
+        style={{
+          background: `linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)`,
+        }}
+      />
+    </div>
   );
 };
 
