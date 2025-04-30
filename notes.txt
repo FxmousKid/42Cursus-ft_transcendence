@@ -2,7 +2,6 @@
 
 [ ] REORGANSIER DESIGN [ ]
 
-
 [ ] AJOUTER PAGE CHOIX DE JEU !!!!!!!!!!!!!!!!!!
 [ ] FAIRE PAGE TOURNAMENET/FRIENDS
 [ ] LOCAL -> jeu normal

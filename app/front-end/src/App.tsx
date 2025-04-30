@@ -1,7 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import HomePage from '@/pages/HomePage';
-import GamePage from '@/pages/GamePage';
+import GameModePage from '@/pages/GameModePage';
+import LocalGamePage from '@/pages/LocalGamePage';
+import TournamentGamePage from '@/pages/TournamentGamePage';
+import FriendsGamePage from '@/pages/FriendsGamePage';
 import ProfilePage from '@/pages/ProfilePage';
 import NotFoundPage from '@/pages/NotFound';
 import LoginPage from '@/pages/Login';
@@ -17,7 +20,10 @@ const AppContent = () => {
       <main className={!isLoginPage ? "pt-16" : ""}>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/game" element={<GamePage />} />
+          <Route path="/game" element={<GameModePage />} />
+          <Route path="/game/local" element={<LocalGamePage />} />
+          <Route path="/game/tournament" element={<TournamentGamePage />} />
+          <Route path="/game/friends" element={<FriendsGamePage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<NotFoundPage />} />

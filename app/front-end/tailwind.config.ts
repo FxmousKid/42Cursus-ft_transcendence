@@ -1,4 +1,6 @@
 import type { Config } from "tailwindcss";
+// @ts-ignore
+import tailwindAnimate from "tailwindcss-animate";
 
 export default {
 	darkMode: ["class"],
@@ -84,13 +86,40 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-slow': {
+					'0%, 100%': { opacity: '0.6' },
+					'50%': { opacity: '0.9' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-slow': 'pulse-slow 4s ease-in-out infinite'
+			},
+			// Adding utility classes for animation delays
+			transitionDelay: {
+				'1000': '1000ms',
+				'2000': '2000ms',
+				'3000': '3000ms',
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		tailwindAnimate,
+		function({ addUtilities }: { addUtilities: (utilities: Record<string, Record<string, string>>) => void }) {
+			const newUtilities = {
+				'.animation-delay-1000': {
+					'animation-delay': '1000ms'
+				},
+				'.animation-delay-2000': {
+					'animation-delay': '2000ms'
+				},
+				'.animation-delay-3000': {
+					'animation-delay': '3000ms'
+				}
+			}
+			addUtilities(newUtilities)
+		}
+	],
 } satisfies Config;
