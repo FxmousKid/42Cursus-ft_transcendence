@@ -1,0 +1,24 @@
+[ ] PHASE 1 [ ]
+
+[ ] REORGANSIER DESIGN [ ]
+
+
+[ ] AJOUTER PAGE CHOIX DE JEU !!!!!!!!!!!!!!!!!!
+[ ] FAIRE PAGE TOURNAMENET/FRIENDS
+[ ] LOCAL -> jeu normal
+
+[ ] SImplifier page de jeu. Amelireor DESIGN remove bboutons inutiles !!!!!!!!!!!!!!!!
+
+[ ] Sign IN ameliorer. Epurer la page aussi
+[ ] Amelireor les cards sur home !!!!!!!!!!!!!!!!!
+
+[ ] Epurer el design globale
+
+[ ] centre en bulle la navbar\
+
+[ ] bouton notif dans la nav bar
+
+PHASE 2
+
+[ ] PROFILE PAGE --->> GENARO
+
