@@ -17,7 +17,7 @@ const AppContent = () => {
   return (
     <div className="min-h-screen bg-background text-foreground antialiased">
       {!isLoginPage && <Navbar />}
-      <main className={!isLoginPage ? "pt-16" : ""}>
+      <main className={!isLoginPage ? "pt-20" : ""}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/game" element={<GameModePage />} />

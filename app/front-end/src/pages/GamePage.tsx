@@ -1,4 +1,3 @@
-
 import PongGame from '@/components/PongGame';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -12,25 +11,6 @@ const GamePage = () => {
       <div className="blob blob-primary w-64 h-64 top-20 left-10 -z-10"></div>
       <div className="blob blob-secondary w-72 h-72 bottom-20 right-10 -z-10"></div>
       <div className="blob blob-accent w-48 h-48 bottom-40 left-1/4 -z-10"></div>
-      
-      {/* Header */}
-      <header className="py-4 px-6 bg-card/40 backdrop-blur-sm border-b border-border">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <h1 
-            onClick={() => navigate('/')} 
-            className="text-2xl font-bold text-primary cursor-pointer hover:scale-105 transition-transform"
-          >
-            PONG ARCADE
-          </h1>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/')}
-            className="border-primary text-primary hover:bg-primary/10"
-          >
-            Back to Home
-          </Button>
-        </div>
-      </header>
       
       {/* Game container */}
       <main className="flex-1 flex items-center justify-center p-4 md:p-8">

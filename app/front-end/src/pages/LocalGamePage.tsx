@@ -12,12 +12,9 @@ const LocalGamePage = () => {
       <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-[#0056d3]/20 blur-3xl -z-10"></div>
       <div className="absolute bottom-20 right-10 w-72 h-72 rounded-full bg-[#0b2046]/40 blur-3xl -z-10"></div>
       
-      {/* Header */}
-      <header className="py-4 px-6 bg-[#0b2046]/80 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white">
-            LOCAL GAME
-          </h1>
+      {/* Back button */}
+      <div className="pt-16 pb-2 px-6">
+        <div className="max-w-6xl mx-auto">
           <Button 
             variant="outline" 
             onClick={() => navigate('/game')}
@@ -26,7 +23,7 @@ const LocalGamePage = () => {
             <ArrowLeft className="h-4 w-4" /> Back to Game Modes
           </Button>
         </div>
-      </header>
+      </div>
       
       {/* Game container */}
       <main className="flex-1 flex items-center justify-center p-4 md:p-8">
