@@ -3,9 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Github } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Github, ArrowLeft } from "lucide-react";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -30,146 +29,154 @@ const Login = () => {
   };
   
   return (
-    <div className="container relative min-h-[calc(100vh-4rem)] flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
-      <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
-        <div className="absolute inset-0 bg-background" />
-        <div className="relative z-20 flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-primary via-secondary to-accent" />
-          <span className="text-xl font-bold elegant-text-primary">PONG TRANSCENDENCE</span>
-        </div>
-        <div className="relative z-20 mt-auto">
-          <blockquote className="space-y-2">
-            <p className="text-lg elegant-text-primary">
-              "The game that started it all, reimagined for the modern era."
-            </p>
-            <footer className="text-sm text-muted-foreground">42 School Project</footer>
-          </blockquote>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0b2046] to-slate-950 relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-0 -left-10 w-72 h-72 bg-primary rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 -right-10 w-72 h-72 bg-secondary rounded-full filter blur-3xl animate-pulse"></div>
       </div>
-      <div className="p-4 lg:p-8 h-full flex items-center">
-        <Card className="mx-auto w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">
-              {activeTab === "login" ? "Sign in to your account" : "Create a new account"}
-            </CardTitle>
-            <CardDescription className="text-center">
-              {activeTab === "login" ? "Enter your credentials below" : "Fill in the form to get started"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login" onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="register">Sign Up</TabsTrigger>
+      
+      {/* Logo at top */}
+      <div className="absolute top-0 left-0 w-full p-5 flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary via-secondary to-accent" />
+          <div className="flex flex-col">
+            <span className="text-xl font-bold text-white">42-Transcendence</span>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          className="text-white hover:bg-[#0b2046]/30"
+          onClick={() => navigate('/')}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Button>
+      </div>
+      
+      {/* Main card */}
+      <div className="w-full max-w-md z-10">
+        <Card className="border-2 border-[#0b2046]/50 bg-[#0b2046]/30 backdrop-blur-md shadow-xl overflow-hidden rounded-xl">
+          <CardHeader className="space-y-6 flex flex-col items-center pt-8 pb-3">
+            <div className="bg-[#0b2046]/30 p-2 rounded-full w-fit">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-[#0056d3] via-[#0056d3] to-[#0056d3]" />
+            </div>
+            
+            {/* Cute rounded toggle for Sign In/Sign Up */}
+            <Tabs defaultValue="login" onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full max-w-[250px] grid-cols-2 mx-auto rounded-full p-1 bg-[#0b2046]/20 border border-[#0b2046]/30">
+                <TabsTrigger 
+                  value="login" 
+                  className="text-sm font-bold rounded-full h-9 data-[state=active]:bg-[#0056d3] data-[state=active]:text-white data-[state=inactive]:text-[#0056d3]/70 transition-all"
+                >
+                  SIGN IN
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="register" 
+                  className="text-sm font-bold rounded-full h-9 data-[state=active]:bg-[#0056d3] data-[state=active]:text-white data-[state=inactive]:text-[#0056d3]/70 transition-all"
+                >
+                  SIGN UP
+                </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="login">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      placeholder="your-email@example.com" 
-                      type="email" 
-                      required 
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                        Forgot?
-                      </Link>
+              <CardContent className="pt-6 px-6">
+                <TabsContent value="login" className="mt-0">
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                      <Input 
+                        id="email" 
+                        placeholder="Email" 
+                        type="email" 
+                        required 
+                        disabled={isLoading}
+                        className="bg-[#0b2046]/20 border-[#0b2046]/50 h-12 placeholder:text-[#0056d3]/70 text-white rounded-lg"
+                      />
                     </div>
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      required 
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign In"}
-                  </Button>
-                </form>
-              </TabsContent>
+                    <div className="space-y-2">
+                      <Input 
+                        id="password" 
+                        type="password"
+                        placeholder="Password"
+                        required 
+                        disabled={isLoading}
+                        className="bg-[#0b2046]/20 border-[#0b2046]/50 h-12 placeholder:text-[#0056d3]/70 text-white rounded-lg"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full h-12 font-bold text-lg bg-[#0056d3] hover:bg-[#0056d3]/80 rounded-lg" disabled={isLoading}>
+                      {isLoading ? "Signing in..." : "Sign In"}
+                    </Button>
+                  </form>
+                </TabsContent>
+                
+                <TabsContent value="register" className="mt-0">
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                      <Input 
+                        id="username" 
+                        placeholder="Username" 
+                        required 
+                        disabled={isLoading}
+                        className="bg-[#0b2046]/20 border-[#0b2046]/50 h-12 placeholder:text-[#0056d3]/70 text-white rounded-lg"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Input 
+                        id="register-email" 
+                        placeholder="Email" 
+                        type="email" 
+                        required 
+                        disabled={isLoading}
+                        className="bg-[#0b2046]/20 border-[#0b2046]/50 h-12 placeholder:text-[#0056d3]/70 text-white rounded-lg"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Input 
+                        id="register-password" 
+                        type="password"
+                        placeholder="Password"
+                        required 
+                        disabled={isLoading}
+                        className="bg-[#0b2046]/20 border-[#0b2046]/50 h-12 placeholder:text-[#0056d3]/70 text-white rounded-lg"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full h-12 font-bold text-lg bg-[#0056d3] hover:bg-[#0056d3]/80 rounded-lg" disabled={isLoading}>
+                      {isLoading ? "Creating account..." : "Create Account"}
+                    </Button>
+                  </form>
+                </TabsContent>
               
-              <TabsContent value="register">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input 
-                      id="username" 
-                      placeholder="coolplayer123" 
-                      required 
-                      disabled={isLoading}
-                    />
+                <div className="relative my-5">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[#0b2046]/50"></div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email">Email</Label>
-                    <Input 
-                      id="register-email" 
-                      placeholder="your-email@example.com" 
-                      type="email" 
-                      required 
-                      disabled={isLoading}
-                    />
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-[#0b2046]/50 px-2 text-[#0056d3]">
+                      OR
+                    </span>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password">Password</Label>
-                    <Input 
-                      id="register-password" 
-                      type="password" 
-                      required 
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating account..." : "Create Account"}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="w-full h-12 border-[#0b2046]/50 text-white hover:bg-[#0b2046]/50 bg-[#0b2046]/20 flex items-center justify-center rounded-lg"
+                    disabled={isLoading}
+                    onClick={() => handleOAuthLogin("github")}
+                  >
+                    <Github className="h-6 w-6" />
                   </Button>
-                </form>
-              </TabsContent>
+                  <Button 
+                    variant="outline" 
+                    className="w-full h-12 border-[#0b2046]/50 text-white hover:bg-[#0b2046]/50 bg-[#0b2046]/20 font-bold text-lg rounded-lg" 
+                    disabled={isLoading}
+                    onClick={() => handleOAuthLogin("42")}
+                  >
+                    42
+                  </Button>
+                </div>
+              </CardContent>
             </Tabs>
-            
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                disabled={isLoading}
-                onClick={() => handleOAuthLogin("github")}
-              >
-                <Github className="mr-2 h-4 w-4" />
-                Github
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full font-bold" 
-                disabled={isLoading}
-                onClick={() => handleOAuthLogin("42")}
-              >
-                42
-              </Button>
-            </div>
-          </CardContent>
-          <CardFooter className="justify-center">
-            <p className="text-xs text-center text-muted-foreground">
-              By continuing, you agree to our{" "}
-              <span className="underline cursor-pointer">Terms of Service</span> and{" "}
-              <span className="underline cursor-pointer">Privacy Policy</span>.
-            </p>
-          </CardFooter>
+          </CardHeader>
         </Card>
       </div>
     </div>
