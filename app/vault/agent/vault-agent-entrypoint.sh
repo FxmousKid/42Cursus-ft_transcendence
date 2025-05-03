@@ -17,7 +17,12 @@ done
 
 cp /vault/role_id /vault/role_id_removable
 cp /vault/secret_id /vault/secret_id_removable
-rmdir /vault/.env
+
+if [ -d /vault/.env ]; then
+	echo "Removing old .env directory..."
+	rmdir /vault/.env
+fi
+
 
 vault agent -config=/vault/config/agent.hcl -log-level=debug &
 VAULT_PID=$!
