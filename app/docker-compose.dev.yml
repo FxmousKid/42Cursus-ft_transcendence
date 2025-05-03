@@ -1,4 +1,5 @@
 services:
+
   backend:
     build:
       context: ./backend
@@ -10,26 +11,40 @@ services:
     networks:
       - backend
     volumes:
-      - sqlite-data:/app/data   # Only this volume!
+      - sqlite-data:/app/data
+      - ./vault/agent/.env:/app/.env:ro
 
-  vault:
+
+  vault-server:
     build:
-      context: ./vault
+      context: ./vault/server
       dockerfile: dockerfile
-    container_name: vault-dev
+    container_name: vault-server
     ports:
-      - "8200:8200"
-    environment:
-      VAULT_ADDRESS: "http://0.0.0.0:8200"
+      - "8200:8200/tcp"
     cap_add:
       - IPC_LOCK
     volumes:
-      - vault-dev-file:/vault/file
-      - ./vault/config/vault.dev.hcl:/vault/config/vault.hcl:ro
+      - ./vault/server:/vault/:rw
+
+
+  vault-agent:
+    build:
+      context: ./vault/agent
+      dockerfile: dockerfile
+    container_name: vault-agent
+    ports:
+      - "8201:8200"
+    depends_on:
+      - vault-server
+    volumes:
+      - ./vault/agent:/vault/:rw
+      - ./vault/server/role_id:/vault/role_id:rw
+      - ./vault/server/secret_id:/vault/secret_id:rw
+
 
 
 volumes:
-  vault-dev-file:
   sqlite-data:
 
 networks:
