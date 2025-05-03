@@ -10,7 +10,7 @@ all-prod: build-prod up-prod
 # Development
 
 build-dev:
-	$(DOCC) -f $(DEV_DOCC_FILE) build 
+	$(DOCC) -f $(DEV_DOCC_FILE) build
 
 up-dev:
 	$(DOCC) -f $(DEV_DOCC_FILE) up
@@ -30,6 +30,9 @@ clean-dev:
 	$(DOCC) -f $(DEV_DOCC_FILE) volume rm -f
 	$(DOCC) -f $(DEV_DOCC_FILE) network rm -f
 
+destroy:
+	docker system prune -a
+	docker container prune -f
 
 # Production
 
