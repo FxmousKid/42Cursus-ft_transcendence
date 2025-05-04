@@ -33,7 +33,6 @@ services:
       - sqlite-data:/app/data
       # - ./vault/agent/:/app/.env:ro  # Use a named volume instead of bind mount
       - ./vault/agent/env/:/app/env:rw
-      # - ./vault/agent/.env:/app/.env:ro
 
 
   vault-server:
