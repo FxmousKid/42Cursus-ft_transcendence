@@ -18,8 +18,8 @@ auto_auth {
 }
 
 template {
-  source      = "/vault/env-template.tmpl"
-  destination = "/vault/.env"
+  source      = "/vault/env/env-template.tmpl"
+  destination = "/vault/env/.env"
 }
 
 # cache {
