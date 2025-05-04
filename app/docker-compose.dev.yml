@@ -30,27 +30,51 @@ services:
     networks:
       - backend
     volumes:
-      - sqlite-data:/app/data   # Only this volume!
+      - sqlite-data:/app/data
+      # - ./vault/agent/:/app/.env:ro  # Use a named volume instead of bind mount
+      - ./vault/agent/env/:/app/env:rw
 
-  vault:
+
+  vault-server:
     build:
-      context: ./vault
+      context: ./vault/server
       dockerfile: dockerfile
-    container_name: vault-dev
+    container_name: vault-server
     ports:
-      - "8200:8200"
-    environment:
-      VAULT_ADDRESS: "http://0.0.0.0:8200"
+      - "8200:8200/tcp"
     cap_add:
       - IPC_LOCK
     volumes:
-      - vault-dev-file:/vault/file
-      - ./vault/config/vault.dev.hcl:/vault/config/vault.hcl:ro
+      # - ./vault/server:/vault/:rw
+
+      - ./vault/server/config:/vault/config:ro  # Config files as read-only
+      - ./vault/server/file:/vault/file:rw      # Only mount the storage directory
+      - ./vault/server/logs:/vault/logs:rw      # Mount logs directory
+      - ./vault/server/tokens/:/vault/tokens:rw           # Store tokens in a named volume
+    restart: unless-stopped
+
+
+  vault-agent:
+    build:
+      context: ./vault/agent
+      dockerfile: dockerfile
+    container_name: vault-agent
+    ports:
+      - "8201:8200"
+    depends_on:
+      - vault-server
+    volumes:
+      - ./vault/agent/config:/vault/config:ro   # Config files as read-only
+      - ./vault/agent/env/:/vault/env:rw                 # Write .env to a named volume
+      - ./vault/agent/logs:/vault/logs:rw       # Mount logs directory
+      - ./vault/server/tokens/:/vault/tokens:rw           # Read tokens from shared volume
+
+    restart: unless-stopped
 
 
 volumes:
-  vault-dev-file:
   sqlite-data:
+    
 
 networks:
   backend:

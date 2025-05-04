@@ -1,3 +1,19 @@
+# Sensitive credentials
+**/root.token
+**/agent-token
+**/unseal.key
+**/role_id*
+**/secret_id*
+**/init.txt
+
+
+# Logs
+**/logs/*
+!**/logs/.gitkeep
+
+# Environment files
+**/.env
+
 # Logs
 logs
 *.log

@@ -1,11 +1,11 @@
 # Development configuration - UNSAFE FOR PRODUCTION
 storage "file" {
-  path = "/vault/file"
+	path = "/vault/file"
 }
 
 listener "tcp" {
-  address     = "0.0.0.0:8200"
-  tls_disable = "true"  # No TLS in dev
+	address     = "0.0.0.0:8200"
+	tls_disable = "true"  # No TLS in dev
 }
 
 ui = true

@@ -1,9 +1,16 @@
 # Use Node.js 20 as the base image
-FROM node:20
+FROM node:23-bookworm
 
 # Install pnpm
 RUN corepack enable
 RUN corepack prepare pnpm@latest --activate
+
+# Install zsh, git, curl, jq
+# RUN apt install zsh git curl chsh jq && \
+#     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true && \
+# 	chsh -s $(which zsh) && \
+# 	touch $HOME/.zshrc
+
 
 # Set up PNPM environment
 ENV PNPM_HOME=/root/.local/share/pnpm
