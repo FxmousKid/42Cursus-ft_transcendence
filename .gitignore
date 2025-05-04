@@ -6,9 +6,6 @@
 **/secret_id*
 **/init.txt
 
-# Runtime data
-**/file/*
-!**/file/.gitkeep
 
 # Logs
 **/logs/*

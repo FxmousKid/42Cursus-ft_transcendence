@@ -9,6 +9,7 @@ RUN apk add zsh git curl jq && \
 ENV VAULT_ADDR="http://vault-server:8200"
 
 COPY ./vault-server-entrypoint.sh /usr/local/bin/vault-server-entrypoint.sh
+
 RUN chmod +x /usr/local/bin/vault-server-entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/vault-server-entrypoint.sh"]

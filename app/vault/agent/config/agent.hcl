@@ -12,7 +12,7 @@ auto_auth {
   }
   sink "file" {
 	config = {
-	  path = "/vault/agent-token"
+	  path = "/vault/tokens/agent-token"
 	}
   }
 }
@@ -21,3 +21,8 @@ template {
   source      = "/vault/env-template.tmpl"
   destination = "/vault/.env"
 }
+
+# cache {
+#   use_auto_auth_token = true
+# }
+
