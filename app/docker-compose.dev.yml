@@ -12,7 +12,8 @@ services:
       - backend
     volumes:
       - sqlite-data:/app/data
-      - env-file:/app/.env:ro  # Use a named volume instead of bind mount
+      # - ./vault/agent/:/app/.env:ro  # Use a named volume instead of bind mount
+      - ./vault/agent/env/:/app/env:rw
       # - ./vault/agent/.env:/app/.env:ro
 
 
@@ -45,23 +46,16 @@ services:
     depends_on:
       - vault-server
     volumes:
-      # - ./vault/agent:/vault/:rw
-      # - ./vault/server/role_id:/vault/role_id:rw
-      # - ./vault/server/secret_id:/vault/secret_id:rw
-
       - ./vault/agent/config:/vault/config:ro   # Config files as read-only
-      - ./vault/agent/env-template.tmpl:/vault/env-template.tmpl:ro
+      - ./vault/agent/env/:/vault/env:rw                 # Write .env to a named volume
       - ./vault/agent/logs:/vault/logs:rw       # Mount logs directory
       - ./vault/server/tokens/:/vault/tokens:rw           # Read tokens from shared volume
-      - env-file:/vault/.env:rw                 # Write .env to a named volume
 
     restart: unless-stopped
 
 
 volumes:
   sqlite-data:
-  env-file: # generated .env by vault agent, to access in backend
-  # vault-tokens: # shared volume between server and agent
     
 
 networks:
