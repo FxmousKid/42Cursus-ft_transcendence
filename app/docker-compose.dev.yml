@@ -2,13 +2,13 @@ services:
 
   frontend:
     build:
-      context: ./front-end
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
     ports:
       - "3000:5173"
     volumes:
-      - ./front-end:/app
+      - ./frontend:/app
       - /app/node_modules
     environment:
       - VITE_API_URL=http://backend:3000
@@ -32,12 +32,12 @@ services:
     volumes:
       - sqlite-data:/app/data
       # - ./vault/agent/:/app/.env:ro  # Use a named volume instead of bind mount
-      - ./vault/agent/env/:/app/env:rw
+      - ./infra/vault/agent/env/:/app/env:rw
 
 
   vault-server:
     build:
-      context: ./vault/server
+      context: ./infra/vault/server
       dockerfile: dockerfile
     container_name: vault-server
     ports:
@@ -47,16 +47,16 @@ services:
     volumes:
       # - ./vault/server:/vault/:rw
 
-      - ./vault/server/config:/vault/config:ro  # Config files as read-only
-      - ./vault/server/file:/vault/file:rw      # Only mount the storage directory
-      - ./vault/server/logs:/vault/logs:rw      # Mount logs directory
-      - ./vault/server/tokens/:/vault/tokens:rw           # Store tokens in a named volume
+      - ./infra/vault/server/config:/vault/config:ro  # Config files as read-only
+      - ./infra/vault/server/file:/vault/file:rw      # Only mount the storage directory
+      - ./infra/vault/server/logs:/vault/logs:rw      # Mount logs directory
+      - ./infra/vault/server/tokens/:/vault/tokens:rw           # Store tokens in a named volume
     restart: unless-stopped
 
 
   vault-agent:
     build:
-      context: ./vault/agent
+      context: ./infra/vault/agent
       dockerfile: dockerfile
     container_name: vault-agent
     ports:
@@ -64,10 +64,10 @@ services:
     depends_on:
       - vault-server
     volumes:
-      - ./vault/agent/config:/vault/config:ro   # Config files as read-only
-      - ./vault/agent/env/:/vault/env:rw                 # Write .env to a named volume
-      - ./vault/agent/logs:/vault/logs:rw       # Mount logs directory
-      - ./vault/server/tokens/:/vault/tokens:rw           # Read tokens from shared volume
+      - ./infra/vault/agent/config:/vault/config:ro   # Config files as read-only
+      - ./infra/vault/agent/env/:/vault/env:rw                 # Write .env to a named volume
+      - ./infra/vault/agent/logs:/vault/logs:rw       # Mount logs directory
+      - ./infra/vault/server/tokens/:/vault/tokens:rw           # Read tokens from shared volume
 
     restart: unless-stopped
 
