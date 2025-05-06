@@ -1,0 +1,20 @@
+
+
+# include the compsoe of every provided type of service
+
+include:
+  - ./core/docker-compose.core.yml            # Core services
+  - ./infra/vault/docker-compose.vault.yml    # Hashicorp Vault services
+
+
+# Global network
+networks:
+  transcendence-network:
+    driver: bridge
+
+# volumes:
+#   vault-env:
+#     driver_opts:
+#       type: none
+#       device: ./infra/vault/agent/env/
+#       o: bind
