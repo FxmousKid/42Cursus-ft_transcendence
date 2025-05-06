@@ -16,8 +16,7 @@
 **/vault/agent/file/*
 
 # Environment files
-app/infra/vault/agent/env/.env
-
+**/.env
 
 # Logs
 logs

@@ -38,6 +38,7 @@ COPY . .
 # Build the NestJS app
 RUN pnpm run build
 
+# Rebuild native dependencies if needed
 RUN cd node_modules/sqlite3 && \
 	pnpm run rebuild && cd /app && pnpm rebuild bcrypt
 
