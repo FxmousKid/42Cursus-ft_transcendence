@@ -16,7 +16,9 @@
 **/vault/agent/file/*
 
 # Environment files
-**/.env
+app/infra/vault/agent/env/.env
+app/backend/data/db.sqlite
+
 
 # Logs
 logs
