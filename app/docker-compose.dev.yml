@@ -2,18 +2,15 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./core/frontend
       dockerfile: Dockerfile
     container_name: frontend
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     volumes:
-      - ./frontend:/app
+      - ./core/frontend:/app
       - ./infra/vault/agent/env/:/app/env:rw
       - /app/node_modules
-    environment:
-      - VITE_API_URL=${API_URL}
-      - VITE_APP_NAME=${VITE_APP_NAME}
     networks:
       - backend
     depends_on:
@@ -21,18 +18,16 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./core/backend
       dockerfile: ./docker/dockerfile
     container_name: backend
     ports:
       - "3001:${BACKEND_PORT:-3000}"
-    environment:
-      - API_URL=${API_URL}
     restart: unless-stopped
     networks:
       - backend
     volumes:
-      - ./backend/data:/app/data
+      - ./core/backend/data:/app/data
       - ./infra/vault/agent/env/:/app/env:rw
 
 
@@ -46,10 +41,10 @@ services:
     cap_add:
       - IPC_LOCK
     volumes:
-      - ./infra/vault/server/config:/vault/config:ro  # Config files as read-only
-      - ./infra/vault/server/file:/vault/file:rw     # Fixed path to match actual directory structure
-      - ./infra/vault/server/logs:/vault/logs:rw      # Mount logs directory
-      - ./infra/vault/server/tokens/:/vault/tokens:rw # Store tokens in a named volume
+      - ./infra/vault/server/config:/vault/config:ro    # Config files as read-only
+      - ./infra/vault/server/file:/vault/file:rw        # To check if causes issues
+      - ./infra/vault/server/logs:/vault/logs:rw        # Mount logs directory
+      - ./infra/vault/server/tokens/:/vault/tokens:rw   # Store tokens in a named volume
     restart: unless-stopped
 
 
@@ -63,10 +58,10 @@ services:
     depends_on:
       - vault-server
     volumes:
-      - ./infra/vault/agent/config:/vault/config:ro   # Config files as read-only
-      - ./infra/vault/agent/env/:/vault/env:rw                 # Write .env to a named volume
-      - ./infra/vault/agent/logs:/vault/logs:rw       # Mount logs directory
-      - ./infra/vault/server/tokens/:/vault/tokens:rw           # Read tokens from shared volume
+      - ./infra/vault/agent/config:/vault/config:ro     # Config files as read-only
+      - ./infra/vault/agent/env/:/vault/env:rw          # Write .env to a named volume
+      - ./infra/vault/agent/logs:/vault/logs:rw         # Mount logs directory
+      - ./infra/vault/server/tokens/:/vault/tokens:rw   # Read tokens from shared volume
 
     restart: unless-stopped
 
@@ -77,4 +72,3 @@ volumes:
 networks:
   backend:
     driver: bridge
-
