@@ -27,8 +27,6 @@ ps-dev:
 clean-dev:
 	$(DOCC) -f $(DEV_DOCC_FILE) down --rmi all
 	$(DOCC) -f $(DEV_DOCC_FILE) rm -f
-	$(DOCC) -f $(DEV_DOCC_FILE) volume rm -f
-	$(DOCC) -f $(DEV_DOCC_FILE) network rm -f
 
 destroy:
 	docker system prune -a

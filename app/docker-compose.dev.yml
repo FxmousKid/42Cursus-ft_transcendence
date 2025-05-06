@@ -6,12 +6,14 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "3000:5173"
+      - "${FRONTEND_PORT:-5173}:5173"
     volumes:
       - ./frontend:/app
+      - ./infra/vault/agent/env/:/app/env:rw
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://backend:3000
+      - VITE_API_URL=${API_URL}
+      - VITE_APP_NAME=${VITE_APP_NAME}
     networks:
       - backend
     depends_on:
@@ -23,15 +25,14 @@ services:
       dockerfile: ./docker/dockerfile
     container_name: backend
     ports:
-      - "3001:3000"
-    # env_file:
-    #   - ./backend/Docker/.env
+      - "3001:${BACKEND_PORT:-3000}"
+    environment:
+      - API_URL=${API_URL}
     restart: unless-stopped
     networks:
       - backend
     volumes:
-      - sqlite-data:/app/data
-      # - ./vault/agent/:/app/.env:ro  # Use a named volume instead of bind mount
+      - ./backend/data:/app/data
       - ./infra/vault/agent/env/:/app/env:rw
 
 
@@ -45,12 +46,11 @@ services:
     cap_add:
       - IPC_LOCK
     volumes:
-      # - ./vault/server:/vault/:rw
-
+      # Commenté les montages problématiques pour faciliter le build
       - ./infra/vault/server/config:/vault/config:ro  # Config files as read-only
-      - ./infra/vault/server/file:/vault/file:rw      # Only mount the storage directory
+      # - ./infra/vault/server/file:/vault/file:rw     # Commenté car pose problème
       - ./infra/vault/server/logs:/vault/logs:rw      # Mount logs directory
-      - ./infra/vault/server/tokens/:/vault/tokens:rw           # Store tokens in a named volume
+      - ./infra/vault/server/tokens/:/vault/tokens:rw # Store tokens in a named volume
     restart: unless-stopped
 
 
@@ -73,8 +73,7 @@ services:
 
 
 volumes:
-  sqlite-data:
-    
+  vault-data: {}  # Volume nommé pour vault
 
 networks:
   backend:

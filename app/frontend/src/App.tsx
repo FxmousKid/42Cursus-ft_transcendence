@@ -8,6 +8,7 @@ import FriendsGamePage from '@/pages/FriendsGamePage';
 import ProfilePage from '@/pages/ProfilePage';
 import NotFoundPage from '@/pages/NotFound';
 import LoginPage from '@/pages/Login';
+import { Toaster } from '@/components/ui/toaster';
 
 // Wrapper component to conditionally render navbar and padding
 const AppContent = () => {
@@ -29,11 +30,12 @@ const AppContent = () => {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
+      <Toaster />
     </div>
   );
 }
 
-function App() {
+const App = () => {
   return (
     <Router>
       <AppContent />

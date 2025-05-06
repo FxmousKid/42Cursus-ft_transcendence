@@ -4,3 +4,34 @@ LOGSTASH_USERNAME={{ with secret "kv/data/elk/logstash" }}{{ .Data.data.username
 LOGSTASH_PASSWORD={{ with secret "kv/data/elk/logstash" }}{{ .Data.data.password }}{{ end }}
 KIBANA_USERNAME={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.username }}{{ end }}
 KIBANA_PASSWORD={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.password }}{{ end }}
+
+# Frontend configuration
+FRONTEND_PORT=5173
+FRONTEND_URL=http://localhost:5173
+
+# Backend configuration
+BACKEND_PORT=3000
+BACKEND_URL=http://localhost:3000
+
+# Pour l'accès aux API (utilisée par le frontend)
+API_URL=http://localhost:3001
+VITE_API_URL=http://localhost:3001
+VITE_APP_NAME=Transcendence 
+
+# Server configuration
+PORT=3000
+HOST=0.0.0.0
+
+# Database Configuration
+DATABASE_URL="sqlite:./db.sqlite"
+
+# JWT Configuration
+JWT_SECRET="your-super-secret-key-here"
+JWT_EXPIRATION="1d"
+
+# CORS Configuration
+CORS_ORIGIN="http://localhost:5173"
+
+# API Configuration
+API_PREFIX="/api"
+SWAGGER_PATH="/docs" 

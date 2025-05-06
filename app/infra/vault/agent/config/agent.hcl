@@ -6,8 +6,8 @@ auto_auth {
   method "approle" {
     mount_path = "auth/approle"
     config = {
-      role_id_file_path = "/vault/role_id_removable"
-      secret_id_file_path = "/vault/secret_id_removable"
+      role_id_file_path = "/vault/tokens/role_id"
+      secret_id_file_path = "/vault/tokens/secret_id"
     }
   }
   sink "file" {
@@ -22,6 +22,7 @@ template {
   destination = "/vault/env/.env"
 }
 
+# Do not uncomment, this doesn't do what you think it does
 # cache {
 #   use_auto_auth_token = true
 # }
