@@ -1,32 +1,31 @@
 import React from 'react';
-import { Trophy } from 'lucide-react';
 
 interface ScoreboardProps {
-  playerScore: number;
-  computerScore: number;
+  player1Score: number;
+  player2Score: number;
+  className?: string;
 }
 
-const ScoreCard = ({ score, label, color }: { score: number; label: string; color: string }) => (
-  <div className={`flex flex-col items-center p-4 elegant-card group hover:scale-105 transition-transform`}>
-    <span className={`text-${color} text-lg font-medium mb-1`}>{label}</span>
-    <span className={`text-${color} text-5xl sm:text-6xl font-bold tabular-nums`}>
-      {score.toString().padStart(2, '0')}
-    </span>
-    {score >= 5 && (
-      <Trophy className={`text-${color} mt-2 animate-bounce`} />
-    )}
-  </div>
-);
-
-const Scoreboard: React.FC<ScoreboardProps> = ({ playerScore, computerScore }) => {
+const Scoreboard: React.FC<ScoreboardProps> = ({ 
+  player1Score, 
+  player2Score, 
+  className = '' 
+}) => {
   return (
-    <div className="flex justify-center items-center gap-12 mb-8">
-      <ScoreCard score={playerScore} label="PLAYER 1" color="primary" />
-      <div className="flex flex-col items-center justify-center">
-        <span className="text-muted-foreground text-lg font-medium">VS</span>
-        <div className="h-px w-8 bg-muted-foreground/30 my-2" />
+    <div className={`flex justify-between items-center gap-12 my-4 ${className}`}>
+      <div className="flex flex-col items-center p-3 bg-card/70 backdrop-blur-sm rounded-xl shadow-md border border-primary/20">
+        <span className="text-primary text-sm font-semibold uppercase tracking-wider">Joueur 1</span>
+        <span className="text-primary text-4xl md:text-5xl font-bold">{player1Score}</span>
       </div>
-      <ScoreCard score={computerScore} label="PLAYER 2" color="secondary" />
+      
+      <div className="flex justify-center items-center w-12 h-12 text-xl">
+        <span className="text-muted-foreground font-bold">VS</span>
+      </div>
+      
+      <div className="flex flex-col items-center p-3 bg-card/70 backdrop-blur-sm rounded-xl shadow-md border border-secondary/20">
+        <span className="text-secondary text-sm font-semibold uppercase tracking-wider">Joueur 2</span>
+        <span className="text-secondary text-4xl md:text-5xl font-bold">{player2Score}</span>
+      </div>
     </div>
   );
 };

@@ -46,9 +46,8 @@ services:
     cap_add:
       - IPC_LOCK
     volumes:
-      # Commenté les montages problématiques pour faciliter le build
       - ./infra/vault/server/config:/vault/config:ro  # Config files as read-only
-      # - ./infra/vault/server/file:/vault/file:rw     # Commenté car pose problème
+      - ./infra/vault/server/file:/vault/file:rw     # Fixed path to match actual directory structure
       - ./infra/vault/server/logs:/vault/logs:rw      # Mount logs directory
       - ./infra/vault/server/tokens/:/vault/tokens:rw # Store tokens in a named volume
     restart: unless-stopped

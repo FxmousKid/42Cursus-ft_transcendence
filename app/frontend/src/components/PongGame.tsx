@@ -1,293 +1,418 @@
-import { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useRef, useState } from 'react';
 import Ball from './Ball';
 import Paddle from './Paddle';
-import { 
-  GameState, 
-  initGameState, 
-  updateGameState, 
-  handleKeyDown, 
-  handleKeyUp 
-} from '@/utils/gameEngine';
-import { Pause, Play, RotateCcw, MessageCircle, Flag } from 'lucide-react';
+import ScoreDisplay from './ScoreDisplay';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-interface PongGameProps {
-  width?: number;
-  height?: number;
-}
-
-const PongGame: React.FC<PongGameProps> = ({
-  width = 800,
-  height = 500,
-}) => {
-  const gameRef = useRef<HTMLDivElement>(null);
-  const [gameState, setGameState] = useState<GameState>(initGameState(width, height));
-  const [showChat, setShowChat] = useState(false);
-  const frameRef = useRef<number>(0);
+const PongGame: React.FC = () => {
+  const navigate = useNavigate();
+  // Références
+  const gameContainerRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(0);
   
-  const resetGame = () => {
-    setGameState(initGameState(
-      gameRef.current?.clientWidth || width,
-      gameRef.current?.clientHeight || height
-    ));
-  };
+  // Dimensions du jeu
+  const [gameSize, setGameSize] = useState({
+    width: 800,
+    height: 500
+  });
   
-  const toggleGame = () => {
-    setGameState(prev => ({
-      ...prev,
-      isGameActive: !prev.isGameActive
-    }));
-  };
+  // État des touches
+  const [keys, setKeys] = useState({
+    w: false,
+    s: false,
+    ArrowUp: false,
+    ArrowDown: false
+  });
   
-  // Handle keyboard events for player controls
+  // État du jeu
+  const [gameState, setGameState] = useState({
+    player1Position: 0,
+    player2Position: 0,
+    ball: {
+      x: 0,
+      y: 0,
+      velocityX: 5,
+      velocityY: 3
+    },
+    scores: {
+      player1: 0,
+      player2: 0
+    },
+    isRunning: false,
+    isPaused: false,
+    lastScorer: null as 'player1' | 'player2' | null
+  });
+  
+  // Dimensions des raquettes et de la balle
+  const paddleWidth = 10;
+  const paddleHeight = 80;
+  const ballSize = 14;
+  
+  // Gérer le redimensionnement du jeu
   useEffect(() => {
-    const handleKeyDownEvent = (e: KeyboardEvent) => {
-      setGameState(prev => handleKeyDown(prev, e.key));
+    const resizeGame = () => {
+      if (gameContainerRef.current) {
+        const containerWidth = Math.min(window.innerWidth - 40, 800);
+        const containerHeight = Math.min(window.innerHeight - 230, 500);
+        
+        setGameSize({
+          width: containerWidth,
+          height: containerHeight
+        });
+      }
     };
     
-    const handleKeyUpEvent = (e: KeyboardEvent) => {
-      setGameState(prev => handleKeyUp(prev, e.key));
-    };
-    
-    window.addEventListener('keydown', handleKeyDownEvent);
-    window.addEventListener('keyup', handleKeyUpEvent);
+    resizeGame();
+    window.addEventListener('resize', resizeGame);
     
     return () => {
-      window.removeEventListener('keydown', handleKeyDownEvent);
-      window.removeEventListener('keyup', handleKeyUpEvent);
+      window.removeEventListener('resize', resizeGame);
     };
   }, []);
   
-  // Game loop
+  // Initialisation du jeu
   useEffect(() => {
-    if (!gameState.isGameActive) return;
-    
-    const gameLoop = () => {
-      setGameState(prev => updateGameState(prev));
-      frameRef.current = requestAnimationFrame(gameLoop);
-    };
-    
-    frameRef.current = requestAnimationFrame(gameLoop);
-    
-    return () => {
-      cancelAnimationFrame(frameRef.current);
-    };
-  }, [gameState.isGameActive]);
+    resetGame();
+  }, [gameSize.width, gameSize.height]);
   
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (!gameRef.current) return;
+  // Réinitialiser le jeu
+  const resetGame = () => {
+    setGameState(prevState => ({
+      ...prevState,
+      player1Position: (gameSize.height - paddleHeight) / 2,
+      player2Position: (gameSize.height - paddleHeight) / 2,
+      ball: {
+        x: gameSize.width / 2 - ballSize / 2,
+        y: gameSize.height / 2 - ballSize / 2,
+        velocityX: Math.random() > 0.5 ? 5 : -5,
+        velocityY: (Math.random() * 2 - 1) * 3
+      },
+      scores: {
+        player1: 0,
+        player2: 0
+      },
+      isRunning: false,
+      isPaused: false,
+      lastScorer: null
+    }));
+    
+    // Réinitialiser le temps écoulé
+    lastTimeRef.current = 0;
+    
+    setTimeout(() => {
+      setGameState(prevState => ({ ...prevState, isRunning: true }));
+    }, 1000);
+  };
+  
+  // Mettre en pause ou reprendre le jeu
+  const togglePause = () => {
+    setGameState(prevState => ({
+      ...prevState,
+      isPaused: !prevState.isPaused
+    }));
+  };
+  
+  // Logique de mise à jour du jeu avec delta time pour une meilleure fluidité
+  const updateGame = (timestamp: number) => {
+    // Calculer le delta time (temps écoulé depuis la dernière frame)
+    if (!lastTimeRef.current) lastTimeRef.current = timestamp;
+    const deltaTime = (timestamp - lastTimeRef.current) / 16.67; // Normaliser par rapport à 60fps
+    lastTimeRef.current = timestamp;
+    
+    setGameState(prevState => {
+      if (!prevState.isRunning || prevState.isPaused) return prevState;
       
-      const newWidth = gameRef.current.clientWidth;
-      const newHeight = gameRef.current.clientHeight;
+      // Copie de l'état pour modifications
+      const newState = { ...prevState };
       
-      setGameState(prev => {
-        const widthRatio = newWidth / prev.gameWidth;
-        const heightRatio = newHeight / prev.gameHeight;
+      // Vitesse de déplacement des raquettes (plus sensible)
+      const paddleSpeed = 7 * deltaTime;
+      
+      // Gérer le mouvement de la raquette du joueur 1 (W/S)
+      if (keys.w) {
+        newState.player1Position = Math.max(0, newState.player1Position - paddleSpeed);
+      }
+      if (keys.s) {
+        newState.player1Position = Math.min(gameSize.height - paddleHeight, newState.player1Position + paddleSpeed);
+      }
+      
+      // Gérer le mouvement de la raquette du joueur 2 (flèches haut/bas)
+      if (keys.ArrowUp) {
+        newState.player2Position = Math.max(0, newState.player2Position - paddleSpeed);
+      }
+      if (keys.ArrowDown) {
+        newState.player2Position = Math.min(gameSize.height - paddleHeight, newState.player2Position + paddleSpeed);
+      }
+      
+      // Mettre à jour la position de la balle avec le deltaTime pour un mouvement plus fluide
+      let newBallX = newState.ball.x + newState.ball.velocityX * deltaTime;
+      let newBallY = newState.ball.y + newState.ball.velocityY * deltaTime;
+      
+      // Collision avec les raquettes
+      // Raquette gauche (joueur 1)
+      if (newBallX <= paddleWidth && 
+          newBallY + ballSize >= newState.player1Position && 
+          newBallY <= newState.player1Position + paddleHeight) {
+          
+        // Calculer où la balle a frappé la raquette (0 = haut, 1 = bas)
+        const hitPosition = (newBallY + ballSize/2 - newState.player1Position) / paddleHeight;
         
-        return {
-          ...prev,
-          gameWidth: newWidth,
-          gameHeight: newHeight,
-          ball: {
-            ...prev.ball,
-            x: prev.ball.x * widthRatio,
-            y: prev.ball.y * heightRatio,
-            radius: prev.ball.radius * Math.min(widthRatio, heightRatio)
-          },
-          playerPaddle: {
-            ...prev.playerPaddle,
-            x: prev.playerPaddle.x * widthRatio,
-            y: prev.playerPaddle.y * heightRatio,
-            width: prev.playerPaddle.width * widthRatio,
-            height: prev.playerPaddle.height * heightRatio
-          },
-          computerPaddle: {
-            ...prev.computerPaddle,
-            x: prev.computerPaddle.x * widthRatio,
-            y: prev.computerPaddle.y * heightRatio,
-            width: prev.computerPaddle.width * widthRatio,
-            height: prev.computerPaddle.height * heightRatio
-          }
-        };
-      });
+        // Changer l'angle en fonction de l'endroit où la balle a frappé
+        const angleModifier = 2.5 * (hitPosition - 0.5); // -1.25 à 1.25
+        
+        // Inverser la direction X et ajuster légèrement la vitesse
+        // Accélération plus progressive
+        newState.ball.velocityX = Math.abs(newState.ball.velocityX) * 1.03;
+        
+        // Ajuster la vélocité Y en fonction de l'endroit où la balle a frappé la raquette
+        // Angle plus prononcé
+        newState.ball.velocityY = angleModifier * 5;
+        
+        // Ajouter un effet plus naturel basé sur le mouvement de la raquette
+        if (keys.w) newState.ball.velocityY -= 1; // Si la raquette monte, la balle prend un peu de cette vitesse
+        if (keys.s) newState.ball.velocityY += 1; // Si la raquette descend, la balle prend un peu de cette vitesse
+        
+        // Repositionner la balle pour éviter qu'elle ne reste coincée
+        newBallX = paddleWidth;
+      }
+      
+      // Raquette droite (joueur 2)
+      if (newBallX + ballSize >= gameSize.width - paddleWidth && 
+          newBallY + ballSize >= newState.player2Position && 
+          newBallY <= newState.player2Position + paddleHeight) {
+          
+        // Même logique que pour la raquette gauche
+        const hitPosition = (newBallY + ballSize/2 - newState.player2Position) / paddleHeight;
+        const angleModifier = 2.5 * (hitPosition - 0.5);
+        
+        // Inverser la direction X et ajuster légèrement la vitesse
+        newState.ball.velocityX = -Math.abs(newState.ball.velocityX) * 1.03;
+        
+        // Ajuster la vélocité Y en fonction de l'endroit où la balle a frappé la raquette
+        newState.ball.velocityY = angleModifier * 5;
+        
+        // Ajouter un effet plus naturel basé sur le mouvement de la raquette
+        if (keys.ArrowUp) newState.ball.velocityY -= 1; // Si la raquette monte, la balle prend un peu de cette vitesse
+        if (keys.ArrowDown) newState.ball.velocityY += 1; // Si la raquette descend, la balle prend un peu de cette vitesse
+        
+        // Repositionner la balle
+        newBallX = gameSize.width - paddleWidth - ballSize;
+      }
+      
+      // Collision avec les bords haut et bas
+      if (newBallY <= 0) {
+        newState.ball.velocityY = Math.abs(newState.ball.velocityY);
+        newBallY = 0;
+        // Légère modification aléatoire de la trajectoire pour plus de naturel
+        newState.ball.velocityY += (Math.random() * 0.4 - 0.2);
+      } else if (newBallY + ballSize >= gameSize.height) {
+        newState.ball.velocityY = -Math.abs(newState.ball.velocityY);
+        newBallY = gameSize.height - ballSize;
+        // Légère modification aléatoire de la trajectoire pour plus de naturel
+        newState.ball.velocityY += (Math.random() * 0.4 - 0.2);
+      }
+      
+      // Limiter la vitesse maximale de la balle
+      const maxSpeedX = 12;
+      const maxSpeedY = 8;
+      if (Math.abs(newState.ball.velocityX) > maxSpeedX) {
+        newState.ball.velocityX = maxSpeedX * Math.sign(newState.ball.velocityX);
+      }
+      if (Math.abs(newState.ball.velocityY) > maxSpeedY) {
+        newState.ball.velocityY = maxSpeedY * Math.sign(newState.ball.velocityY);
+      }
+      
+      // Vérifier si un joueur a marqué
+      if (newBallX <= 0) {
+        // Joueur 2 marque
+        newState.scores.player2 += 1;
+        newState.lastScorer = 'player2';
+        resetBall(newState);
+        return newState;
+      } else if (newBallX + ballSize >= gameSize.width) {
+        // Joueur 1 marque
+        newState.scores.player1 += 1;
+        newState.lastScorer = 'player1';
+        resetBall(newState);
+        return newState;
+      }
+      
+      // Mise à jour de la position de la balle
+      newState.ball.x = newBallX;
+      newState.ball.y = newBallY;
+      
+      return newState;
+    });
+  };
+  
+  // Réinitialiser la balle après un point
+  const resetBall = (state: typeof gameState) => {
+    state.ball = {
+      x: gameSize.width / 2 - ballSize / 2,
+      y: gameSize.height / 2 - ballSize / 2,
+      velocityX: state.lastScorer === 'player1' ? -5 : 5,
+      velocityY: (Math.random() * 2 - 1) * 3
+    };
+    state.isRunning = false;
+    
+    // Réinitialiser le temps écoulé
+    lastTimeRef.current = 0;
+    
+    setTimeout(() => {
+      setGameState(prevState => ({ ...prevState, isRunning: true }));
+    }, 1000);
+  };
+  
+  // Relancer la balle
+  const relaunchBall = () => {
+    setGameState(prevState => {
+      const newState = { ...prevState };
+      newState.ball = {
+        x: gameSize.width / 2 - ballSize / 2,
+        y: gameSize.height / 2 - ballSize / 2,
+        velocityX: Math.random() > 0.5 ? 5 : -5,
+        velocityY: (Math.random() * 2 - 1) * 3
+      };
+      newState.isRunning = true;
+      newState.isPaused = false;
+      return newState;
+    });
+  };
+  
+  // Boucle de jeu avec requestAnimationFrame
+  useEffect(() => {
+    const gameLoop = (timestamp: number) => {
+      updateGame(timestamp);
+      animationRef.current = requestAnimationFrame(gameLoop);
     };
     
-    // Set initial size
-    if (gameRef.current) {
-      const initialWidth = gameRef.current.clientWidth;
-      const initialHeight = gameRef.current.clientHeight;
-      setGameState(initGameState(initialWidth, initialHeight));
+    if (gameState.isRunning && !gameState.isPaused) {
+      animationRef.current = requestAnimationFrame(gameLoop);
     }
     
-    window.addEventListener('resize', handleResize);
+    return () => {
+      cancelAnimationFrame(animationRef.current);
+    };
+  }, [gameState.isRunning, gameState.isPaused, keys]);
+  
+  // Contrôles du clavier avec gestion des keypresses continus
+  useEffect(() => {
+    const keyDownHandler = (e: KeyboardEvent) => {
+      if (['w', 's', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        e.preventDefault(); // Empêcher le défilement de la page avec les flèches
+        setKeys(prevKeys => ({
+          ...prevKeys,
+          [e.key]: true
+        }));
+      } else if (e.key === 'r') {
+        resetGame();
+      } else if (e.key === 'p' || e.key === ' ' || e.key === 'Escape') {
+        e.preventDefault(); // Empêcher le défilement de la page avec la barre d'espace
+        togglePause();
+      } else if (e.key === 'Enter') {
+        relaunchBall();
+      }
+    };
+    
+    const keyUpHandler = (e: KeyboardEvent) => {
+      if (['w', 's', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        setKeys(prevKeys => ({
+          ...prevKeys,
+          [e.key]: false
+        }));
+      }
+    };
+    
+    window.addEventListener('keydown', keyDownHandler);
+    window.addEventListener('keyup', keyUpHandler);
     
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('keydown', keyDownHandler);
+      window.removeEventListener('keyup', keyUpHandler);
     };
   }, []);
   
   return (
-    <div className="flex flex-col items-center w-full max-w-5xl mx-auto relative">
-      {/* Header */}
-      <header className="w-full mb-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-white">PLAY</h1>
-        <Button
-          onClick={() => setShowChat(!showChat)}
-          variant="outline"
-          className="border-white/20 text-white hover:bg-white/10 gap-2"
-        >
-          <MessageCircle className="h-4 w-4" />
-          CHAT
-        </Button>
-      </header>
-
-      {/* Player profiles */}
-      <div className="flex justify-between items-center w-full mb-4">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 bg-primary rounded-full overflow-hidden mb-2 border-2 border-white/20">
-            <div className="w-full h-full flex items-center justify-center text-white font-bold">P1</div>
-          </div>
-          <span className="text-white text-sm">Player 1</span>
-        </div>
-        
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 bg-secondary rounded-full overflow-hidden mb-2 border-2 border-white/20">
-            <div className="w-full h-full flex items-center justify-center text-white font-bold">P2</div>
-          </div>
-          <span className="text-white text-sm">Player 2</span>
-        </div>
+    <div className="flex flex-col items-center justify-center w-full">
+      
+      {/* Scoreboard épuré */}
+      <div className="flex items-center justify-center w-full my-2">
+        <ScoreDisplay player1Score={gameState.scores.player1} player2Score={gameState.scores.player2} />
       </div>
       
-      {/* Game board with integrated scoring */}
+      {/* Aire de jeu centrée */}
       <div 
-        ref={gameRef}
-        className="game-board w-full aspect-[16/10] relative bg-[#0b2046] rounded-lg border border-white/20 overflow-hidden"
-        tabIndex={0}
+        ref={gameContainerRef}
+        className="relative mx-auto overflow-hidden rounded-lg border border-blue-900/30 shadow-[0_0_15px_rgba(0,30,60,0.5)]"
+        style={{
+          width: `${gameSize.width}px`,
+          height: `${gameSize.height}px`,
+          background: 'linear-gradient(to bottom, #0a1929, #07101b)',
+        }}
       >
-        {/* Center line */}
-        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/20 transform -translate-x-1/2 border-dashed"></div>
-        
-        {/* Integrated Score Display */}
-        <div className="absolute inset-0 flex justify-center items-center pointer-events-none z-0">
-          <div className="flex w-full justify-around">
-            <span className="text-white/20 text-9xl font-bold">{gameState.playerScore}</span>
-            <span className="text-white/20 text-9xl font-bold">{gameState.computerScore}</span>
-          </div>
-        </div>
-        
-        <Ball
-          position={{ 
-            x: gameState.ball.x - gameState.ball.radius, 
-            y: gameState.ball.y - gameState.ball.radius 
+        {/* Ligne médiane */}
+        <div 
+          className="absolute h-full w-0.5 left-1/2 transform -translate-x-1/2 z-5"
+          style={{ 
+            backgroundImage: 'repeating-linear-gradient(transparent, transparent 10px, rgba(100, 150, 255, 0.4) 10px, rgba(100, 150, 255, 0.4) 20px)'
           }}
-          radius={gameState.ball.radius}
         />
+        
+        {/* Raquette du joueur 1 */}
         <Paddle
-          position={{ 
-            x: gameState.playerPaddle.x, 
-            y: gameState.playerPaddle.y 
-          }}
-          width={gameState.playerPaddle.width}
-          height={gameState.playerPaddle.height}
-          isPlayer={true}
-          gameActive={gameState.isGameActive}
+          position={{ x: 0, y: gameState.player1Position }}
+          dimensions={{ width: paddleWidth, height: paddleHeight }}
+          side="left"
         />
+        
+        {/* Raquette du joueur 2 */}
         <Paddle
-          position={{ 
-            x: gameState.computerPaddle.x, 
-            y: gameState.computerPaddle.y 
-          }}
-          width={gameState.computerPaddle.width}
-          height={gameState.computerPaddle.height}
-          isPlayer={false}
-          gameActive={gameState.isGameActive}
+          position={{ x: gameSize.width - paddleWidth, y: gameState.player2Position }}
+          dimensions={{ width: paddleWidth, height: paddleHeight }}
+          side="right"
         />
         
-        {!gameState.isGameActive && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0b2046]/90 backdrop-blur-sm z-10">
-            <h2 className="text-3xl md:text-5xl font-bold mb-8 text-white">
-              PONG
-            </h2>
-            <p className="text-gray-300 text-lg mb-8 text-center px-6 max-w-md">
-              Use <span className="text-primary">W/S</span> for Player 1 and <span className="text-secondary">↑/↓</span> for Player 2
-            </p>
-            <Button 
-              onClick={toggleGame} 
-              className="bg-[#0056d3] hover:bg-[#0048b3] text-white text-lg px-8 py-6 rounded-full"
-            >
-              <Play className="mr-2 h-5 w-5" />
-              Play
-            </Button>
-          </div>
-        )}
+        {/* Balle */}
+        <Ball position={gameState.ball} size={ballSize} />
         
-        {/* Chat Sidebar */}
-        {showChat && (
-          <div className="absolute top-0 right-0 bottom-0 w-64 bg-[#0b2046]/90 backdrop-blur-sm border-l border-white/20 z-20 transform transition-transform duration-300 ease-in-out">
-            <div className="p-4">
-              <h3 className="text-white font-bold mb-2 flex justify-between items-center">
-                Chat
-                <button onClick={() => setShowChat(false)} className="text-white/50 hover:text-white">×</button>
-              </h3>
-              <div className="bg-[#071835] rounded-lg h-[calc(100%-90px)] p-2 mb-2 overflow-y-auto">
-                <div className="text-gray-400 text-sm italic">No messages yet</div>
-              </div>
-              <div className="flex">
-                <input 
-                  type="text" 
-                  placeholder="Type a message..." 
-                  className="bg-[#071835] border-none text-white text-sm rounded-l-lg p-2 flex-grow"
-                />
-                <button className="bg-[#0056d3] text-white rounded-r-lg px-3">
-                  →
-                </button>
-              </div>
+        {/* Indicateur d'état non bloquant */}
+        {(!gameState.isRunning || gameState.isPaused) && (
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
+            <div className="px-4 py-2 bg-black/40 backdrop-blur-[1px] rounded-full">
+              <span className="text-sm font-medium text-white">
+                {gameState.isPaused ? 'Pause' : gameState.lastScorer ? `Point pour Joueur ${gameState.lastScorer === 'player1' ? '1' : '2'}` : 'Prêt ?'}
+              </span>
             </div>
           </div>
         )}
       </div>
       
-      {/* Game Controls */}
-      <div className="flex justify-center gap-4 mt-6">
-        <Button 
-          onClick={toggleGame} 
-          variant="outline"
-          className="border-white/20 text-white hover:bg-white/10 gap-2"
+      {/* Contrôles sous le jeu */}
+      <div className="flex flex-wrap items-center justify-center gap-3 mt-5 w-full max-w-2xl px-4">
+        <button 
+          onClick={togglePause}
+          className="px-5 py-2 rounded-full bg-slate-200 text-blue-700 text-sm font-medium shadow-md hover:bg-slate-300 transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
         >
-          {gameState.isGameActive ? (
-            <>
-              <Pause className="h-4 w-4" />
-              PAUSE
-            </>
-          ) : (
-            <>
-              <Play className="h-4 w-4" />
-              PLAY
-            </>
-          )}
-        </Button>
-        <Button 
-          onClick={resetGame} 
-          variant="outline"
-          className="border-white/20 text-white hover:bg-white/10 gap-2"
+          {gameState.isPaused ? 'Reprendre' : 'Pause'}
+        </button>
+        
+        <button 
+          onClick={resetGame}
+          className="px-5 py-2 rounded-full bg-slate-200 text-blue-700 text-sm font-medium shadow-md hover:bg-slate-300 transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-slate-900"
         >
-          <RotateCcw className="h-4 w-4" />
-          RESTART
-        </Button>
-        <Button 
-          variant="outline"
-          className="border-white/20 text-white hover:bg-red-500/20 gap-2"
-        >
-          <Flag className="h-4 w-4" />
-          GIVE UP
-        </Button>
-      </div>
-      
-      {/* Footer */}
-      <div className="text-center mt-8 text-sm text-gray-400">
-        © Transcendence 2025
+          Redémarrer
+        </button>
+        
+        <div className="flex items-center gap-2 px-4 py-1.5 bg-gray-800/50 backdrop-blur-sm rounded-full border border-blue-900/20">
+          <span className="text-xs text-white/80">Touches:</span>
+          <span className="text-xs font-mono text-white/70 bg-gray-700/50 px-1.5 py-0.5 rounded">W/S</span>
+          <span className="text-xs text-white/70">|</span>
+          <span className="text-xs font-mono text-white/70 bg-gray-700/50 px-1.5 py-0.5 rounded">↑/↓</span>
+          <span className="text-xs text-white/70">|</span>
+          <span className="text-xs font-mono text-white/70 bg-gray-700/50 px-1.5 py-0.5 rounded">ESC</span>
+        </div>
       </div>
     </div>
   );

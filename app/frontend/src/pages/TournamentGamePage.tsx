@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Shuffle } from 'lucide-react';
+import { ArrowLeft, Plus, Shuffle, X, Trophy, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 
@@ -17,6 +17,7 @@ const TournamentGamePage = () => {
     { id: 2, name: '' }
   ]);
   const [nextId, setNextId] = useState(3);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Check if we have a complete bracket (power of 2)
   const isPowerOfTwo = (n: number) => {
@@ -49,233 +50,159 @@ const TournamentGamePage = () => {
     setPlayers(shuffled);
   };
   
-  // Generate bracket matches based on players
-  const generateBracketMatches = (playerList: Player[]) => {
-    const matches = [];
-    for (let i = 0; i < playerList.length; i += 2) {
-      if (i + 1 < playerList.length) {
-        matches.push({
-          player1: playerList[i],
-          player2: playerList[i + 1]
-        });
-      } else {
-        matches.push({
-          player1: playerList[i],
-          player2: { id: -1, name: "TBD" }
-        });
-      }
-    }
-    return matches;
-  };
-  
-  // Generate all rounds of the bracket
-  const generateBracket = () => {
-    const rounds = [];
-    let currentRound = [...players];
+  const handleStartTournament = () => {
+    if (!canContinue) return;
     
-    while (currentRound.length > 1) {
-      rounds.push(generateBracketMatches(currentRound));
-      
-      // Next round contestants (placeholders)
-      currentRound = currentRound.map((_, index) => {
-        if (index % 2 === 0) {
-          return { id: -1, name: "Winner" };
-        }
-        return null;
-      }).filter(Boolean) as Player[];
-    }
-    
-    return rounds;
+    setIsSubmitting(true);
+    // Simulate loading for demo
+    setTimeout(() => {
+      setIsSubmitting(false);
+      // Navigate or start tournament logic would go here
+    }, 1500);
   };
   
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#0b2046] to-[#0056d3] text-white relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-[#0056d3]/20 blur-3xl -z-10"></div>
-      <div className="absolute bottom-20 right-10 w-72 h-72 rounded-full bg-[#0b2046]/40 blur-3xl -z-10"></div>
-      
+    <div className="min-h-screen bg-gradient-to-b from-[#001a40] to-[#001230] text-white flex flex-col">
       {/* Header */}
-      <header className="py-4 px-6 bg-[#0b2046]/80 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white">
-            TOURNAMENT SETUP
-          </h1>
-          <Button 
-            variant="outline" 
+      <header className="py-5 px-6 bg-[#00102a]/90 backdrop-blur-sm border-b border-[#1a3366]/30">
+        <div className="max-w-5xl mx-auto flex justify-between items-center">
+          <button 
             onClick={() => navigate('/game')}
-            className="border-white/20 text-white hover:bg-white/10 gap-2"
+            className="text-sm text-white/70 hover:text-white flex items-center gap-2 transition-colors hover:translate-x-[-3px] duration-200"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to Game Modes
-          </Button>
+            <ArrowLeft className="h-4 w-4" /> Back
+          </button>
+          <h1 className="text-xl font-bold tracking-wider">TOURNAMENT</h1>
+          <div className="w-[60px]"></div> {/* Spacer for centering */}
         </div>
       </header>
-      
-      {/* Main content */}
-      <main className="flex-1 container mx-auto py-8 px-4">
-        <Card className="bg-[#0b2046]/80 border-white/10 backdrop-blur-sm overflow-hidden p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Player Setup */}
-            <div className="lg:col-span-1">
-              <h2 className="text-xl font-bold mb-4">Tournament Players</h2>
+
+      {/* Main Content */}
+      <main className="flex-1 flex items-center justify-center p-4">
+        <Card className="bg-[#00102a]/95 backdrop-blur-sm border border-[#1a3366]/20 shadow-2xl rounded-xl w-full max-w-3xl overflow-hidden">
+          <div className="p-8">
+            <div className="flex items-center justify-center mb-10 relative">
+              <div className="absolute w-40 h-40 rounded-full border-4 border-[#1a3366]/20 border-dashed animate-spin-slow"></div>
+              <Trophy className="h-10 w-10 text-[#3d85ff] mr-3 drop-shadow-glow" />
+              <h2 className="text-2xl font-bold">Tournament Setup</h2>
+            </div>
+            
+            {/* Players Section */}
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-5">
+                <div className="flex items-center">
+                  <Users className="h-5 w-5 text-[#3d85ff] mr-2" />
+                  <h3 className="text-lg font-medium">Players <span className="text-[#3d85ff] ml-1">({players.length})</span></h3>
+                </div>
+                <div className="transition hover:scale-105 active:scale-95 duration-200">
+                  <Button
+                    onClick={randomizePlayers}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/70 hover:text-white hover:bg-[#1a3366]/30"
+                  >
+                    <Shuffle className="h-4 w-4 mr-2" /> Shuffle
+                  </Button>
+                </div>
+              </div>
               
-              <div className="space-y-3 mb-6">
+              <div className="space-y-3">
                 {players.map((player, index) => (
-                  <div key={player.id} className="flex items-center gap-2">
-                    <div className="w-6 text-center text-gray-400">{index + 1}</div>
+                  <div 
+                    key={player.id}
+                    className="flex items-center gap-3 group"
+                  >
+                    <div className="w-9 h-9 bg-[#1a3366]/40 rounded-full flex items-center justify-center text-sm font-medium text-[#3d85ff] shadow-inner">
+                      {index + 1}
+                    </div>
                     <Input
                       value={player.name}
                       onChange={(e) => updatePlayerName(player.id, e.target.value)}
-                      placeholder={`Player ${index + 1} name`}
-                      className="bg-[#071835] border-white/10 focus-visible:ring-[#0056d3] text-white"
+                      placeholder={`Player ${index + 1}`}
+                      className="bg-[#1a3366]/30 border-[#1a3366]/50 focus-visible:ring-[#3d85ff] text-white rounded-lg h-10 shadow-inner transition-all duration-200"
                     />
                     {players.length > 2 && (
                       <button 
                         onClick={() => removePlayer(player.id)}
-                        className="text-gray-400 hover:text-white transition-colors"
+                        className="opacity-0 group-hover:opacity-100 w-9 h-9 bg-[#1a3366]/30 rounded-full flex items-center justify-center text-white/60 hover:text-white/90 transition-all hover:scale-110 active:scale-90 hover:bg-[rgba(61,133,255,0.2)] duration-200"
                       >
-                        ✕
+                        <X className="h-4 w-4" />
                       </button>
                     )}
                   </div>
                 ))}
               </div>
               
-              <Button
-                onClick={addPlayer}
-                className="w-full bg-[#0056d3]/30 hover:bg-[#0056d3]/50 border border-[#0056d3]/50 flex items-center justify-center gap-2 mb-6"
-              >
-                <Plus className="h-4 w-4" />
-                Add Player
-              </Button>
-              
-              <div className="bg-[#071835]/50 p-4 rounded-lg">
-                <h3 className="text-md font-medium mb-2">Tournament Rules</h3>
-                <ul className="text-sm text-gray-300 space-y-2 list-disc pl-5">
-                  <li>For a valid bracket, player count must be a power of 2 (2, 4, 8, 16, etc.)</li>
-                  <li>All players must have unique names</li>
-                  <li>Matches are played in order from top to bottom</li>
-                  <li>The tournament follows a single elimination format</li>
-                </ul>
+              <div className="mt-4 transition hover:scale-[1.02] active:scale-[0.98] duration-200">
+                <Button
+                  onClick={addPlayer}
+                  variant="outline"
+                  className="w-full border-dashed border-[#1a3366]/50 text-white/70 hover:text-white hover:bg-[#1a3366]/30 hover:border-[#3d85ff]/60 transition-all duration-300 h-10"
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add Player
+                </Button>
               </div>
             </div>
             
-            {/* Right Column - Tournament Bracket */}
-            <div className="lg:col-span-2">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Tournament Bracket</h2>
-                <Button
-                  onClick={randomizePlayers}
-                  variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10 gap-2"
-                >
-                  <Shuffle className="h-4 w-4" />
-                  Randomize
-                </Button>
+            {/* Information and Status */}
+            {!isValidBracket && (
+              <div 
+                className="bg-gradient-to-r from-[#1a3366]/20 to-[#1a3366]/30 border-l-4 border-[#3d85ff] rounded-r-lg p-4 mb-8"
+              >
+                <p className="text-sm text-[#3d85ff] font-medium">
+                  For a valid tournament, you need {Math.pow(2, Math.ceil(Math.log2(players.length)))} players.
+                  {Math.pow(2, Math.ceil(Math.log2(players.length))) - players.length > 0 && 
+                    ` Add ${Math.pow(2, Math.ceil(Math.log2(players.length))) - players.length} more.`}
+                </p>
               </div>
-              
-              <div className="bg-[#071835]/30 rounded-lg p-6 h-[400px] overflow-auto">
-                {players.length >= 2 ? (
-                  <div className="tournament-bracket flex">
-                    {generateBracket().map((round, roundIndex) => (
-                      <div 
-                        key={roundIndex} 
-                        className="round flex-1 flex flex-col justify-around min-w-[180px] relative"
-                        style={{ 
-                          marginRight: roundIndex < generateBracket().length - 1 ? '40px' : '0',
-                          height: `${Math.pow(2, roundIndex+1) * 50}px` 
-                        }}
-                      >
-                        {/* Render match cards */}
-                        {round.map((match, matchIndex) => (
-                          <div 
-                            key={matchIndex} 
-                            className="match-container relative"
-                            style={{ 
-                              height: `${Math.pow(2, roundIndex) * 100}px`,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: 'center'
-                            }}
-                          >
-                            <div className="match bg-[#0b2046] rounded-lg border border-white/10 overflow-hidden hover:bg-[#0d2650] transition-colors">
-                              <div className={`p-3 border-b border-white/10 ${match.player1.name ? 'text-white' : 'text-gray-500'}`}>
-                                {match.player1.name || 'Player 1'}
-                              </div>
-                              <div className={`p-3 ${match.player2.name ? 'text-white' : 'text-gray-500'}`}>
-                                {match.player2.name || 'Player 2'}
-                              </div>
-                            </div>
-                            
-                            {/* Horizontal connector lines */}
-                            {roundIndex < generateBracket().length - 1 && (
-                              <div className="connector absolute top-1/2 right-0 h-px w-10 bg-white/30 -mr-10"></div>
-                            )}
-                          </div>
-                        ))}
-                        
-                        {/* Vertical connector lines (drawn separately for cleaner appearance) */}
-                        {roundIndex < generateBracket().length - 1 && round.map((_, matchIndex) => {
-                          // Only create vertical connector for every odd-even pair
-                          if (matchIndex % 2 === 0 && matchIndex + 1 < round.length) {
-                            const startY = matchIndex * (Math.pow(2, roundIndex) * 100) + Math.pow(2, roundIndex) * 50;
-                            const height = Math.pow(2, roundIndex) * 100;
-                            
-                            return (
-                              <div 
-                                key={`connector-${matchIndex}`}
-                                className="absolute right-0 bg-white/30"
-                                style={{
-                                  width: '1px',
-                                  height: `${height}px`,
-                                  top: `${startY}px`,
-                                  right: '-10px'
-                                }}
-                              ></div>
-                            );
-                          }
-                          return null;
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-gray-400">
-                    Add at least 2 players to generate a bracket
-                  </div>
-                )}
+            )}
+            
+            {!allPlayersNamed && isValidBracket && (
+              <div 
+                className="bg-gradient-to-r from-[#1a3366]/20 to-[#1a3366]/30 border-l-4 border-[#3d85ff] rounded-r-lg p-4 mb-8"
+              >
+                <p className="text-sm text-[#3d85ff] font-medium">All players must have names.</p>
+              </div>
+            )}
+            
+            {/* Tournament Rules */}
+            <div className="mb-10 grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-gradient-to-br from-[#1a3366]/30 to-[#1a3366]/20 backdrop-blur-sm rounded-lg p-5 flex flex-col items-center justify-center text-center shadow-inner">
+                <div className="text-white/60 mb-2 uppercase tracking-wider text-xs">Players</div>
+                <div className="text-xl font-bold">2, 4, 8, 16...</div>
+                <div className="text-white/60 text-xs mt-1">Power of 2</div>
+              </div>
+              <div className="bg-gradient-to-br from-[#1a3366]/30 to-[#1a3366]/20 backdrop-blur-sm rounded-lg p-5 flex flex-col items-center justify-center text-center shadow-inner">
+                <div className="text-white/60 mb-2 uppercase tracking-wider text-xs">Format</div>
+                <div className="text-xl font-bold">Single Elimination</div>
+                <div className="text-white/60 text-xs mt-1">One chance</div>
               </div>
             </div>
-          </div>
-          
-          {/* Footer Controls */}
-          <div className="mt-8 flex justify-between items-center">
-            <div className="text-sm text-gray-400">
-              {!isValidBracket && (
-                <span className="text-amber-400">
-                  Current player count ({players.length}) is not valid for a tournament bracket. 
-                  Use {Math.pow(2, Math.ceil(Math.log2(players.length)))} players for a complete bracket.
-                </span>
-              )}
-              {!allPlayersNamed && isValidBracket && (
-                <span className="text-amber-400">All players must have names</span>
-              )}
+            
+            {/* Start Button */}
+            <div className={`transition duration-200 ${canContinue ? 'hover:scale-[1.02] active:scale-[0.98]' : ''}`}>
+              <Button
+                onClick={handleStartTournament}
+                disabled={!canContinue || isSubmitting}
+                className={`w-full py-6 text-lg font-bold tracking-wider transition-all duration-300 rounded-xl shadow-xl
+                  ${canContinue 
+                    ? 'bg-gradient-to-r from-[#3d85ff] to-[#1a6be5] hover:from-[#3d85ff] hover:to-[#1259c7] text-white' 
+                    : 'bg-[#1a3366]/30 text-white/30 cursor-not-allowed'}`}
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    SETTING UP...
+                  </div>
+                ) : "START TOURNAMENT"}
+              </Button>
             </div>
-            <Button
-              disabled={!canContinue}
-              className="bg-[#0056d3] hover:bg-[#0048b3] text-white font-bold px-6"
-            >
-              CONTINUE
-            </Button>
           </div>
         </Card>
       </main>
-      
-      {/* Footer */}
-      <footer className="bg-[#0b2046]/80 backdrop-blur-sm py-6 px-4 border-t border-white/10">
-        <div className="max-w-6xl mx-auto text-center">
-          <span className="text-sm text-gray-300">© {new Date().getFullYear()} Transcendence. All rights reserved.</span>
-        </div>
-      </footer>
     </div>
   );
 };

@@ -32,6 +32,11 @@ class ApiService {
   ): Promise<ApiResponse<T>> {
     try {
       const url = `${API_URL}${endpoint}`;
+      console.log(`[API] Making ${options.method} request to: ${url}`);
+      
+      if (options.body) {
+        console.log(`[API] Request body:`, options.body);
+      }
       
       const response = await fetch(url, {
         ...options,
@@ -42,6 +47,8 @@ class ApiService {
           ...options.headers,
         },
       });
+      
+      console.log(`[API] Response status: ${response.status} ${response.statusText}`);
       
       // Traiter différents types de réponses
       if (response.status === 204) {
@@ -76,6 +83,7 @@ class ApiService {
       
       return { data: data as T };
     } catch (error) {
+      console.error('[API] Request error:', error);
       return {
         error: error instanceof Error ? error.message : 'An unknown error occurred',
       };

@@ -1,0 +1,505 @@
+/* Simplified UI Components */
+
+/* === Basic Components === */
+
+/* Buttons */
+.simple-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.2rem;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--font-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.simple-btn:hover {
+  background-color: var(--primary-80);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.simple-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.simple-btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.simple-btn-secondary:hover {
+  background-color: var(--secondary-80);
+}
+
+.simple-btn-outline {
+  background-color: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  font-weight: 600;
+}
+
+.simple-btn-outline:hover {
+  background-color: var(--primary-10);
+  border-color: var(--primary-80);
+  color: var(--primary-80);
+}
+
+.simple-btn-ghost {
+  background-color: transparent;
+  color: var(--foreground);
+  box-shadow: none;
+  border: none;
+  padding: 0.5rem 1rem;
+}
+
+.simple-btn-ghost:hover {
+  background-color: var(--primary-10);
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.simple-btn-sm {
+  padding: 0.3rem 0.8rem;
+  font-size: var(--font-sm);
+}
+
+.simple-btn-lg {
+  padding: 0.75rem 1.75rem;
+  font-size: var(--font-lg);
+  font-weight: 700;
+}
+
+.simple-btn-destructive {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+.simple-btn-destructive:hover {
+  background-color: var(--destructive-80);
+}
+
+/* Text within buttons */
+.simple-btn span, 
+.simple-btn-secondary span, 
+.simple-btn-outline span, 
+.simple-btn-ghost span,
+.simple-btn-destructive span {
+  font-weight: inherit;
+  position: relative;
+  z-index: 1;
+}
+
+/* Icon positioning in buttons */
+.simple-btn svg, 
+.simple-btn-secondary svg, 
+.simple-btn-outline svg, 
+.simple-btn-ghost svg,
+.simple-btn-destructive svg {
+  margin-right: 0.5rem;
+}
+
+/* Disabled state for buttons */
+.simple-btn:disabled,
+.simple-btn-secondary:disabled,
+.simple-btn-outline:disabled,
+.simple-btn-ghost:disabled,
+.simple-btn-destructive:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Cards */
+.simple-card {
+  background-color: var(--card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.simple-card-header {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.simple-card-title {
+  font-size: var(--font-xl);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.simple-card-description {
+  color: var(--muted-foreground);
+  font-size: var(--font-sm);
+}
+
+.simple-card-content {
+  margin-bottom: 1rem;
+}
+
+.simple-card-footer {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* Inputs */
+.simple-input {
+  width: 100%;
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  color: var(--foreground);
+  font-size: var(--font-base);
+}
+
+.simple-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-20);
+}
+
+.simple-form-group {
+  margin-bottom: 1rem;
+}
+
+.simple-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: var(--font-sm);
+  font-weight: 500;
+}
+
+/* === Layouts === */
+
+/* Simple Flex Layout */
+.simple-flex {
+  display: flex;
+  gap: 1rem;
+}
+
+.simple-flex-col {
+  flex-direction: column;
+}
+
+.simple-flex-center {
+  justify-content: center;
+  align-items: center;
+}
+
+.simple-flex-between {
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Simple Grid Layout */
+.simple-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.simple-grid-2 {
+  grid-template-columns: repeat(1, 1fr);
+}
+
+@media (min-width: 768px) {
+  .simple-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.simple-grid-3 {
+  grid-template-columns: repeat(1, 1fr);
+}
+
+@media (min-width: 768px) {
+  .simple-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .simple-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.simple-grid-4 {
+  grid-template-columns: repeat(1, 1fr);
+}
+
+@media (min-width: 768px) {
+  .simple-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .simple-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* === Navigation === */
+
+/* Simple Navbar */
+.simple-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background-color: rgba(23, 45, 80, 0.8);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.simple-navbar-brand {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.simple-navbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.simple-navbar-item {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  transition: color 0.2s;
+  text-decoration: none;
+}
+
+.simple-navbar-item:hover {
+  color: var(--foreground);
+}
+
+.simple-navbar-item.active {
+  color: var(--primary);
+}
+
+/* Tabs */
+.simple-tabs-list {
+  display: flex;
+  background-color: var(--card);
+  border-radius: var(--radius);
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+}
+
+.simple-tab-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.simple-tab-trigger[data-state="active"] {
+  background-color: var(--primary-10);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.simple-tab-trigger:hover {
+  background-color: var(--primary-5);
+  color: var(--primary-80);
+}
+
+/* === Common Patterns === */
+
+/* Hero Section */
+.simple-hero {
+  padding: 4rem 1rem;
+  text-align: center;
+  position: relative;
+}
+
+.simple-hero-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.simple-hero-description {
+  font-size: 1.25rem;
+  color: var(--muted-foreground);
+  max-width: 600px;
+  margin: 0 auto 2rem;
+}
+
+.simple-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+/* Feature Section */
+.simple-feature-section {
+  padding: 4rem 1rem;
+}
+
+.simple-feature-section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.simple-feature-card {
+  background-color: var(--card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  height: 100%;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.simple-feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.simple-feature-icon {
+  background-color: var(--primary-10);
+  color: var(--primary);
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.simple-feature-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.simple-feature-description {
+  color: var(--muted-foreground);
+}
+
+/* === Utilities === */
+
+.simple-text-primary {
+  color: var(--primary);
+}
+
+.simple-bg-primary {
+  background-color: var(--primary);
+}
+
+.simple-text-center {
+  text-align: center;
+}
+
+.simple-mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.simple-my-4 {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.simple-my-8 {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.simple-container {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* === Game Specific Components === */
+
+.simple-game-board {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+}
+
+.simple-scoreboard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--card);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+
+.simple-score {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Card variants */
+.simple-card-hover {
+  transition: all 0.2s ease;
+}
+
+.simple-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.simple-card-bordered-primary {
+  border-left: 4px solid var(--primary);
+}
+
+.simple-card-bordered-secondary {
+  border-left: 4px solid var(--secondary);
+}
+
+.simple-card-bordered-success {
+  border-left: 4px solid var(--success);
+}
+
+.simple-card-bordered-warning {
+  border-left: 4px solid var(--warning);
+}
+
+.simple-card-bordered-danger {
+  border-left: 4px solid var(--destructive);
+} 

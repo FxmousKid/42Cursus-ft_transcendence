@@ -1,6 +1,7 @@
 import { Controller, Post, Body, ValidationPipe, UsePipes, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth') // Route de base pour ce contrôleur
 export class AuthController {
@@ -39,4 +40,33 @@ export class AuthController {
   }
 
   // Endpoint de login sera implémenté ultérieurement
+  @Post('login')
+  @UsePipes(new ValidationPipe({
+    transform: true,
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    errorHttpStatusCode: 422
+  }))
+  async login(@Body() loginDto: LoginDto) {
+    this.logger.log(`Login attempt for user: ${loginDto.email}`);
+    
+    try {
+      const user = await this.authService.login(loginDto.email, loginDto.password);
+      
+      return {
+        success: true,
+        user
+      };
+    } catch (error) {
+      this.logger.error(`Login failed: ${error.message}`);
+      
+      throw new HttpException(
+        { 
+          success: false, 
+          message: error.message || 'Login failed' 
+        },
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+  }
 } 

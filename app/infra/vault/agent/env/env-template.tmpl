@@ -5,7 +5,9 @@ LOGSTASH_PASSWORD={{ with secret "kv/data/elk/logstash" }}{{ .Data.data.password
 KIBANA_USERNAME={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.username }}{{ end }}
 KIBANA_PASSWORD={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.password }}{{ end }}
 
+
 # Frontend configuration
+VITE_APP_NAME=Transcendence
 FRONTEND_PORT=5173
 FRONTEND_URL=http://localhost:5173
 

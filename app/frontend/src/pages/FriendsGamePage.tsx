@@ -29,148 +29,152 @@ const FriendsGamePage = () => {
   ];
   
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#0b2046] to-[#0056d3] text-white relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-[#0056d3]/20 blur-3xl -z-10"></div>
-      <div className="absolute bottom-20 right-10 w-72 h-72 rounded-full bg-[#0b2046]/40 blur-3xl -z-10"></div>
+    <div className="min-h-screen flex flex-col">
+      {/* Background effects - simplified */}
+      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-primary-20 opacity-50"></div>
       
       {/* Back button */}
       <div className="pt-16 pb-2 px-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="simple-container">
           <Button 
-            variant="outline" 
+            className="simple-btn-outline"
             onClick={() => navigate('/game')}
-            className="border-white/20 text-white hover:bg-white/10 gap-2"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to Game Modes
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Game Modes
           </Button>
         </div>
       </div>
       
       {/* Main content */}
-      <main className="flex-1 px-4 py-8">
-        <div className="max-w-3xl mx-auto bg-[#0b2046]/60 backdrop-blur-md rounded-xl border border-white/10 p-6 md:p-8 shadow-xl">
-          <h1 className="text-2xl md:text-3xl font-bold mb-6 text-center">Play With Friends</h1>
-          
-          {/* your code begins here */}
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Friends List */}
-            <div className="lg:col-span-1">
-              <Card className="bg-[#0b2046]/80 border-white/10 backdrop-blur-sm h-full">
-                <CardHeader>
-                  <CardTitle className="text-xl text-white">Friends</CardTitle>
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search friends..."
-                      className="pl-8 bg-[#071835] border-white/10 focus-visible:ring-[#0056d3]"
-                    />
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-300 mb-3">Online ({onlineFriends.length})</h3>
-                    <div className="space-y-2">
-                      {onlineFriends.map(friend => (
-                        <div key={friend.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-[#0056d3]/20 cursor-pointer">
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                              <div className="h-10 w-10 rounded-full bg-[#0056d3] flex items-center justify-center">
-                                {friend.avatar}
-                              </div>
-                              <div className={`absolute bottom-0 right-0 h-3 w-3 rounded-full ${friend.status === "In Game" ? "bg-yellow-500" : "bg-green-500"} border-2 border-[#0b2046]`}></div>
-                            </div>
-                            <div>
-                              <p className="font-medium">{friend.name}</p>
-                              <p className="text-xs text-gray-300">{friend.status}</p>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="ghost" className="hover:bg-[#0056d3]/30">
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-300 mb-3">Offline ({offlineFriends.length})</h3>
-                    <div className="space-y-2">
-                      {offlineFriends.map(friend => (
-                        <div key={friend.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-[#0056d3]/20 cursor-pointer">
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                              <div className="h-10 w-10 rounded-full bg-[#0056d3]/50 flex items-center justify-center text-white/70">
-                                {friend.avatar}
-                              </div>
-                              <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-gray-500 border-2 border-[#0b2046]"></div>
-                            </div>
-                            <div>
-                              <p className="font-medium text-white/70">{friend.name}</p>
-                              <p className="text-xs text-gray-400">{friend.status}</p>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="ghost" className="hover:bg-[#0056d3]/30 text-white/50">
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-                
-                <CardFooter>
-                  <Button variant="outline" className="w-full border-white/20 gap-2">
-                    <UserPlus className="h-4 w-4" /> Add Friend
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
+      <main className="flex-1 py-8 px-4">
+        <div className="simple-container">
+          <div className="simple-card max-w-3xl simple-mx-auto">
+            <h2 className="simple-text-center text-2xl font-bold mb-6">Play With Friends</h2>
             
-            {/* Right Column - Invite & Start */}
-            <div className="lg:col-span-2">
-              <Card className="bg-[#0b2046]/80 border-white/10 backdrop-blur-sm p-8 h-full flex flex-col">
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                  <div className="p-6 rounded-full bg-[#0056d3]/20 mb-6">
-                    <User className="h-16 w-16 text-[#0056d3]" />
-                  </div>
-                  
-                  <h2 className="text-3xl font-bold mb-3">Invite a Friend</h2>
-                  <p className="text-gray-300 max-w-md mb-8">
-                    Challenge your friends to a game of Pong! Send them an invite link or 
-                    select a friend from your friends list.
-                  </p>
-                  
-                  <div className="w-full max-w-md bg-[#071835] rounded-lg p-4 flex items-center mb-8">
-                    <div className="flex-1 truncate text-sm text-gray-300">
-                      https://pong-transcendence.com/game/invite/{yourCode}
+            <div className="simple-grid simple-grid-3">
+              {/* Left Column - Friends List */}
+              <div>
+                <Card className="simple-card h-full">
+                  <CardHeader>
+                    <CardTitle>Friends</CardTitle>
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search friends..."
+                        className="simple-input pl-8"
+                      />
                     </div>
-                    <Button size="sm" variant="ghost" className="ml-2" onClick={copyToClipboard}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  </CardHeader>
                   
-                  <div className="flex flex-col md:flex-row gap-4 w-full max-w-md">
-                    <Button className="flex-1 bg-[#0056d3] hover:bg-[#0048b3] gap-2">
-                      <Mail className="h-4 w-4" /> Send Invite
+                  <CardContent>
+                    <div className="mb-6">
+                      <h3 className="text-sm font-medium text-muted-foreground mb-3">Online ({onlineFriends.length})</h3>
+                      <div className="simple-flex simple-flex-col gap-2">
+                        {onlineFriends.map(friend => (
+                          <div key={friend.id} className="simple-flex simple-flex-between p-2 rounded-lg hover:bg-primary-10 cursor-pointer">
+                            <div className="simple-flex items-center gap-3">
+                              <div className="relative">
+                                <div className="h-10 w-10 rounded-full bg-primary simple-flex simple-flex-center">
+                                  {friend.avatar}
+                                </div>
+                                <div className={`absolute bottom-0 right-0 h-3 w-3 rounded-full ${friend.status === "In Game" ? "bg-warning" : "bg-success"}`}></div>
+                              </div>
+                              <div>
+                                <p className="font-medium">{friend.name}</p>
+                                <p className="text-xs text-muted-foreground">{friend.status}</p>
+                              </div>
+                            </div>
+                            <Button className="simple-btn-ghost p-2 h-8 w-8 rounded-full">
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-3">Offline ({offlineFriends.length})</h3>
+                      <div className="simple-flex simple-flex-col gap-2">
+                        {offlineFriends.map(friend => (
+                          <div key={friend.id} className="simple-flex simple-flex-between p-2 rounded-lg hover:bg-primary-10 cursor-pointer">
+                            <div className="simple-flex items-center gap-3">
+                              <div className="relative">
+                                <div className="h-10 w-10 rounded-full bg-primary-50 simple-flex simple-flex-center">
+                                  {friend.avatar}
+                                </div>
+                                <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-gray-500"></div>
+                              </div>
+                              <div>
+                                <p className="font-medium text-muted-foreground">{friend.name}</p>
+                                <p className="text-xs text-muted-foreground">{friend.status}</p>
+                              </div>
+                            </div>
+                            <Button className="simple-btn-ghost p-2 h-8 w-8 rounded-full">
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                  
+                  <CardFooter>
+                    <Button className="simple-btn w-full">
+                      <UserPlus className="mr-2 h-4 w-4" /> Add Friend
                     </Button>
-                    <Button variant="outline" className="flex-1 border-white/20 hover:bg-white/10">
-                      Create Game Room
-                    </Button>
+                  </CardFooter>
+                </Card>
+              </div>
+              
+              {/* Right Column - Invite & Start */}
+              <div className="col-span-2">
+                <Card className="simple-card h-full">
+                  <div className="simple-flex simple-flex-col simple-flex-center simple-text-center p-8">
+                    <div className="simple-feature-icon mb-6">
+                      <User className="h-16 w-16" />
+                    </div>
+                    
+                    <h2 className="text-3xl font-bold mb-3">Invite a Friend</h2>
+                    <p className="text-muted-foreground max-w-md mb-8">
+                      Challenge your friends to a game of Pong! Send them an invite link or 
+                      select a friend from your friends list.
+                    </p>
+                    
+                    <div className="w-full max-w-md bg-card rounded-lg p-4 simple-flex items-center mb-8 border border-border">
+                      <div className="flex-1 truncate text-sm text-muted-foreground">
+                        https://pong-transcendence.com/game/invite/{yourCode}
+                      </div>
+                      <Button className="simple-btn-ghost ml-2" onClick={copyToClipboard}>
+                        {copied ? "Copied!" : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    
+                    <div className="simple-flex gap-4 w-full max-w-md">
+                      <Button className="simple-btn flex-1">
+                        <Mail className="mr-2 h-4 w-4" /> Send Invite
+                      </Button>
+                      <Button className="simple-btn-secondary flex-1">
+                        Create Game Room
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
       </main>
       
       {/* Footer */}
-      <footer className="bg-[#0b2046]/80 backdrop-blur-sm py-6 px-4 border-t border-white/10">
-        <div className="max-w-6xl mx-auto text-center">
-          <span className="text-sm text-gray-300">© {new Date().getFullYear()} Transcendence. All rights reserved.</span>
+      <footer className="py-6 px-4 border-t border-border-10 bg-card-30">
+        <div className="simple-container simple-text-center">
+          <div className="simple-flex items-center justify-center gap-2 mb-2">
+            <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-white font-bold text-xs">P</span>
+            </div>
+            <span className="text-lg font-bold simple-text-primary">PONG</span>
+          </div>
+          <span className="text-sm text-muted-foreground">© {new Date().getFullYear()} Transcendence. All rights reserved.</span>
         </div>
       </footer>
     </div>

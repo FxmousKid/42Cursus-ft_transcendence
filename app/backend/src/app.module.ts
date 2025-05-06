@@ -21,7 +21,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 				synchronize: true,
 				// Configurations pour la synchronisation
 				sync: {
-				  force: false // Ne supprime pas les tables existantes
+				  force: false, // Ne pas supprimer les tables existantes
+				  alter: true  // Permet de modifier les tables existantes si le modèle change
 				},
 				logging: true, // Activer les logs pour debug
 				models: [User],

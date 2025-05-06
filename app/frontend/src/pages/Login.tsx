@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { api } from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
+import "../styles/login.css";
 
-const APP_NAME = import.meta.env.VITE_APP_NAME;
+const APP_NAME = import.meta.env.VITE_APP_NAME || "Transcendence";
 
 interface FormData {
   username: string;
@@ -24,10 +22,11 @@ const initialFormData: FormData = {
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [activeTab, setActiveTab] = useState<"login" | "register">("register");
   const navigate = useNavigate();
   const { toast } = useToast();
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  const { login } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -79,12 +78,17 @@ const Login = () => {
           throw new Error("Email and password are required");
         }
         
-        const result = await api.auth.login(formData);
-        console.log("Login result:", result);
+        const result = await login(formData.email, formData.password);
         
         if (result.error) {
           throw new Error(result.error);
         }
+
+        toast({
+          title: "Success!",
+          description: "Login successful!",
+          variant: "default",
+        });
 
         // Redirect to home page after successful login
         navigate("/");
@@ -101,127 +105,157 @@ const Login = () => {
     }
   };
 
-  const renderForm = (type: "login" | "register") => (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {type === "register" && (
-        <Input 
+  const renderSignUpForm = () => (
+    <div className="sign-in-container">
+      <div className="simple-form-group">
+        <input 
           name="username"
           value={formData.username}
           onChange={handleInputChange}
           placeholder="Username" 
           required 
           disabled={isLoading}
-          className="bg-[#0b2046]/20 border-[#0b2046]/50 h-12 placeholder:text-[#0056d3]/70 text-white rounded-lg"
+          className="simple-input"
         />
-      )}
-      <Input 
-        name="email"
-        value={formData.email}
-        onChange={handleInputChange}
-        placeholder="Email" 
-        type="email" 
-        required 
+      </div>
+      <div className="simple-form-group">
+        <input 
+          name="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          placeholder="Email" 
+          type="email" 
+          required 
+          disabled={isLoading}
+          className="simple-input"
+        />
+      </div>
+      <div className="simple-form-group">
+        <input 
+          name="password"
+          value={formData.password}
+          onChange={handleInputChange}
+          type="password"
+          placeholder="Password"
+          required 
+          disabled={isLoading}
+          className="simple-input"
+        />
+      </div>
+      <button 
+        className="create-account-btn"
         disabled={isLoading}
-        className="bg-[#0b2046]/20 border-[#0b2046]/50 h-12 placeholder:text-[#0056d3]/70 text-white rounded-lg"
-      />
-      <Input 
-        name="password"
-        value={formData.password}
-        onChange={handleInputChange}
-        type="password"
-        placeholder="Password"
-        required 
-        disabled={isLoading}
-        className="bg-[#0b2046]/20 border-[#0b2046]/50 h-12 placeholder:text-[#0056d3]/70 text-white rounded-lg"
-      />
-      <Button 
-        type="submit" 
-        className="w-full h-12 font-bold text-lg bg-[#0056d3] hover:bg-[#0056d3]/80 rounded-lg" 
-        disabled={isLoading}
+        onClick={handleSubmit}
       >
-        {isLoading 
-          ? (type === "login" ? "Signing in..." : "Creating account...") 
-          : (type === "login" ? "Sign In" : "Create Account")}
-      </Button>
-    </form>
+        {isLoading ? "Creating account..." : "CREATE ACCOUNT"}
+      </button>
+
+      <div className="divider">
+        <span>OR</span>
+      </div>
+      
+      <button 
+        className="google-btn"
+        disabled={isLoading}
+        onClick={() => console.log("Google login not implemented yet")}
+      >
+        <img src="/google.svg" alt="Google" />
+        Continue with Google
+      </button>
+    </div>
+  );
+
+  const renderSignInForm = () => (
+    <div className="sign-in-container">
+      <div className="simple-form-group">
+        <input 
+          name="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          placeholder="Email" 
+          type="email" 
+          required 
+          disabled={isLoading}
+          className="simple-input"
+        />
+      </div>
+      <div className="simple-form-group">
+        <input 
+          name="password"
+          value={formData.password}
+          onChange={handleInputChange}
+          type="password"
+          placeholder="Password"
+          required 
+          disabled={isLoading}
+          className="simple-input"
+        />
+      </div>
+      <button
+        className="create-account-btn" 
+        disabled={isLoading}
+        onClick={(e) => handleSubmit(e)}
+        type="button"
+      >
+        {isLoading ? "Signing in..." : "SIGN IN"}
+      </button>
+
+      <div className="divider">
+        <span>OR</span>
+      </div>
+      
+      <button 
+        className="google-btn"
+        disabled={isLoading}
+        onClick={() => console.log("Google login not implemented yet")}
+      >
+        <img src="/google.svg" alt="Google" />
+        Continue with Google
+      </button>
+    </div>
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0b2046] to-slate-950 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 -left-10 w-72 h-72 bg-primary rounded-full filter blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 -right-10 w-72 h-72 bg-secondary rounded-full filter blur-3xl animate-pulse" />
-      </div>
-      
-      <div className="absolute top-0 left-0 w-full p-5 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary via-secondary to-accent" />
-          <span className="text-xl font-bold text-white">{APP_NAME}</span>
+    <div className="login-container">
+      <div className="login-navbar">
+        <div className="login-navbar-brand">
+          <div className="login-brand-logo">
+            <span>P</span>
+          </div>
+          <span className="login-brand-text">{APP_NAME}</span>
         </div>
-        <Button
-          variant="ghost"
-          className="text-white hover:bg-[#0b2046]/30"
+        <button
+          className="login-back-button"
           onClick={() => navigate('/')}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="button-icon" />
           Back to Home
-        </Button>
+        </button>
       </div>
       
-      <div className="w-full max-w-md z-10">
-        <Card className="border-2 border-[#0b2046]/50 bg-[#0b2046]/30 backdrop-blur-md shadow-xl overflow-hidden rounded-xl">
-          <CardHeader className="space-y-6 flex flex-col items-center pt-8 pb-3">
-            <div className="bg-[#0b2046]/30 p-2 rounded-full w-fit">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-[#0056d3] via-[#0056d3] to-[#0056d3]" />
-            </div>
-            
-            <Tabs defaultValue="login" value={activeTab} onValueChange={(value) => setActiveTab(value as "login" | "register")} className="w-full">
-              <TabsList className="grid w-full max-w-[250px] grid-cols-2 mx-auto rounded-full p-1 bg-[#0b2046]/20 border border-[#0b2046]/30">
-                <TabsTrigger 
-                  value="login" 
-                  className="text-sm font-bold rounded-full h-9 data-[state=active]:bg-[#0056d3] data-[state=active]:text-white data-[state=inactive]:text-[#0056d3]/70 transition-all"
-                >
-                  SIGN IN
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="register" 
-                  className="text-sm font-bold rounded-full h-9 data-[state=active]:bg-[#0056d3] data-[state=active]:text-white data-[state=inactive]:text-[#0056d3]/70 transition-all"
-                >
-                  SIGN UP
-                </TabsTrigger>
-              </TabsList>
-              
-              <CardContent className="pt-6 px-6">
-                <TabsContent value="login" className="mt-0">
-                  {renderForm("login")}
-                </TabsContent>
-                
-                <TabsContent value="register" className="mt-0">
-                  {renderForm("register")}
-                </TabsContent>
-              
-                <div className="relative my-5">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-[#0b2046]/50" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-[#0b2046]/50 px-2 text-[#0056d3]">OR</span>
-                  </div>
-                </div>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full h-12 border-[#0b2046]/50 text-white hover:bg-[#0b2046]/50 bg-[#0b2046]/20 flex items-center justify-center gap-2 rounded-lg"
-                  disabled={isLoading}
-                  onClick={() => console.log("Google login not implemented yet")}
-                >
-                  <img src="/google.svg" alt="Google" className="w-6 h-6" />
-                  Continue with Google
-                </Button>
-              </CardContent>
-            </Tabs>
-          </CardHeader>
-        </Card>
+      <div className="login-card">
+        <div className="login-header">
+          <div className="login-logo"></div>
+          
+          <div className="tabs-container">
+            <button 
+              className={`tab-button ${activeTab === "login" ? "active" : ""}`}
+              onClick={() => setActiveTab("login")}
+              type="button"
+            >
+              Sign In
+            </button>
+            <button 
+              className={`tab-button ${activeTab === "register" ? "active" : ""}`}
+              onClick={() => setActiveTab("register")}
+              type="button"
+            >
+              Sign Up
+            </button>
+          </div>
+          
+          {activeTab === "login" ? renderSignInForm() : renderSignUpForm()}
+        </div>
       </div>
     </div>
   );

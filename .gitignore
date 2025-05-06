@@ -16,7 +16,9 @@
 **/vault/agent/file/*
 
 # Environment files
-**/.env
+app/infra/vault/agent/env/.env
+app/backend/data/db.sqlite
+
 
 # Logs
 logs
@@ -150,3 +152,4 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+app/.env

@@ -1,0 +1,107 @@
+/* Main CSS file - imports all modules */
+
+/* Import Reset */
+@import './reset.css';
+
+/* Import Variables */
+@import './variables.css';
+
+/* Import Layout */
+@import './layout.css';
+
+/* Import Typography */
+@import './typography.css';
+
+/* Import Components */
+@import './components.css';
+
+/* Import Utilities */
+@import './utilities.css';
+
+/* Import Elegant Styles */
+@import './elegant.css';
+
+/* Import Animations */
+@import './animations.css';
+
+/* Import Tailwind Fallback Styles */
+@import './tailwind-fallback.css';
+
+/* Import Simplified UI Components */
+@import './simplified-ui.css';
+
+/* Import all CSS files */
+@import './navbar.css';
+@import './dropdown.css';
+@import './button.css';
+@import './input.css';
+@import './login.css';
+
+/*
+ * Système CSS Simplifié
+ * ---------------------
+ * 
+ * Pour simplifier le design, nous avons:
+ * 1. Créé un fichier "tailwind-fallback.css" qui contient les classes Tailwind les plus
+ *    couramment utilisées pour faciliter la transition
+ * 2. Créé un fichier "simplified-ui.css" avec des composants simplifiés préfixés par "simple-"
+ * 
+ * Pour migrer une page Tailwind vers notre nouveau design simplifié:
+ * 1. Remplacer les classes Tailwind complexes par les classes "simple-" correspondantes
+ * 2. Éliminer les effets visuels trop complexes (animations, dégradés complexes, etc.)
+ * 3. Utiliser les variables CSS pour les couleurs et espacements
+ * 
+ * Exemple:
+ * Avant: <div className="flex items-center justify-center p-4 bg-primary/10 rounded-lg">
+ * Après:  <div className="simple-flex simple-flex-center p-4 bg-primary-10 rounded-lg">
+ */
+
+/* Global styles */
+:root {
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #818cf8;
+  --primary-50: rgba(99, 102, 241, 0.05);
+  --primary-100: rgba(99, 102, 241, 0.1);
+  --danger: #ef4444;
+  --danger-dark: #dc2626;
+  --background: #121212;
+  --card-background: #1e1e1e;
+  --foreground: #e2e2e2;
+  --border: #2e2e2e;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  color: var(--foreground);
+  background-color: var(--background);
+  line-height: 1.5;
+}
+
+main {
+  padding-top: 80px; /* Add padding to account for fixed navbar */
+}
+
+/* General utility classes */
+.button-icon, .nav-icon, .dropdown-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
+/* Root styles */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  background-image: 
+    radial-gradient(circle at top left, rgba(10, 102, 255, 0.1), transparent 40%),
+    radial-gradient(circle at bottom right, rgba(10, 102, 255, 0.1), transparent 40%);
+  min-height: 100vh;
+} 

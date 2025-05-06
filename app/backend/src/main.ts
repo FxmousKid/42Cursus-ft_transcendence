@@ -67,14 +67,14 @@ async function bootstrap() {
 
 	// Enable CORS for frontend
 	app.enableCors({
-		origin: ['http://localhost:5173', 'http://localhost:3000', 'http://frontend:5173', 'http://172.21.0.3:5173'], // Frontend URLs
-		methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+		origin: ['http://localhost:5173', 'http://localhost:3000', 'http://frontend:5173', 'http://172.21.0.3:5173', '*'], // Frontend URLs
+		methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 		credentials: true,
 		allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
 	});
 	
 	// Starting app
-	await app.listen(3000, '0.0.0.0');
+	await app.listen(3001, '0.0.0.0');
 	logger.log(`Server running on ${await app.getUrl()}`);
 }
 bootstrap();
