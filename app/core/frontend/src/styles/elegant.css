@@ -1,0 +1,71 @@
+/* Elegant design classes */
+
+/* Text styling */
+.elegant-text-primary {
+  color: transparent;
+  background-image: linear-gradient(to right, var(--primary), rgba(10, 102, 255, 0.8));
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.elegant-text-secondary {
+  color: transparent;
+  background-image: linear-gradient(to right, var(--secondary), rgba(10, 102, 255, 0.8));
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.elegant-text-accent {
+  color: transparent;
+  background-image: linear-gradient(to right, var(--accent), rgba(10, 102, 255, 0.8));
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+/* Button styling */
+.elegant-button-primary {
+  background-image: linear-gradient(to right, var(--primary), rgba(10, 102, 255, 0.8));
+  transition: filter 0.3s;
+}
+
+.elegant-button-primary:hover {
+  filter: brightness(1.1);
+}
+
+.elegant-button-secondary {
+  background-image: linear-gradient(to right, var(--secondary), rgba(10, 102, 255, 0.8));
+  transition: filter 0.3s;
+}
+
+.elegant-button-secondary:hover {
+  filter: brightness(1.1);
+}
+
+/* Card styling */
+.elegant-card {
+  background-color: rgba(23, 45, 80, 0.3);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(10, 102, 255, 0.2);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.3s;
+}
+
+.elegant-card:hover {
+  border-color: rgba(10, 102, 255, 0.4);
+}
+
+/* Instruction card */
+.instruction-card {
+  background-color: rgba(23, 45, 80, 0.4);
+  backdrop-filter: blur(4px);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(10, 102, 255, 0.2);
+  transition: border-color 0.3s;
+}
+
+.instruction-card:hover {
+  border-color: rgba(10, 102, 255, 0.4);
+} 

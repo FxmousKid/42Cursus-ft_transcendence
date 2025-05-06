@@ -1,0 +1,54 @@
+/* Reset CSS */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+input, button, textarea, select {
+  font: inherit;
+}
+
+p, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+}
+
+/* Remove list styles */
+ul, ol {
+  list-style: none;
+}
+
+/* Set default link style */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Remove focus outline for non-keyboard users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Accessible outline for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+} 
