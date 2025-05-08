@@ -80,7 +80,7 @@ const Login = () => {
         
         const result = await login(formData.email, formData.password);
         
-        if (result.error) {
+        if (result && result.error) {
           throw new Error(result.error);
         }
 

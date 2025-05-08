@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { api, AuthResponse } from '../services/api';
 
 interface User {
-  id: string;
+  id: number | string;
   username: string;
   email: string;
 }
@@ -9,7 +10,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
 }
@@ -43,18 +45,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      // TODO: Implement actual login API call
-      // For now, we'll just simulate a successful login
-      const mockUser = {
-        id: '1',
-        username: 'testuser',
-        email: email,
-      };
-      setUser(mockUser);
-      localStorage.setItem('token', 'mock-token');
+      console.log("Submitting login:", { email, password });
+      
+      const result = await api.auth.login({ email, password });
+      
+      if (result.error) {
+        console.error('Login failed:', result.error);
+        return { error: result.error };
+      }
+      
+      if (result.data) {
+        setUser(result.data);
+        localStorage.setItem('token', 'token-value'); // Store actual token when API provides one
+        return {};
+      } else {
+        return { error: 'Login failed: No user data received' };
+      }
     } catch (error) {
       console.error('Login failed:', error);
-      throw error;
+      return { error: error instanceof Error ? error.message : 'Unknown error occurred' };
     }
   };
 
@@ -89,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     loading,
+    isAuthenticated: !!user,
     login,
     logout,
     register,
