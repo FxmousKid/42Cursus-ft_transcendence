@@ -23,7 +23,7 @@ services:
     container_name: backend
     restart: unless-stopped
     ports:
-      - "3001:${BACKEND_PORT:-3000}"
+      - "3001:3001"
     networks:
       - transcendence-network
     volumes:

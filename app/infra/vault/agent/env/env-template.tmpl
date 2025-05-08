@@ -16,8 +16,10 @@ BACKEND_PORT=3000
 BACKEND_URL=http://localhost:3000
 
 # Pour l'accès aux API (utilisée par le frontend)
+# En local
 API_URL=http://localhost:3001
-VITE_API_URL=http://localhost:3001
+# En Docker (le nom du service dans docker-compose)
+VITE_API_URL=http://backend:3001
 VITE_APP_NAME=Transcendence 
 
 # Server configuration
