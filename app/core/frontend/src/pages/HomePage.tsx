@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { GamepadIcon, Trophy, Users, Zap, ArrowRight, Github, User } from "lucide-react";
+import { GamepadIcon, Users, Zap, ArrowRight, Github, User } from "lucide-react";
 
 const features = [
   {

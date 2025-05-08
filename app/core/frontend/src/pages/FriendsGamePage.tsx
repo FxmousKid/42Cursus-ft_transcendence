@@ -1,14 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, UserPlus, User, Mail, Copy } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 
 const FriendsGamePage = () => {
   const navigate = useNavigate();
   const [friendCode, setFriendCode] = useState('');
-  const [yourCode, setYourCode] = useState('F7BC2D'); // Generated code example
+  const [yourCode] = useState('F7BC2D'); // Generated code example
   const [copied, setCopied] = useState(false);
   
   const copyToClipboard = () => {
