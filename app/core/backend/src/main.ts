@@ -67,7 +67,12 @@ async function bootstrap() {
 
 	// Enable CORS for frontend
 	app.enableCors({
-		origin: ['http://localhost:5173', 'http://localhost:3000'],
+		origin: [
+			'http://localhost:5173',  // Local development
+			'http://localhost:3000',  // Alternative local port
+			'http://frontend:5173',   // Docker container name
+			'http://127.0.0.1:5173',  // Docker host
+		],
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 		credentials: true,
 		allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],

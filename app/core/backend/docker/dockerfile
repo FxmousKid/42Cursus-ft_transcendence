@@ -35,6 +35,9 @@ RUN pnpm rebuild bcrypt
 # Copy the rest of your application code
 COPY . .
 
+# Create the data directory and ensure permissions
+RUN mkdir -p /app/data && chmod 777 /app/data
+
 # Build the NestJS app
 RUN pnpm run build
 
@@ -42,8 +45,8 @@ RUN pnpm run build
 RUN cd node_modules/sqlite3 && \
 	pnpm run rebuild && cd /app && pnpm rebuild bcrypt
 
-# Expose port 3000
-EXPOSE 3000
+# Expose port 3001
+EXPOSE 3001
 
-# Start the app
-CMD ["pnpm", "run", "start:prod"]
+# Start the app in development mode for Docker environment
+CMD ["pnpm", "run", "start:dev"]

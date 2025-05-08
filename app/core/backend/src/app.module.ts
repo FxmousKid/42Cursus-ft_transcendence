@@ -22,10 +22,17 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 				// Configurations pour la synchronisation
 				sync: {
 				  force: false, // Ne pas supprimer les tables existantes
-				  alter: true  // Permet de modifier les tables existantes si le modèle change
+				  alter: false  // Désactiver les modifications de tables pour éviter les erreurs
 				},
-				logging: true, // Activer les logs pour debug
+				logging: console.log, // Activer les logs pour debug avec fonction explicite
 				models: [User],
+				// Additional SQLite options for better compatibility
+				dialectOptions: {
+				  // For SQLite
+				  pragma: {
+					foreign_keys: 1,
+				  },
+				},
 			}),
 			inject: [ConfigService],
 		}),
