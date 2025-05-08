@@ -1,8 +1,6 @@
 Web :
  1 - NestJS + Fastify
 
- 0.5 - Tailwind CSS
-
  1 - Blockchain Stacking (JC + JW)
 
 U.M. (User Management) :

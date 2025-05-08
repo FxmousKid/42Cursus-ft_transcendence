@@ -1,0 +1,31 @@
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ./frontend:/app
+      - ../infra/vault/agent/env/:/app/env:rw
+      - /app/node_modules
+    networks:
+      - transcendence-network
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ./docker/dockerfile
+    container_name: backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    networks:
+      - transcendence-network
+    volumes:
+      - ./backend/data:/app/data
+      - ../infra/vault/agent/env/:/app/env:rw

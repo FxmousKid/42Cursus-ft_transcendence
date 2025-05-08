@@ -1,6 +1,0 @@
-ELASTIC_USERNAME={{ with secret "kv/data/elk/elasticsearch" }}{{ .Data.data.username }}{{ end }}
-ELASTIC_PASSWORD={{ with secret "kv/data/elk/elasticsearch" }}{{ .Data.data.password }}{{ end }}
-LOGSTASH_USERNAME={{ with secret "kv/data/elk/logstash" }}{{ .Data.data.username }}{{ end }}
-LOGSTASH_PASSWORD={{ with secret "kv/data/elk/logstash" }}{{ .Data.data.password }}{{ end }}
-KIBANA_USERNAME={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.username }}{{ end }}
-KIBANA_PASSWORD={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.password }}{{ end }}

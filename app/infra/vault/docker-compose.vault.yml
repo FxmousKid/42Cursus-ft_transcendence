@@ -1,0 +1,37 @@
+services:
+
+  vault-server:
+    build:
+      context: ./server
+      dockerfile: dockerfile
+    container_name: vault-server
+    restart: unless-stopped
+    ports:
+      - "8200:8200/tcp"
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - transcendence-network
+    volumes:
+      - ./server/config/:/vault/config:ro
+      - ./server/ssl/:/vault/ssl:rw
+      - ./server/logs/:/vault/logs:rw
+      - ./server/tokens/:/vault/tokens:rw
+
+  vault-agent:
+    build:
+      context: ./agent/
+      dockerfile: dockerfile
+    container_name: vault-agent
+    restart: unless-stopped
+    networks:
+      - transcendence-network
+    depends_on: 
+      - vault-server
+    ports:
+      - "8201:8200"
+    volumes:
+      - ./agent/config/:/vault/config:ro
+      - ./agent/logs/:/vault/logs:ro
+      - ./server/tokens/:/vault/tokens:rw
+      - ./agent/env/:/vault/env:rw

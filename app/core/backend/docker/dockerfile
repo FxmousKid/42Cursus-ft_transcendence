@@ -1,0 +1,52 @@
+# Use Node.js 20 as the base image
+FROM node:23-bookworm
+
+# Install pnpm
+RUN corepack enable
+RUN corepack prepare pnpm@latest --activate
+
+# Install SQLite3 and other required packages including build dependencies for bcrypt
+RUN apt-get update && apt-get install -y sqlite3 python3 make g++ build-essential
+
+# Install zsh, git, curl, jq
+# RUN apt install zsh git curl chsh jq && \
+#     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true && \
+# 	chsh -s $(which zsh) && \
+# 	touch $HOME/.zshrc
+
+
+# Set up PNPM environment
+ENV PNPM_HOME=/root/.local/share/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+
+# Install NestJS CLI globally
+RUN npm install -g @nestjs/cli
+
+# Set working directory
+WORKDIR /app
+
+# Copy package.json, pnpm-lock.yaml and other pnpm files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies and rebuild bcrypt
+RUN pnpm install --frozen-lockfile
+RUN pnpm rebuild bcrypt
+
+# Copy the rest of your application code
+COPY . .
+
+# Create the data directory and ensure permissions
+RUN mkdir -p /app/data && chmod 777 /app/data
+
+# Build the NestJS app
+RUN pnpm run build
+
+# Rebuild native dependencies if needed
+RUN cd node_modules/sqlite3 && \
+	pnpm run rebuild && cd /app && pnpm rebuild bcrypt
+
+# Expose port 3001
+EXPOSE 3001
+
+# Start the app in development mode for Docker environment
+CMD ["pnpm", "run", "start:dev"]

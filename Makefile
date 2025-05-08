@@ -1,63 +1,46 @@
 NAME = ft_transcendence
 DOCC = docker compose
-DEV_DOCC_FILE = ./app/docker-compose.dev.yml
-PROD_DOCC_FILE = ./app/docker-compose.prod.yml
 
+# Main compose file with includes
+MAIN_COMPOSE = ./app/docker-compose.main.yml
 
-all-dev: build-dev up-dev
-all-prod: build-prod up-prod
+all: build up
 
-# Development
+# Build all services
+build:
+	$(DOCC) -f $(MAIN_COMPOSE) build
 
-build-dev:
-	$(DOCC) -f $(DEV_DOCC_FILE) build
+# Start services
+up:
+	$(DOCC) -f $(MAIN_COMPOSE) up
 
-up-dev:
-	$(DOCC) -f $(DEV_DOCC_FILE) up
+# Start services in detached mode
+up-detached:
+	$(DOCC) -f $(MAIN_COMPOSE) up -d
 
-down-dev:
-	$(DOCC) -f $(DEV_DOCC_FILE) down
+# Stop all services
+down:
+	$(DOCC) -f $(MAIN_COMPOSE) down
 
-logs-dev:
-	$(DOCC) -f $(DEV_DOCC_FILE) logs
+# View logs from all services
+logs:
+	$(DOCC) -f $(MAIN_COMPOSE) logs -f
 
-ps-dev:
-	$(DOCC) -f $(DEV_DOCC_FILE) ps
+# Show running containers
+ps:
+	$(DOCC) -f $(MAIN_COMPOSE) ps
 
-clean-dev:
-	$(DOCC) -f $(DEV_DOCC_FILE) down --rmi all
-	$(DOCC) -f $(DEV_DOCC_FILE) rm -f
-	$(DOCC) -f $(DEV_DOCC_FILE) volume rm -f
-	$(DOCC) -f $(DEV_DOCC_FILE) network rm -f
+# Clean up containers, images, and networks
+clean:
+	$(DOCC) -f $(MAIN_COMPOSE) down --rmi all
+	docker volume prune -f
 
+# Complete system cleanup
 destroy:
 	docker system prune -a
 	docker container prune -f
+	docker volume prune -f
+	docker network prune -f
 
-# Production
-
-build-prod:
-	$(DOCC) -f $(PROD_DOCC_FILE) build
-
-up-prod:
-	$(DOCC) -f $(PROD_DOCC_FILE) up
-
-down-prod:
-	$(DOCC) -f $(PROD_DOCC_FILE) down
-
-logs-prod:
-	$(DOCC) -f $(PROD_DOCC_FILE) logs
-
-ps-prod:
-	$(DOCC) -f $(PROD_DOCC_FILE) ps
-
-clean-prod:
-	$(DOCC) -f $(PROD_DOCC_FILE) down --rmi all
-	$(DOCC) -f $(PROD_DOCC_FILE) rm -f
-	$(DOCC) -f $(PROD_DOCC_FILE) volume rm -f
-	$(DOCC) -f $(PROD_DOCC_FILE) network rm -f
-	
-
-.PHONY: all-dev all-prod build-dev up-dev down-dev logs-dev build-prod up-prod down-prod logs-prod
-.PHONY: clean-dev clean-prod ps-dev ps-prod
-.DEFAULT_GOAL := all-dev
+.PHONY: all setup-compose build up up-detached down logs ps clean destroy
+.DEFAULT_GOAL := all
