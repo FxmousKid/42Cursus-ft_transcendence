@@ -10,6 +10,7 @@ import NotFoundPage from '@/pages/NotFound';
 import LoginPage from '@/pages/Login';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/AuthContext';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import './styles/game.css';
 
 // Wrapper component to conditionally render navbar and padding
@@ -22,13 +23,42 @@ const AppContent = () => {
       {!isLoginPage && <Navbar />}
       <main className={!isLoginPage ? "pt-20" : ""}>
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/game" element={<GameModePage />} />
-          <Route path="/game/local" element={<LocalGamePage />} />
-          <Route path="/game/tournament" element={<TournamentGamePage />} />
-          <Route path="/game/friends" element={<FriendsGamePage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={
+            <ProtectedRoute requireAuth={false}>
+              <LoginPage />
+            </ProtectedRoute>
+          } />
+
+          {/* Protected routes - require authentication */}
+          <Route path="/game" element={
+            <ProtectedRoute requireAuth={true}>
+              <GameModePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/game/local" element={
+            <ProtectedRoute requireAuth={true}>
+              <LocalGamePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/game/tournament" element={
+            <ProtectedRoute requireAuth={true}>
+              <TournamentGamePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/game/friends" element={
+            <ProtectedRoute requireAuth={true}>
+              <FriendsGamePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute requireAuth={true}>
+              <ProfilePage />
+            </ProtectedRoute>
+          } />
+          
+          {/* Fallback route */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

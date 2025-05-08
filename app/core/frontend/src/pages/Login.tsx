@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { api } from "@/services/api";
@@ -24,9 +24,13 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "register">("register");
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const { login } = useAuth();
+
+  // Get the 'from' location from router state or default to home page
+  const from = (location.state as { from?: string })?.from || "/";
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -90,8 +94,8 @@ const Login = () => {
           variant: "default",
         });
 
-        // Redirect to home page after successful login
-        navigate("/");
+        // Redirect to the original page the user was trying to access or home page
+        navigate(from);
       }
     } catch (error) {
       console.error("Form submission error:", error);

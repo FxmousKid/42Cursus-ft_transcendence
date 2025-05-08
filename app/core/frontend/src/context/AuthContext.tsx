@@ -22,20 +22,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Check if user is authenticated when component mounts
   useEffect(() => {
-    // Check if user is already logged in (e.g., from localStorage or session)
     const checkAuth = async () => {
       try {
+        setLoading(true);
+        
+        // Check if token exists in localStorage
         const token = localStorage.getItem('token');
-        if (token) {
-          // TODO: Implement token validation and user data fetching
-          // For now, we'll just set loading to false
-          setLoading(false);
+        if (!token) {
+          // No token, not authenticated
+          setUser(null);
+          return;
+        }
+        
+        // Here you would typically make an API call to validate the token and get user data
+        // For now, we'll use a mock implementation that checks localStorage for user data
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch (e) {
+            console.error('Failed to parse stored user data:', e);
+            setUser(null);
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          }
         } else {
-          setLoading(false);
+          // Token exists but no user data, attempt to fetch user data
+          // This is a placeholder for a real API call to get user info from token
+          console.log('Token exists but no user data, would fetch from API in production');
+          
+          // For now, clear token since we can't validate it
+          setUser(null);
+          localStorage.removeItem('token');
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
+        console.error('Authentication check failed:', error);
+        setUser(null);
+      } finally {
         setLoading(false);
       }
     };
@@ -55,8 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       if (result.data) {
+        // Store user data in state and localStorage
         setUser(result.data);
-        localStorage.setItem('token', 'token-value'); // Store actual token when API provides one
+        localStorage.setItem('token', 'token-value'); // Replace with actual token from API
+        localStorage.setItem('user', JSON.stringify(result.data));
         return {};
       } else {
         return { error: 'Login failed: No user data received' };
@@ -72,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // TODO: Implement actual logout API call
       setUser(null);
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
     } catch (error) {
       console.error('Logout failed:', error);
       throw error;
@@ -80,15 +108,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (username: string, email: string, password: string) => {
     try {
-      // TODO: Implement actual registration API call
-      // For now, we'll just simulate a successful registration
-      const mockUser = {
-        id: '1',
-        username,
-        email,
-      };
-      setUser(mockUser);
-      localStorage.setItem('token', 'mock-token');
+      const registerData = { username, email, password };
+      const result = await api.auth.register(registerData);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      // In most applications, you wouldn't automatically log in after registration
+      // But if you want to, you could use the login function here
+      
+      return; // Just return success, don't log in automatically
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
