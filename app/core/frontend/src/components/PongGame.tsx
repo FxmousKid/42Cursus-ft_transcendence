@@ -2,15 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import Ball from './Ball';
 import Paddle from './Paddle';
 import ScoreDisplay from './ScoreDisplay';
-import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 
 const PongGame: React.FC = () => {
-  const navigate = useNavigate();
   // Références
   const gameContainerRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
+  const requestAnimationFrameIdRef = useRef<number>(0);
   
   // Dimensions du jeu
   const [gameSize, setGameSize] = useState({
@@ -75,6 +73,7 @@ const PongGame: React.FC = () => {
   // Initialisation du jeu
   useEffect(() => {
     resetGame();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameSize.width, gameSize.height]);
   
   // Réinitialiser le jeu
@@ -283,19 +282,24 @@ const PongGame: React.FC = () => {
   
   // Boucle de jeu avec requestAnimationFrame
   useEffect(() => {
+    if (!gameState.isRunning) return;
+    
     const gameLoop = (timestamp: number) => {
       updateGame(timestamp);
-      animationRef.current = requestAnimationFrame(gameLoop);
+      if (gameState.isRunning) {
+        requestAnimationFrameIdRef.current = requestAnimationFrame(gameLoop);
+      }
     };
     
-    if (gameState.isRunning && !gameState.isPaused) {
-      animationRef.current = requestAnimationFrame(gameLoop);
-    }
+    requestAnimationFrameIdRef.current = requestAnimationFrame(gameLoop);
     
     return () => {
-      cancelAnimationFrame(animationRef.current);
+      if (requestAnimationFrameIdRef.current) {
+        cancelAnimationFrame(requestAnimationFrameIdRef.current);
+      }
     };
-  }, [gameState.isRunning, gameState.isPaused, keys]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.isRunning]);
   
   // Contrôles du clavier avec gestion des keypresses continus
   useEffect(() => {
@@ -333,6 +337,18 @@ const PongGame: React.FC = () => {
       window.removeEventListener('keyup', keyUpHandler);
     };
   }, []);
+  
+  // Relancer la balle après un point
+  useEffect(() => {
+    if (gameState.lastScorer) {
+      const timer = setTimeout(() => {
+        relaunchBall();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.lastScorer]);
   
   return (
     <div className="flex flex-col items-center justify-center w-full">

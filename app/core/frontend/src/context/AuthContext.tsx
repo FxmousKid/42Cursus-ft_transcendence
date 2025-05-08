@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { api, AuthResponse } from '../services/api';
+import { api } from '../services/api';
 
 interface User {
   id: number | string;
@@ -137,6 +137,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// Ajout d'un commentaire pour désactiver l'avertissement car nous voulons permettre HMR tout en gardant
+// la définition dans le même fichier pour une meilleure cohésion
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
