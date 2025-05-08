@@ -33,7 +33,7 @@ ps:
 # Clean up containers, images, and networks
 clean:
 	$(DOCC) -f $(MAIN_COMPOSE) down --rmi all
-	$(DOCC) -f $(MAIN_COMPOSE) volume rm -f
+	docker volume prune -f
 
 # Complete system cleanup
 destroy:
