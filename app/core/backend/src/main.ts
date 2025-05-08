@@ -67,14 +67,19 @@ async function bootstrap() {
 
 	// Enable CORS for frontend
 	app.enableCors({
-		origin: ['http://localhost:5173', 'http://localhost:3000', 'http://frontend:5173', 'http://172.21.0.3:5173', '*'], // Frontend URLs
+		origin: ['http://localhost:5173', 'http://localhost:3000'],
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 		credentials: true,
 		allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+		exposedHeaders: ['Access-Control-Allow-Origin'],
+		preflightContinue: false,
+		optionsSuccessStatus: 204
 	});
 	
-	// Starting app
-	await app.listen(3001, '0.0.0.0');
+	// Starting app - Make sure to listen on all interfaces
+	const port = 3001;
+	// Explicitly bind to all network interfaces (0.0.0.0)
+	await app.listen(port, '0.0.0.0');
 	logger.log(`Server running on ${await app.getUrl()}`);
 }
 bootstrap();

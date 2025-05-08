@@ -46,6 +46,7 @@ class ApiService {
           'Accept': 'application/json',
           ...options.headers,
         },
+        mode: 'cors'
       });
       
       console.log(`[API] Response status: ${response.status} ${response.statusText}`);
