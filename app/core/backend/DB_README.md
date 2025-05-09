@@ -29,14 +29,13 @@ CREATE TABLE friendships {
 
 CREATE TABLE matches {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    match_type VARCHAR(20) DEFAULT "local" NOT NULL,
     FOREIGN KEY (player1_id) REFERENCES users(id),
     FOREIGN KEY (player2_id) REFERENCES users(id),
     score_player1 INTEGER,
     score_player2 INTEGER,
     FOREIGN KEY (winner_id) REFERENCES users(id),
     status VARCHAR(20) DEFAULT 'pending',
-    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ended_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 }
 
 ```
