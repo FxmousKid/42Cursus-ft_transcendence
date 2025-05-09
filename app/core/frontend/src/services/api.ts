@@ -313,16 +313,19 @@ class ApiService {
     acceptRequest: (requestId: number) =>
       this.request(`/friendships/accept/${requestId}`, {
         method: 'POST',
+        body: JSON.stringify({}),
       }),
     
     rejectRequest: (requestId: number) =>
       this.request(`/friendships/reject/${requestId}`, {
         method: 'DELETE',
+        body: JSON.stringify({}),
       }),
     
     removeFriend: (friendId: number) =>
       this.request(`/friendships/${friendId}`, {
         method: 'DELETE',
+        body: JSON.stringify({}),
       }),
   };
 }
