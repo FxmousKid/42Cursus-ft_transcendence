@@ -3,20 +3,23 @@ import { User } from '../user/user.model';
 
 interface MatchesAttributes {
 	id?: number;
+	match_type: string;
 	player1_id: number;
 	player2_id: number;
 	score_player1: number;
 	score_player2: number;
 	winner_id: number;
 	status: string;
-	started_at: Date;
-	ended_at: Date;
 }
 
 @Table({
 	tableName: 'matches'
 })
 export class Matches extends Model<MatchesAttributes> {
+
+	@AllowNull(false)
+	@Column(DataType.STRING(20))
+	declare match_type: string;
 
 	@ForeignKey(() => User)
 	@AllowNull(false)
@@ -44,12 +47,4 @@ export class Matches extends Model<MatchesAttributes> {
 	@AllowNull(false)
 	@Column(DataType.STRING(50))
 	declare status: string;
-
-	@AllowNull(false)
-	@Column(DataType.DATE)
-	declare started_at: Date;
-
-	@AllowNull(false)
-	@Column(DataType.DATE)
-	declare ended_at: Date;
 }
