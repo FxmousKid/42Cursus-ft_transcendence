@@ -1,4 +1,11 @@
-import { Table, Column, Model, DataType, Unique, AllowNull } from 'sequelize-typescript';
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
+  Unique,
+  AllowNull,
+} from 'sequelize-typescript';
 
 interface UserAttributes {
 	id?: number;

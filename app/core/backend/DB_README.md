@@ -18,6 +18,26 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE friendships {
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (friend_id) REFERENCES users(id),
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+}
+
+CREATE TABLE matches {
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    match_type VARCHAR(20) DEFAULT "local" NOT NULL,
+    FOREIGN KEY (player1_id) REFERENCES users(id),
+    FOREIGN KEY (player2_id) REFERENCES users(id),
+    score_player1 INTEGER,
+    score_player2 INTEGER,
+    FOREIGN KEY (winner_id) REFERENCES users(id),
+    status VARCHAR(20) DEFAULT 'pending',
+}
+
 ```
 
 ## Accès à la base de données SQLite dans le conteneur Docker
