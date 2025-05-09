@@ -1,7 +1,8 @@
-import { Controller, Post, Body, ValidationPipe, UsePipes, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, ValidationPipe, UsePipes, Logger, HttpException, HttpStatus, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth') // Route de base pour ce contrôleur
 export class AuthController {
@@ -39,7 +40,6 @@ export class AuthController {
     }
   }
 
-  // Endpoint de login sera implémenté ultérieurement
   @Post('login')
   @UsePipes(new ValidationPipe({
     transform: true,
@@ -51,11 +51,14 @@ export class AuthController {
     this.logger.log(`Login attempt for user: ${loginDto.email}`);
     
     try {
-      const user = await this.authService.login(loginDto.email, loginDto.password);
+      const result = await this.authService.login(loginDto.email, loginDto.password);
+      
+      this.logger.log(`Login successful for ${loginDto.email}, returning token`);
+      this.logger.debug(`Response payload: ${JSON.stringify(result)}`);
       
       return {
         success: true,
-        user
+        ...result
       };
     } catch (error) {
       this.logger.error(`Login failed: ${error.message}`);
@@ -66,6 +69,29 @@ export class AuthController {
           message: error.message || 'Login failed' 
         },
         HttpStatus.UNAUTHORIZED
+      );
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(@Request() req) {
+    try {
+      await this.authService.logout(req.user.userId);
+      
+      return {
+        success: true,
+        message: 'Logged out successfully'
+      };
+    } catch (error) {
+      this.logger.error(`Logout failed: ${error.message}`);
+      
+      throw new HttpException(
+        { 
+          success: false, 
+          message: error.message || 'Logout failed' 
+        },
+        HttpStatus.BAD_REQUEST
       );
     }
   }

@@ -5,6 +5,7 @@ import {
   DataType,
   Unique,
   AllowNull,
+  Default,
 } from 'sequelize-typescript';
 
 interface UserAttributes {
@@ -12,6 +13,8 @@ interface UserAttributes {
 	username: string;
 	email: string;
 	password: string;
+	status?: string;
+	avatar_url?: string;
 }
 
 @Table({ 
@@ -32,4 +35,13 @@ export class User extends Model<UserAttributes> {
 	@AllowNull(false)
 	@Column(DataType.STRING(255))
 	declare password: string;
+	
+	@AllowNull(false)
+	@Default('offline')
+	@Column(DataType.STRING(20))
+	declare status: string;
+	
+	@AllowNull(true)
+	@Column(DataType.STRING(255))
+	declare avatar_url: string;
 }

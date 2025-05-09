@@ -4,16 +4,27 @@ import { AuthController } from './auth.controller';
 import { UserModule } from '../user/user.module'; // Import UserModule to access UserModel
 import { SequelizeModule } from '@nestjs/sequelize';
 import { User } from '../user/user.model'; // Import User model
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
     UserModule, // Make User repository available
     SequelizeModule.forFeature([User]), // Make User model injectable in this module
-    // JwtModule.register({ ... }) // We'll add JWT later if needed for login
-    // PassportModule // We'll add Passport later if needed
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET') || 'your-secret-key',
+        signOptions: { expiresIn: '1d' },
+      }),
+    }),
   ],
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
-  exports: [AuthService], // Export AuthService if other modules need it
+  exports: [AuthService, JwtStrategy, PassportModule], // Export AuthService if other modules need it
 })
 export class AuthModule {} 

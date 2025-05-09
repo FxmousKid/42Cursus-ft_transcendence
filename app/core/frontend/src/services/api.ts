@@ -65,6 +65,17 @@ export interface FriendRequest {
   created_at: string;
 }
 
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  joinDate?: string;
+  totalGames?: number;
+  winRate?: number;
+  matches?: MatchData[];
+  status: string;
+}
+
 class ApiService {
   private async request<T>(
     endpoint: string,
@@ -163,6 +174,25 @@ class ApiService {
     getMatches: () =>
       this.request<MatchData[]>('/user/matches', {
         method: 'GET',
+      }),
+      
+    // Get all users
+    getAllUsers: () =>
+      this.request<User[]>('/users', {
+        method: 'GET',
+      }),
+      
+    // Get online users
+    getOnlineUsers: () =>
+      this.request<User[]>('/users/online', {
+        method: 'GET',
+      }),
+      
+    // Update user status
+    updateStatus: (status: string) =>
+      this.request<User>('/users/status', {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
       }),
   };
 
