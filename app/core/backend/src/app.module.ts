@@ -26,7 +26,7 @@ import { MatchesModule } from './matches/matches.module';
 				// Configurations pour la synchronisation
 				sync: {
 					force: false, // Ne pas supprimer les tables existantes
-					alter: false  // Désactiver les modifications de tables pour éviter les erreurs
+					alter: true  // Enable alter to update table schema
 				},
 				logging: console.log, // Activer les logs pour debug avec fonction explicite
 				models: [User, Friendships, Matches],
