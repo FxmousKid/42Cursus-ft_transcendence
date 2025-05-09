@@ -14,19 +14,52 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
+  toggleDevMode: () => void;
+  isDevMode: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Création d'un utilisateur de test pour le mode développement
+const DEV_USER: User = {
+  id: 42,
+  username: 'devuser',
+  email: 'dev@example.com',
+};
+
+// Détection de l'environnement de développement
+const isDevelopmentEnv = import.meta.env.DEV || import.meta.env.MODE === 'development';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // Le mode développement ne sera activable que dans l'environnement de développement
+  const [isDevMode, setIsDevMode] = useState<boolean>(
+    isDevelopmentEnv && localStorage.getItem('devMode') === 'true'
+  );
+
+  useEffect(() => {
+    // Si on n'est pas en environnement de développement et que le mode dev est activé,
+    // on le désactive pour éviter des problèmes en production
+    if (!isDevelopmentEnv && isDevMode) {
+      console.log('Production environment detected - disabling dev mode');
+      setIsDevMode(false);
+      localStorage.removeItem('devMode');
+    }
+  }, [isDevMode]);
 
   // Check if user is authenticated when component mounts
   useEffect(() => {
     const checkAuth = async () => {
       try {
         setLoading(true);
+        
+        // Vérifier d'abord si le mode développement est activé
+        if (isDevelopmentEnv && isDevMode) {
+          console.log('🔧 Development mode active - bypassing authentication');
+          setUser(DEV_USER);
+          return;
+        }
         
         // Check if token exists in localStorage
         const token = localStorage.getItem('token');
@@ -66,10 +99,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkAuth();
-  }, []);
+  }, [isDevMode]);
+
+  const toggleDevMode = () => {
+    // Ne permettre le basculement que dans l'environnement de développement
+    if (!isDevelopmentEnv) {
+      console.warn('Dev mode can only be enabled in development environment');
+      return;
+    }
+    
+    const newDevModeState = !isDevMode;
+    setIsDevMode(newDevModeState);
+    localStorage.setItem('devMode', newDevModeState.toString());
+    
+    if (newDevModeState) {
+      setUser(DEV_USER);
+      console.log('🔧 Development mode activated - bypassing authentication');
+    } else {
+      setUser(null);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      console.log('🔧 Development mode deactivated');
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
+      // Si on est en mode développement, connecter directement
+      if (isDevelopmentEnv && isDevMode) {
+        console.log('🔧 Dev mode: Bypassing login API call');
+        setUser(DEV_USER);
+        return {};
+      }
+      
       console.log("Submitting login:", { email, password });
       
       const result = await api.auth.login({ email, password });
@@ -96,6 +158,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      // Si on est en mode développement, ne rien faire mais désactiver le mode dev
+      if (isDevelopmentEnv && isDevMode) {
+        toggleDevMode();
+        return;
+      }
+      
       // TODO: Implement actual logout API call
       setUser(null);
       localStorage.removeItem('token');
@@ -108,6 +176,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (username: string, email: string, password: string) => {
     try {
+      // Si on est en mode développement, simuler l'enregistrement
+      if (isDevelopmentEnv && isDevMode) {
+        console.log('🔧 Dev mode: Bypassing register API call');
+        return;
+      }
+      
       const registerData = { username, email, password };
       const result = await api.auth.register(registerData);
       
@@ -132,6 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     register,
+    toggleDevMode,
+    isDevMode
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

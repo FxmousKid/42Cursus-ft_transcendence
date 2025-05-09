@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Terminal } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -20,13 +20,16 @@ const initialFormData: FormData = {
   password: ""
 };
 
+// Détection de l'environnement de développement
+const isDevelopmentEnv = import.meta.env.DEV || import.meta.env.MODE === 'development';
+
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("login");
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, register } = useAuth();
+  const { login, register, toggleDevMode, isDevMode } = useAuth();
   const { toast } = useToast();
   
   // Get the 'from' location from router state or default to home page
@@ -102,6 +105,20 @@ const Login = () => {
       title: "Info",
       description: `${provider} login not implemented yet`,
     });
+  };
+
+  const handleDevModeToggle = () => {
+    toggleDevMode();
+    
+    if (!isDevMode) { // Vérifie l'état actuel avant le basculement
+      toast({
+        title: "Mode Développeur Activé",
+        description: "Vous êtes maintenant automatiquement connecté en mode développement.",
+      });
+      
+      // Redirection vers la page d'accueil après activation du mode dev
+      navigate(from);
+    }
   };
   
   return (
@@ -279,6 +296,19 @@ const Login = () => {
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Home
       </Button>
+      
+      {/* Dev Mode Toggle Button - affichage conditionnel selon l'environnement */}
+      {isDevelopmentEnv && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`absolute bottom-4 right-4 opacity-30 hover:opacity-100 transition-opacity ${isDevMode ? 'bg-amber-700/30 text-amber-400' : 'text-gray-500'}`}
+          onClick={handleDevModeToggle}
+        >
+          <Terminal className="w-4 h-4 mr-1" />
+          {isDevMode ? "Dev Mode ON" : "Dev Mode"}
+        </Button>
+      )}
     </div>
   );
 };
