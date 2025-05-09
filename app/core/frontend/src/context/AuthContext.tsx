@@ -136,15 +136,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       const result = await api.auth.login({ email, password });
       
+      console.log("Login response:", result);
+      
       if (result.error) {
         console.error('Login failed:', result.error);
         return { error: result.error };
       }
       
       if (result.data) {
+        console.log("Login successful, data structure:", JSON.stringify(result.data, null, 2));
         // Store user data in state and localStorage
         setUser(result.data);
-        localStorage.setItem('token', 'token-value'); // Replace with actual token from API
+        
+        if (result.data.access_token) {
+          localStorage.setItem('token', result.data.access_token);
+          console.log("Token stored in localStorage:", result.data.access_token.substring(0, 20) + "...");
+          
+          // Validate token structure
+          const isTokenValid = api.checkToken();
+          if (!isTokenValid) {
+            console.error("Token validation failed, might not be properly formatted");
+          }
+        } else {
+          console.error("No access_token found in response data");
+          console.log("Full response data:", result.data);
+        }
+        
         localStorage.setItem('user', JSON.stringify(result.data));
         return {};
       } else {

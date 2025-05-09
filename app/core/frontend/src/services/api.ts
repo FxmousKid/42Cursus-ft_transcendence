@@ -12,6 +12,7 @@ export interface AuthResponse {
   id: number;
   username: string;
   email: string;
+  access_token: string;
 }
 
 export interface RegisterData {
@@ -77,6 +78,43 @@ export interface User {
 }
 
 class ApiService {
+  // Add a debug method to check token
+  checkToken() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('[API] No token found in localStorage');
+      return false;
+    }
+    
+    try {
+      // Log token parts for debugging
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.error('[API] Invalid token format (not a valid JWT format)');
+        return false;
+      }
+      
+      // Decode header and payload
+      const header = JSON.parse(atob(parts[0]));
+      const payload = JSON.parse(atob(parts[1]));
+      
+      console.log('[API] Token header:', header);
+      console.log('[API] Token payload:', payload);
+      
+      // Check if token is expired
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp && payload.exp < now) {
+        console.error('[API] Token is expired');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('[API] Error parsing token:', error);
+      return false;
+    }
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -89,14 +127,24 @@ class ApiService {
         console.log(`[API] Request body:`, options.body);
       }
       
+      // Get token from localStorage
+      const token = localStorage.getItem('token');
+      console.log(`[API] Token from localStorage:`, token ? 'Found token' : 'No token');
+      
+      // Prepare headers
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        ...options.headers,
+      };
+      
+      console.log(`[API] Request headers:`, headers);
+      
       const response = await fetch(url, {
         ...options,
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...options.headers,
-        },
+        headers,
         mode: 'cors'
       });
       
@@ -127,12 +175,39 @@ class ApiService {
       }
 
       // Gérer la réponse structurée
-      if (data?.success === true && data?.user) {
-        return { data: data.user as T };
-      } else if (data?.success === true && data?.data) {
-        return { data: data.data as T };
+      console.log("Raw API response data:", data);
+      
+      if (data?.success === true) {
+        // Backend returns { success: true, ...userData, access_token }
+        if (data?.access_token) {
+          // This is a login response with directly embedded user data and token
+          console.log("Found access_token in response, returning full data object:", data);
+          
+          // Ensure the token is properly structured
+          try {
+            const tokenParts = data.access_token.split('.');
+            if (tokenParts.length !== 3) {
+              console.error("[API] Warning: JWT token format is invalid");
+            } else {
+              console.log("[API] JWT token format looks valid");
+            }
+          } catch (e) {
+            console.error("[API] Error analyzing token format:", e);
+          }
+          
+          return { data: data as T };
+        } else if (data?.user) {
+          // Response with user nested
+          console.log("Found user object in response:", data.user);
+          return { data: data.user as T };
+        } else if (data?.data) {
+          // Response with data field
+          console.log("Found data field in response:", data.data);
+          return { data: data.data as T };
+        }
       }
       
+      // Default fallback
       return { data: data as T };
     } catch (error) {
       console.error('[API] Request error:', error);
@@ -159,20 +234,20 @@ class ApiService {
   user = {
     // Get current user profile
     getProfile: () => 
-      this.request<UserProfileData>('/user/profile', {
+      this.request<UserProfileData>('/users/profile', {
         method: 'GET',
       }),
     
     // Update user profile
     updateProfile: (data: UpdateProfileData) =>
-      this.request<UserProfileData>('/user/profile', {
+      this.request<UserProfileData>('/users/profile', {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
     
-    // Get match history
+    // Get match history (Note: This endpoint might not exist yet)
     getMatches: () =>
-      this.request<MatchData[]>('/user/matches', {
+      this.request<MatchData[]>('/users/matches', {
         method: 'GET',
       }),
       

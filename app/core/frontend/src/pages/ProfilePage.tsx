@@ -106,18 +106,21 @@ const ProfilePage = () => {
           };
           
           // Try to get match data
-          const matchesRes = await api.user.getMatches();
-          if (matchesRes.data && matchesRes.data.length > 0) {
-            userData.matches = matchesRes.data;
-            userData.totalGames = matchesRes.data.length;
-            
-            // Calculate win rate
-            const wins = matchesRes.data.filter(match => match.result === 'Win').length;
-            userData.winRate = userData.totalGames > 0 
-              ? Math.round((wins / userData.totalGames) * 100) 
-              : 0;
-          } else {
-            // Example match for new users
+          try {
+            const matchesRes = await api.user.getMatches();
+            if (matchesRes.data && matchesRes.data.length > 0) {
+              userData.matches = matchesRes.data;
+              userData.totalGames = matchesRes.data.length;
+              
+              // Calculate win rate
+              const wins = matchesRes.data.filter(match => match.result === 'Win').length;
+              userData.winRate = userData.totalGames > 0 
+                ? Math.round((wins / userData.totalGames) * 100) 
+                : 0;
+            }
+          } catch (error) {
+            console.log("Error fetching matches:", error);
+            // Fallback to example match data if endpoint doesn't exist
             userData.matches = [
               { 
                 opponent: "Joueur", 
@@ -171,16 +174,26 @@ const ProfilePage = () => {
 
   // API calls for friendship management
   const fetchFriends = async () => {
-    const res = await api.friendship.getFriends();
-    if (res.data) {
-      setFriends(res.data as Friend[]);
+    try {
+      const res = await api.friendship.getFriends();
+      if (res.data) {
+        setFriends(res.data as Friend[]);
+      }
+    } catch (error) {
+      console.error("Error fetching friends:", error);
+      // Don't change the friends state if there's an error
     }
   };
 
   const fetchPendingRequests = async () => {
-    const res = await api.friendship.getPendingRequests();
-    if (res.data) {
-      setPendingRequests(res.data as FriendRequest[]);
+    try {
+      const res = await api.friendship.getPendingRequests();
+      if (res.data) {
+        setPendingRequests(res.data as FriendRequest[]);
+      }
+    } catch (error) {
+      console.error("Error fetching pending requests:", error);
+      // Don't change the pending requests state if there's an error
     }
   };
 
@@ -526,6 +539,7 @@ const ProfilePage = () => {
                 <Label htmlFor="username">Nom d'utilisateur</Label>
                 <Input
                   id="username"
+                  name="username"
                   value={formData.username}
                   onChange={handleInputChange}
                 />
@@ -535,6 +549,7 @@ const ProfilePage = () => {
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
@@ -545,6 +560,7 @@ const ProfilePage = () => {
                 <Label htmlFor="password">Nouveau mot de passe</Label>
                 <Input
                   id="password"
+                  name="password"
                   type="password"
                   placeholder="Laisser vide pour ne pas changer"
                   value={formData.password}

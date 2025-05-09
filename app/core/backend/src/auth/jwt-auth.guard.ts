@@ -2,6 +2,15 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from
 import { Observable } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
 
+// Définir l'interface pour le payload JWT
+interface JwtPayload {
+  sub: number;
+  email: string;
+  username: string;
+  iat?: number;
+  exp?: number;
+}
+
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   canActivate(
@@ -16,10 +25,15 @@ export class JwtAuthGuard implements CanActivate {
         throw new UnauthorizedException('No token provided');
       }
       
-      const payload = jwt.verify(token, process.env.JWT_SECRET || 'your-default-secret');
+      // Convertir d'abord en unknown, puis en JwtPayload
+      const payload = jwt.verify(token, process.env.JWT_SECRET || 'your-default-secret') as unknown as JwtPayload;
       
       // Ajouter l'utilisateur décodé à la requête
-      request.user = payload;
+      request.user = {
+        userId: payload.sub,
+        email: payload.email,
+        username: payload.username
+      };
       
       return true;
     } catch (error) {
