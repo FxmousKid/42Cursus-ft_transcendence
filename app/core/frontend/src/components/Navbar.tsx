@@ -33,13 +33,6 @@ const navItems = [
     icon: <GamepadIcon className="w-4 h-4" />,
     description: 'Play Pong game',
     requireAuth: true
-  },
-  { 
-    name: 'Profile', 
-    path: '/profile', 
-    icon: <User className="w-4 h-4" />,
-    description: 'View your profile',
-    requireAuth: true
   }
 ];
 
