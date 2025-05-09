@@ -8,6 +8,8 @@ import { Friendships } from './friendships/friendships.model';
 import { AuthModule } from './auth/auth.module';
 import { FriendshipsModule } from './friendships/friendships.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Matches } from './matches/matches.model';
+import { MatchesModule } from './matches/matches.module';
 
 @Module({
 	imports: [
@@ -27,7 +29,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 					alter: false  // Désactiver les modifications de tables pour éviter les erreurs
 				},
 				logging: console.log, // Activer les logs pour debug avec fonction explicite
-				models: [User, Friendships],
+				models: [User, Friendships, Matches],
 				// Additional SQLite options for better compatibility
 				dialectOptions: {
 					// For SQLite
@@ -40,6 +42,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 		}),
 		UserModule,
 		FriendshipsModule,
+		MatchesModule,
 		AuthModule,
 	],
 	controllers: [AppController],
