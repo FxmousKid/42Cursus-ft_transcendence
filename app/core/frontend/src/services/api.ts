@@ -25,6 +25,46 @@ export interface LoginData {
   password: string;
 }
 
+export interface UserProfileData {
+  id: number;
+  username: string;
+  email: string;
+  joinDate?: string;
+  totalGames?: number;
+  winRate?: number;
+  matches?: MatchData[];
+}
+
+export interface MatchData {
+  id?: number;
+  opponent: string;
+  result: 'Win' | 'Loss';
+  score: string;
+  date: string;
+}
+
+export interface UpdateProfileData {
+  username?: string;
+  email?: string;
+  password?: string;
+}
+
+export interface Friend {
+  id: number;
+  username: string;
+  email: string;
+}
+
+export interface FriendRequest {
+  id: number;
+  sender: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  created_at: string;
+}
+
 class ApiService {
   private async request<T>(
     endpoint: string,
@@ -102,6 +142,60 @@ class ApiService {
       this.request<AuthResponse>('/auth/login', {
         method: 'POST',
         body: JSON.stringify(data),
+      }),
+  };
+
+  user = {
+    // Get current user profile
+    getProfile: () => 
+      this.request<UserProfileData>('/user/profile', {
+        method: 'GET',
+      }),
+    
+    // Update user profile
+    updateProfile: (data: UpdateProfileData) =>
+      this.request<UserProfileData>('/user/profile', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    
+    // Get match history
+    getMatches: () =>
+      this.request<MatchData[]>('/user/matches', {
+        method: 'GET',
+      }),
+  };
+
+  friendship = {
+    getFriends: () =>
+      this.request<Friend[]>('/friendships', {
+        method: 'GET',
+      }),
+    
+    getPendingRequests: () =>
+      this.request<FriendRequest[]>('/friendships/requests', {
+        method: 'GET',
+      }),
+    
+    sendRequest: (username: string) =>
+      this.request('/friendships/request', {
+        method: 'POST',
+        body: JSON.stringify({ username }),
+      }),
+    
+    acceptRequest: (requestId: number) =>
+      this.request(`/friendships/accept/${requestId}`, {
+        method: 'POST',
+      }),
+    
+    rejectRequest: (requestId: number) =>
+      this.request(`/friendships/reject/${requestId}`, {
+        method: 'DELETE',
+      }),
+    
+    removeFriend: (friendId: number) =>
+      this.request(`/friendships/${friendId}`, {
+        method: 'DELETE',
       }),
   };
 }
