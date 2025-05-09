@@ -105,12 +105,16 @@ class ApiService {
       const now = Math.floor(Date.now() / 1000);
       if (payload.exp && payload.exp < now) {
         console.error('[API] Token is expired');
+        localStorage.removeItem('token'); // Remove expired token
+        localStorage.removeItem('user');  // Clear user data too
         return false;
       }
       
       return true;
     } catch (error) {
       console.error('[API] Error parsing token:', error);
+      localStorage.removeItem('token'); // Remove invalid token
+      localStorage.removeItem('user');  // Clear user data too
       return false;
     }
   }
@@ -121,14 +125,24 @@ class ApiService {
   ): Promise<ApiResponse<T>> {
     try {
       const url = `${API_URL}${endpoint}`;
-      console.log(`[API] Making ${options.method} request to: ${url}`);
+      console.log(`[API] Making ${options.method || 'GET'} request to: ${url}`);
       
       if (options.body) {
         console.log(`[API] Request body:`, options.body);
       }
       
-      // Get token from localStorage
+      // Get token from localStorage and validate it
       const token = localStorage.getItem('token');
+      
+      // For authenticated endpoints, validate token before making the request
+      if (token && endpoint !== '/auth/login' && endpoint !== '/auth/register') {
+        const isValid = this.checkToken();
+        if (!isValid) {
+          console.error('[API] Invalid token detected before request');
+          throw new Error('Invalid token');
+        }
+      }
+      
       console.log(`[API] Token from localStorage:`, token ? 'Found token' : 'No token');
       
       // Prepare headers
@@ -149,6 +163,14 @@ class ApiService {
       });
       
       console.log(`[API] Response status: ${response.status} ${response.statusText}`);
+      
+      // Handle authentication errors specifically
+      if (response.status === 401) {
+        console.error('[API] Authentication failed - clearing credentials');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        throw new Error('Invalid token');
+      }
       
       // Traiter différents types de réponses
       if (response.status === 204) {

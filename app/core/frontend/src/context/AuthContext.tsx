@@ -145,8 +145,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (result.data) {
         console.log("Login successful, data structure:", JSON.stringify(result.data, null, 2));
+        
         // Store user data in state and localStorage
-        setUser(result.data);
+        const userData = {
+          id: result.data.id,
+          username: result.data.username,
+          email: result.data.email
+        };
+        
+        setUser(userData);
         
         if (result.data.access_token) {
           localStorage.setItem('token', result.data.access_token);
@@ -157,13 +164,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!isTokenValid) {
             console.error("Token validation failed, might not be properly formatted");
           }
+          
+          // Store the user data separately for future use
+          localStorage.setItem('user', JSON.stringify(userData));
+          return {};
         } else {
           console.error("No access_token found in response data");
           console.log("Full response data:", result.data);
+          return { error: 'Login failed: No token received' };
         }
-        
-        localStorage.setItem('user', JSON.stringify(result.data));
-        return {};
       } else {
         return { error: 'Login failed: No user data received' };
       }

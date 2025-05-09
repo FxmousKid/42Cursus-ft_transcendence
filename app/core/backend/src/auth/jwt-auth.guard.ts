@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
+import { ConfigService } from '@nestjs/config';
 
 // Définir l'interface pour le payload JWT
 interface JwtPayload {
@@ -13,6 +14,8 @@ interface JwtPayload {
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
+  constructor(private configService: ConfigService) {}
+  
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
@@ -25,8 +28,11 @@ export class JwtAuthGuard implements CanActivate {
         throw new UnauthorizedException('No token provided');
       }
       
+      // Use the same secret key as in jwt.strategy.ts
+      const jwtSecret = this.configService.get<string>('JWT_SECRET') || 'your-secret-key';
+      
       // Convertir d'abord en unknown, puis en JwtPayload
-      const payload = jwt.verify(token, process.env.JWT_SECRET || 'your-default-secret') as unknown as JwtPayload;
+      const payload = jwt.verify(token, jwtSecret) as unknown as JwtPayload;
       
       // Ajouter l'utilisateur décodé à la requête
       request.user = {

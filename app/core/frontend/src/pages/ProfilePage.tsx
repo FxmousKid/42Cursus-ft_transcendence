@@ -93,6 +93,39 @@ const ProfilePage = () => {
             email: profileRes.data.email,
             password: '',
           });
+        } else if (profileRes.error) {
+          // Handle authentication errors
+          if (profileRes.error.includes('Invalid token') || profileRes.error.includes('unauthorized')) {
+            // Use local user data as fallback
+            const userData: UserProfileData = {
+              id: authUser.id as number,
+              username: authUser.username,
+              email: authUser.email,
+              joinDate: new Date().toISOString(),
+              totalGames: 0,
+              winRate: 0,
+              matches: []
+            };
+            
+            setProfile(userData);
+            setFormData({
+              username: userData.username,
+              email: userData.email,
+              password: '',
+            });
+            
+            toast({
+              title: "Authentication error",
+              description: "Your session has expired. Some profile features will be limited.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Error",
+              description: "Failed to load profile data: " + profileRes.error,
+              variant: "destructive"
+            });
+          }
         } else {
           // Fallback to auth context data
           const userData: UserProfileData = {
