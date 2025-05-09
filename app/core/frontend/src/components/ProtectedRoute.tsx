@@ -1,10 +1,8 @@
-import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { LoadingScreen } from './LoadingScreen';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
+  children: JSX.Element;
   requireAuth: boolean;
 }
 
@@ -17,8 +15,9 @@ export const ProtectedRoute = ({ children, requireAuth }: ProtectedRouteProps) =
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
+  // Show loading state while checking authentication
   if (loading) {
-    return <LoadingScreen />;
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
   // Route requires authentication but user is not authenticated
@@ -34,5 +33,5 @@ export const ProtectedRoute = ({ children, requireAuth }: ProtectedRouteProps) =
   }
 
   // If authentication requirements are met, render the children
-  return <>{children}</>;
+  return children;
 }; 

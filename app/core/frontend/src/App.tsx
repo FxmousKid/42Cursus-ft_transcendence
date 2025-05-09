@@ -8,10 +8,9 @@ import FriendsGamePage from '@/pages/FriendsGamePage';
 import ProfilePage from '@/pages/ProfilePage';
 import NotFoundPage from '@/pages/NotFound';
 import LoginPage from '@/pages/Login';
-import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import './styles/game.css';
+import { Toaster } from '@/components/ui/toaster';
 
 // Wrapper component to conditionally render navbar and padding
 const AppContent = () => {
@@ -67,7 +66,7 @@ const AppContent = () => {
   );
 }
 
-const App = () => {
+function App() {
   return (
     <AuthProvider>
       <Router>

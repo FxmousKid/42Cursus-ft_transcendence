@@ -6,19 +6,20 @@ export default function NotFoundPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="simple-flex simple-flex-center simple-flex-col min-h-screen">
-      <div className="text-center">
-        <h1 className="text-9xl font-bold simple-text-primary">404</h1>
-        <h2 className="text-3xl font-bold mb-4">Page not found</h2>
-        <p className="text-lg text-muted-foreground mb-8">
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-8 px-4 text-center">
+      <div className="space-y-4">
+        <h1 className="text-9xl font-bold tracking-tighter text-primary">404</h1>
+        <h2 className="text-3xl font-semibold tracking-tight">Page not found</h2>
+        <p className="text-lg text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
         </p>
       </div>
       <Button
         onClick={() => navigate("/")}
-        className="simple-btn"
+        size="lg"
+        className="gap-2"
       >
-        <Home className="mr-2 h-5 w-5" />
+        <Home className="h-5 w-5" />
         Return Home
       </Button>
     </div>
