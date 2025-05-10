@@ -132,44 +132,159 @@
   .instruction-card {
     @apply bg-card/40 backdrop-blur-sm rounded-xl p-6 border border-primary/20 hover:border-primary/40 transition-colors;
   }
-
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-20px);
-    }
+  
+  /* Enhanced animations */
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-in-out forwards;
   }
-
-  @keyframes blob-animation {
-    0% {
-      border-radius: 60% 40% 30% 70%/60% 30% 70% 40%;
-      transform: translate(0, 0) rotate(0deg);
-    }
-    50% {
-      border-radius: 30% 60% 70% 40%/50% 60% 30% 60%;
-      transform: translate(20px, 20px) rotate(45deg);
-    }
-    100% {
-      border-radius: 40% 60% 30% 70%/60% 30% 70% 40%;
-      transform: translate(-20px, -20px) rotate(-45deg);
-    }
+  
+  .animate-slide-up {
+    animation: slideUp 0.8s ease-out forwards;
   }
-
-  .animate-pulsate {
-    animation: pulsate 2s ease-in-out infinite;
+  
+  .animate-slide-right {
+    animation: slideRight 0.8s ease-out forwards;
   }
-
-  @keyframes pulsate {
-    0%, 100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.8;
-      transform: scale(1.05);
-    }
+  
+  .animate-pulse-slow {
+    animation: pulseSlow 3s ease-in-out infinite;
   }
+  
+  .animate-team-card {
+    @apply hover:scale-105 hover:shadow-xl transition-all duration-300;
+  }
+  
+  .hero-gradient-text {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent animate-gradient-x;
+  }
+  
+  .glass-card {
+    @apply backdrop-blur-md bg-card/30 border border-white/10 shadow-lg;
+  }
+  
+  .team-avatar {
+    @apply border-4 border-background ring-2 ring-primary/20 hover:ring-primary transition-all duration-300;
+  }
+  
+  .responsive-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
+  }
+  
+  .gradient-border {
+    @apply relative;
+    background-clip: padding-box;
+  }
+  
+  .gradient-border::before {
+    content: '';
+    @apply absolute inset-0 rounded-[inherit] p-[2px] bg-gradient-to-r from-primary to-secondary -z-10;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+  }
+}
+
+/* Keyframes for animations */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideRight {
+  0% {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseSlow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes blob-animation {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  33% {
+    transform: scale(1.1) translate(5%, 5%);
+  }
+  66% {
+    transform: scale(0.9) translate(-5%, 10%);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradient-x {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Animation delay utilities */
+.delay-0 {
+  animation-delay: 0s;
+}
+
+.delay-1 {
+  animation-delay: 0.1s;
+}
+
+.delay-2 {
+  animation-delay: 0.2s;
+}
+
+.delay-3 {
+  animation-delay: 0.3s;
+}
+
+.delay-4 {
+  animation-delay: 0.4s;
+}
+
+.delay-5 {
+  animation-delay: 0.5s;
 }
 
