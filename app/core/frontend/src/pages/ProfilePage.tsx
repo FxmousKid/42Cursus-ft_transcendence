@@ -18,7 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
 import { websocketService } from '../services/websocket.service';
 
-// Define Friend and FriendRequest types locally
+// Définition des types pour les amis et les demandes d'ami
 interface Friend {
   id: number;
   username: string;
@@ -83,11 +83,11 @@ const ProfilePage = () => {
       setIsLoading(true);
       
       try {
-        // Try to fetch from API first
+        // Récupérer les données du profil de l'utilisateur
         const profileRes = await api.user.getProfile();
         
         if (profileRes.data) {
-          // If we have API data, use it
+          // Si on a des données d'API, on les utilise
           setProfile(profileRes.data);
           setFormData({
             username: profileRes.data.username,
@@ -95,9 +95,9 @@ const ProfilePage = () => {
             password: '',
           });
         } else if (profileRes.error) {
-          // Handle authentication errors
+          // Gestion des erreurs d'authentification
           if (profileRes.error.includes('Invalid token') || profileRes.error.includes('unauthorized')) {
-            // Use local user data as fallback
+            // Si on n'a pas de données d'API, on utilise les données de l'authentification
             const userData: UserProfileData = {
               id: authUser.id as number,
               username: authUser.username,
@@ -115,20 +115,12 @@ const ProfilePage = () => {
               password: '',
             });
             
-            toast({
-              title: "Authentication error",
-              description: "Your session has expired. Some profile features will be limited.",
-              variant: "destructive"
-            });
+            toast({ title: "Erreur d'authentification", description: "Votre session a expiré. Certaines fonctionnalités du profil seront limitées.", variant: "destructive"});
           } else {
-            toast({
-              title: "Error",
-              description: "Failed to load profile data: " + profileRes.error,
-              variant: "destructive"
-            });
+            toast({ title: "Erreur", description: "Impossible de charger les données du profil: " + profileRes.error, variant: "destructive" });
           }
         } else {
-          // Fallback to auth context data
+          // Si on n'a pas de données d'API, on utilise les données de l'authentification
           const userData: UserProfileData = {
             id: authUser.id as number,
             username: authUser.username,
@@ -181,7 +173,7 @@ const ProfilePage = () => {
           variant: "destructive"
         });
         
-        // Still set profile with auth data as fallback
+        // Si on n'a pas de données d'API, on utilise les données de l'authentification
         if (authUser) {
           setProfile({
             id: authUser.id as number,
@@ -210,27 +202,27 @@ const ProfilePage = () => {
     if (authUser?.token) {
       websocketService.connect(authUser.token);
 
-      // Écouteur pour les nouvelles demandes d'ami
+      // Écouteur pour les nouvelles demandes d'ami | Quand B reçoit une demande d'ami de A
       websocketService.on('friendRequest', (data) => {
         toast({
           title: "Nouvelle demande d'ami",
           description: `${data.from.username} vous a envoyé une demande d'ami`,
         });
-        fetchPendingRequests();
+        fetchPendingRequests(); // Met à jour la liste des demandes d'ami
       });
 
-      // Écouteur pour les demandes d'ami acceptées
+      // Écouteur pour les demandes d'ami acceptées | Quand A accepte la demande d'ami de B
       websocketService.on('friendRequestAccepted', (data) => {
         toast({
           title: "Demande d'ami acceptée",
           description: `${data.friend.username} a accepté votre demande d'ami`,
         });
-        fetchFriends();
+        fetchFriends(); // Met à jour la liste des amis
       });
 
       return () => {
-        websocketService.off('friendRequest', () => {});
-        websocketService.off('friendRequestAccepted', () => {});
+        websocketService.off('friendRequest', () => {}); // Arrêter l'écouteur pour les nouvelles demandes d'ami
+        websocketService.off('friendRequestAccepted', () => {}); // Arrêter l'écouteur pour les demandes d'ami acceptées
       };
     }
   }, [authUser?.token, toast]);
@@ -244,7 +236,7 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error("Error fetching friends:", error);
-      // Don't change the friends state if there's an error
+      // Ne pas changer l'état des amis si il y a une erreur
     }
   };
 
@@ -256,13 +248,14 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error("Error fetching pending requests:", error);
-      // Don't change the pending requests state if there's an error
+      // Ne pas changer l'état des demandes d'ami si il y a une erreur
     }
   };
 
   const handleSendFriendRequest = async () => {
     if (!newFriendUsername.trim()) return;
 
+    // Appel à l'API pour envoyer la demande d'ami
     const res = await api.friendship.sendRequest(newFriendUsername);
     if (res.error) {
       toast({
@@ -272,6 +265,7 @@ const ProfilePage = () => {
       });
     } else {
       toast({
+        // Afficher une notification en temps réel
         title: "Succès",
         description: `Demande d'ami envoyée à ${newFriendUsername}`,
       });
@@ -282,52 +276,31 @@ const ProfilePage = () => {
   const handleAcceptRequest = async (requestId: number) => {
     const res = await api.friendship.acceptRequest(requestId);
     if (res.error) {
-      toast({
-        title: "Erreur",
-        description: res.error,
-        variant: "destructive"
-      });
+      toast({ title: "Erreur", description: res.error, variant: "destructive" });
     } else {
-      toast({
-        title: "Succès",
-        description: "Demande d'ami acceptée",
-      });
-      fetchFriends();
-      fetchPendingRequests();
+      toast({ title: "Succès", description: "Demande d'ami acceptée" });
+      fetchFriends(); // Met à jour la liste des amis
+      fetchPendingRequests(); // Met à jour la liste des demandes d'ami
     }
   };
 
   const handleRejectRequest = async (requestId: number) => {
     const res = await api.friendship.rejectRequest(requestId);
     if (res.error) {
-      toast({
-        title: "Erreur",
-        description: res.error,
-        variant: "destructive"
-      });
+      toast({ title: "Erreur", description: res.error, variant: "destructive" });
     } else {
-      toast({
-        title: "Succès",
-        description: "Demande d'ami rejetée",
-      });
-      fetchPendingRequests();
+      toast({ title: "Succès", description: "Demande d'ami rejetée" });
+      fetchPendingRequests(); // Met à jour la liste des demandes d'ami
     }
   };
 
   const handleRemoveFriend = async (friendId: number) => {
     const res = await api.friendship.removeFriend(friendId);
     if (res.error) {
-      toast({
-        title: "Erreur",
-        description: res.error,
-        variant: "destructive"
-      });
+      toast({ title: "Erreur", description: res.error, variant: "destructive" });
     } else {
-      toast({
-        title: "Succès",
-        description: "Ami supprimé",
-      });
-      fetchFriends();
+      toast({ title: "Succès", description: "Ami supprimé" });
+      fetchFriends(); // Met à jour la liste des amis
     }
   };
 
@@ -348,7 +321,7 @@ const ProfilePage = () => {
         throw new Error(res.error);
       }
       
-      // Update profile with new data
+      // Mettre à jour le profil avec les nouvelles données
       if (res.data) {
         setProfile(oldProfile => {
           if (!oldProfile) return res.data || null;
@@ -356,7 +329,7 @@ const ProfilePage = () => {
         });
       }
       
-      // Clear password field
+      // Effacer le champ de mot de passe
       setFormData(prev => ({ ...prev, password: '' }));
       
       toast({
@@ -372,7 +345,7 @@ const ProfilePage = () => {
     }
   };
 
-  // Loading state
+  // Loading du profil
   if (isLoading || !profile) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-80px)]">

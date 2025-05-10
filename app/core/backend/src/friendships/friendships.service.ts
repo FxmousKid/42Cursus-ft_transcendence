@@ -16,6 +16,7 @@ export class FriendshipsService {
   ) {}
 
   async sendFriendRequest(userId: number, friendUsername: string): Promise<Friendships> {
+    // Recherche de l'utilisateur à qui envoyer la demande (friendUsername)
     const friend = await this.userModel.findOne({
       where: { username: friendUsername }
     });
@@ -23,7 +24,6 @@ export class FriendshipsService {
     if (!friend) {
       throw new Error('User not found');
     }
-
     if (friend.id === userId) {
       throw new Error('You cannot send a friend request to yourself');
     }
@@ -50,10 +50,10 @@ export class FriendshipsService {
       created_at: new Date()
     });
 
-    // Récupérer les informations de l'utilisateur qui envoie la demande
+    // Récupérer les informations de l'utilisateur qui envoie la demande (A)
     const sender = await this.userModel.findByPk(userId);
     
-    // Envoyer une notification en temps réel
+    // Envoyer une notification WebSocket à B
     this.websocketGateway.notifyFriendRequest(friend.id, sender);
 
     return request;

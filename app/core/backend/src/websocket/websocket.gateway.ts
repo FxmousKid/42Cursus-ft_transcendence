@@ -68,9 +68,9 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
   }
 
-  // Méthode pour notifier l'acceptation d'une demande d'ami
+  // Méthode pour notifier l'acceptation d'une demande d'ami | Quand B accepte la demande d'ami de A
   notifyFriendRequestAccepted(toUserId: number, acceptedBy: any) {
-    const socketId = this.userSocketMap.get(toUserId);
+    const socketId = this.userSocketMap.get(toUserId); // Récupérer l'ID du socket de B
     if (socketId) {
       this.server.to(socketId).emit('friendRequestAccepted', {
         type: 'friendRequestAccepted',
@@ -78,7 +78,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
           id: acceptedBy.id,
           username: acceptedBy.username,
         },
-      });
+      }); // Envoyer la notification à B
     }
   }
 } 
