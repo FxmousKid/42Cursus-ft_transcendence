@@ -1,4 +1,13 @@
-import { Table, Column, Model, DataType, Default, ForeignKey, AllowNull } from 'sequelize-typescript';
+import {
+	Table,
+	Column,
+	Model,
+	DataType,
+	Default,
+	ForeignKey,
+	AllowNull,
+	BelongsTo,
+} from 'sequelize-typescript';
 import { User } from '../user/user.model';
 
 interface FriendshipsAttributes {
@@ -10,7 +19,7 @@ interface FriendshipsAttributes {
 }
 
 @Table({
-	tableName: 'friendships'
+	tableName: 'friendships',
 })
 export class Friendships extends Model<FriendshipsAttributes> {
 
@@ -32,4 +41,10 @@ export class Friendships extends Model<FriendshipsAttributes> {
 	@Default(DataType.NOW)
 	@Column(DataType.DATE)
 	declare created_at: Date;
+	
+	@BelongsTo(() => User, 'user_id')
+	declare user: User;
+	
+	@BelongsTo(() => User, 'friend_id')
+	declare friend: User;
 }
