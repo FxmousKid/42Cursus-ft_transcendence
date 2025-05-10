@@ -30,8 +30,9 @@ HOST=0.0.0.0
 DATABASE_URL="sqlite:./db.sqlite"
 
 # JWT Configuration
-JWT_SECRET="your-super-secret-key-here"
+JWT_SECRET=transcendence_jwt_secret_key
 JWT_EXPIRATION="1d"
+NODE_ENV=development
 
 # CORS Configuration
 CORS_ORIGIN="http://localhost:5173"
@@ -39,3 +40,29 @@ CORS_ORIGIN="http://localhost:5173"
 # API Configuration
 API_PREFIX="/api"
 SWAGGER_PATH="/docs" 
+
+# Version of Elastic products
+STACK_VERSION=8.7.1
+
+# Set the cluster name for elasticsearch
+CLUSTER_NAME=docker-cluster
+
+# Set to 'basic' or 'trial' to automatically start the 30-day trial of es-cloud
+LICENSE=basic
+#LICENSE=trial
+
+# Port to expose Elasticsearch HTTP API to the host
+ES_PORT=9200
+
+# Port to expose Kibana to the host
+KIBANA_PORT=5601
+
+# Increase or decrease based on the available host memory (in bytes)
+ES_MEM_LIMIT=1073741824
+KB_MEM_LIMIT=1073741824
+LS_MEM_LIMIT=1073741824
+
+# SAMPLE Predefined Key only to be used in POC environments
+ENCRYPTION_KEY=c34d38b3a14956121ff2170e5030b471551370178f43e5626eec58b04a30fae2
+
+# Swagger

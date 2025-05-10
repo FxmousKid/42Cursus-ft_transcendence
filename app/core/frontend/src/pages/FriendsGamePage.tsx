@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, UserPlus, User, Mail, Copy } from 'lucide-react';
+import { ArrowLeft, Search, User, Mail, Copy } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
+import { OnlineUsers } from '@/components/OnlineUsers';
 
 const FriendsGamePage = () => {
   const navigate = useNavigate();
-  const [friendCode, setFriendCode] = useState('');
   const [yourCode, setYourCode] = useState('F7BC2D'); // Generated code example
   const [copied, setCopied] = useState(false);
   
@@ -16,17 +16,6 @@ const FriendsGamePage = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-  
-  const onlineFriends = [
-    { id: 1, name: "AlexGamer", status: "Online", avatar: "A" },
-    { id: 2, name: "PongMaster", status: "In Game", avatar: "P" },
-    { id: 3, name: "ChampionPlayer", status: "Online", avatar: "C" },
-  ];
-  
-  const offlineFriends = [
-    { id: 4, name: "GameWizard", status: "Offline", avatar: "G" },
-    { id: 5, name: "PaddlePro", status: "Last seen 2h ago", avatar: "P" },
-  ];
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#0b2046] to-[#0056d3] text-white relative overflow-hidden">
@@ -55,78 +44,9 @@ const FriendsGamePage = () => {
           {/* your code begins here */}
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Friends List */}
+            {/* Left Column - Friends & Users List */}
             <div className="lg:col-span-1">
-              <Card className="bg-[#0b2046]/80 border-white/10 backdrop-blur-sm h-full">
-                <CardHeader>
-                  <CardTitle className="text-xl text-white">Friends</CardTitle>
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search friends..."
-                      className="pl-8 bg-[#071835] border-white/10 focus-visible:ring-[#0056d3]"
-                    />
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-300 mb-3">Online ({onlineFriends.length})</h3>
-                    <div className="space-y-2">
-                      {onlineFriends.map(friend => (
-                        <div key={friend.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-[#0056d3]/20 cursor-pointer">
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                              <div className="h-10 w-10 rounded-full bg-[#0056d3] flex items-center justify-center">
-                                {friend.avatar}
-                              </div>
-                              <div className={`absolute bottom-0 right-0 h-3 w-3 rounded-full ${friend.status === "In Game" ? "bg-yellow-500" : "bg-green-500"} border-2 border-[#0b2046]`}></div>
-                            </div>
-                            <div>
-                              <p className="font-medium">{friend.name}</p>
-                              <p className="text-xs text-gray-300">{friend.status}</p>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="ghost" className="hover:bg-[#0056d3]/30">
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-300 mb-3">Offline ({offlineFriends.length})</h3>
-                    <div className="space-y-2">
-                      {offlineFriends.map(friend => (
-                        <div key={friend.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-[#0056d3]/20 cursor-pointer">
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                              <div className="h-10 w-10 rounded-full bg-[#0056d3]/50 flex items-center justify-center text-white/70">
-                                {friend.avatar}
-                              </div>
-                              <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-gray-500 border-2 border-[#0b2046]"></div>
-                            </div>
-                            <div>
-                              <p className="font-medium text-white/70">{friend.name}</p>
-                              <p className="text-xs text-gray-400">{friend.status}</p>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="ghost" className="hover:bg-[#0056d3]/30 text-white/50">
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-                
-                <CardFooter>
-                  <Button variant="outline" className="w-full border-white/20 gap-2">
-                    <UserPlus className="h-4 w-4" /> Add Friend
-                  </Button>
-                </CardFooter>
-              </Card>
+              <OnlineUsers />
             </div>
             
             {/* Right Column - Invite & Start */}

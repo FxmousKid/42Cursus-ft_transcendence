@@ -3,8 +3,9 @@
 # include the compsoe of every provided type of service
 
 include:
-  - ./core/docker-compose.core.yml            # Core services
-  - ./infra/vault/docker-compose.vault.yml    # Hashicorp Vault services
+  - ./core/docker-compose.core.yml              # Core services
+  - ./infra/vault/docker-compose.vault.yml      # Hashicorp Vault services
+  - ./infra/logging/docker-compose.logging.yml  # ELK stack services
 
 
 # Global network
