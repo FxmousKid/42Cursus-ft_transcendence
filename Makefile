@@ -10,9 +10,11 @@ all: build up
 build:
 	$(DOCC) -f $(MAIN_COMPOSE) build
 
+
 # Start services
 up:
 	$(DOCC) -f $(MAIN_COMPOSE) up
+
 
 # Start services in detached mode
 up-detached:
