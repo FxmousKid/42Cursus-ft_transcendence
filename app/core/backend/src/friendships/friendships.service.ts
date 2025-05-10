@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Friendships } from './friendships.model';
 import { User } from '../user/user.model';
 import { Op } from 'sequelize';
+import { WebsocketGateway } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class FriendshipsService {
@@ -11,6 +12,7 @@ export class FriendshipsService {
     private readonly friendshipsModel: typeof Friendships,
     @InjectModel(User)
     private readonly userModel: typeof User,
+    private readonly websocketGateway: WebsocketGateway
   ) {}
 
   async sendFriendRequest(userId: number, friendUsername: string): Promise<Friendships> {
@@ -41,12 +43,20 @@ export class FriendshipsService {
     }
 
     // Créer la demande d'amitié
-    return this.friendshipsModel.create({
+    const request = await this.friendshipsModel.create({
       user_id: userId,
       friend_id: friend.id,
       status: 'pending',
       created_at: new Date()
     });
+
+    // Récupérer les informations de l'utilisateur qui envoie la demande
+    const sender = await this.userModel.findByPk(userId);
+    
+    // Envoyer une notification en temps réel
+    this.websocketGateway.notifyFriendRequest(friend.id, sender);
+
+    return request;
   }
 
   async acceptFriendRequest(userId: number, requestId: number): Promise<Friendships> {
@@ -64,6 +74,12 @@ export class FriendshipsService {
 
     request.status = 'accepted';
     await request.save();
+    
+    // Récupérer les informations de l'utilisateur qui accepte la demande
+    const acceptingUser = await this.userModel.findByPk(userId);
+    
+    // Envoyer une notification en temps réel à l'expéditeur initial
+    this.websocketGateway.notifyFriendRequestAccepted(request.user_id, acceptingUser);
     
     return request;
   }

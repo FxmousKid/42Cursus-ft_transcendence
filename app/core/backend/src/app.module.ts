@@ -10,6 +10,7 @@ import { FriendshipsModule } from './friendships/friendships.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Matches } from './matches/matches.model';
 import { MatchesModule } from './matches/matches.module';
+import { WebsocketModule } from './websocket/websocket.module';
 
 @Module({
 	imports: [
@@ -18,7 +19,7 @@ import { MatchesModule } from './matches/matches.module';
 		}),
 		SequelizeModule.forRootAsync({
 			imports: [ConfigModule],
-			useFactory: (configService: ConfigService) => ({
+			useFactory: async (configService: ConfigService) => ({
 				dialect: 'sqlite',
 				storage: './data/db.sqlite',
 				autoLoadModels: true,
@@ -44,6 +45,7 @@ import { MatchesModule } from './matches/matches.module';
 		FriendshipsModule,
 		MatchesModule,
 		AuthModule,
+		WebsocketModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

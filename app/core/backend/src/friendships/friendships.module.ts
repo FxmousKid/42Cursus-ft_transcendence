@@ -4,10 +4,12 @@ import { Friendships } from './friendships.model';
 import { FriendshipsService } from './friendships.service';
 import { FriendshipsController } from './friendships.controller';
 import { User } from '../user/user.model';
+import { WebsocketModule } from '../websocket/websocket.module';
 
 @Module({
 	imports: [
-		SequelizeModule.forFeature([Friendships, User]) // Registering friendship and user models
+		SequelizeModule.forFeature([Friendships, User]), // Registering friendship and user models
+		WebsocketModule
 	],
 	providers: [FriendshipsService],
 	controllers: [FriendshipsController],

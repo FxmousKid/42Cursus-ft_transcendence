@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
+import { websocketService } from '../services/websocket.service';
 
 // Define Friend and FriendRequest types locally
 interface Friend {
@@ -204,6 +205,35 @@ const ProfilePage = () => {
 
     fetchUserData();
   }, [authUser, toast]);
+
+  useEffect(() => {
+    if (authUser?.token) {
+      websocketService.connect(authUser.token);
+
+      // Écouteur pour les nouvelles demandes d'ami
+      websocketService.on('friendRequest', (data) => {
+        toast({
+          title: "Nouvelle demande d'ami",
+          description: `${data.from.username} vous a envoyé une demande d'ami`,
+        });
+        fetchPendingRequests();
+      });
+
+      // Écouteur pour les demandes d'ami acceptées
+      websocketService.on('friendRequestAccepted', (data) => {
+        toast({
+          title: "Demande d'ami acceptée",
+          description: `${data.friend.username} a accepté votre demande d'ami`,
+        });
+        fetchFriends();
+      });
+
+      return () => {
+        websocketService.off('friendRequest', () => {});
+        websocketService.off('friendRequestAccepted', () => {});
+      };
+    }
+  }, [authUser?.token, toast]);
 
   // API calls for friendship management
   const fetchFriends = async () => {

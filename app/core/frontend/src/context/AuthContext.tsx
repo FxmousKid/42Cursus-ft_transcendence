@@ -2,9 +2,10 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { api } from '../services/api';
 
 interface User {
-  id: number | string;
+  id?: number;
   username: string;
   email: string;
+  token?: string;
 }
 
 interface AuthContextType {
@@ -31,12 +32,23 @@ const DEV_USER: User = {
 const isDevelopmentEnv = import.meta.env.DEV || import.meta.env.MODE === 'development';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [loading, setLoading] = useState(true);
   // Le mode développement ne sera activable que dans l'environnement de développement
   const [isDevMode, setIsDevMode] = useState<boolean>(
     isDevelopmentEnv && localStorage.getItem('devMode') === 'true'
   );
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('user');
+    }
+  }, [user]);
 
   useEffect(() => {
     // Si on n'est pas en environnement de développement et que le mode dev est activé,
@@ -150,7 +162,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = {
           id: result.data.id,
           username: result.data.username,
-          email: result.data.email
+          email: result.data.email,
+          token: result.data.access_token
         };
         
         setUser(userData);
