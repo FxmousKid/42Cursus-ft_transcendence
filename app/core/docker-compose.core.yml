@@ -21,6 +21,9 @@ services:
       context: ./backend
       dockerfile: ./docker/dockerfile
     container_name: backend
+    depends_on:
+      es01:
+        condition: service_healthy
     restart: unless-stopped
     ports:
       - "3001:3001"

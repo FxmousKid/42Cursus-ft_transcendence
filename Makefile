@@ -14,13 +14,17 @@ build:
 up:
 	$(DOCC) -f $(MAIN_COMPOSE) up
 
+# Start services in daemon mode
+up-d:
+	$(DOCC) -f $(MAIN_COMPOSE) up -d
+
 # Start services in detached mode
 up-detached:
 	$(DOCC) -f $(MAIN_COMPOSE) up -d
 
 # Stop all services
 down:
-	$(DOCC) -f $(MAIN_COMPOSE) down
+	$(DOCC) -f $(MAIN_COMPOSE) down 
 
 # View logs from all services
 logs:
