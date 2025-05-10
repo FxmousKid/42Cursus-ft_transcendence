@@ -73,18 +73,6 @@ export class FriendshipsService {
     }
 
     request.status = 'accepted';
-<<<<<<< HEAD
-    return request.save();
-  }
-
-  async rejectFriendRequest(userId: number, friendId: number) {
-    const request = await this.friendshipsModel.findOne({
-      where: {
-        user_id: friendId,
-        friend_id: userId,
-        status: 'pending',
-      },
-=======
     await request.save();
     
     // Récupérer les informations de l'utilisateur qui accepte la demande
@@ -103,76 +91,12 @@ export class FriendshipsService {
         friend_id: userId,
         status: 'pending'
       }
->>>>>>> friendships
     });
 
     if (!request) {
       throw new Error('Friend request not found');
     }
 
-<<<<<<< HEAD
-    request.status = 'rejected';
-    return request.save();
-  }
-
-  async getFriends(userId: number) {
-    const friendships = await this.friendshipsModel.findAll({
-      where: {
-        [Op.or]: [
-          { user_id: userId, status: 'accepted' },
-          { friend_id: userId, status: 'accepted' },
-        ],
-      },
-      include: [
-        {
-          model: this.userModel,
-          as: 'user',
-          attributes: ['id', 'username', 'avatar_url', 'status'],
-        },
-        {
-          model: this.userModel,
-          as: 'friend',
-          attributes: ['id', 'username', 'avatar_url', 'status'],
-        },
-      ],
-    });
-
-    return friendships.map(friendship => {
-      const friend = friendship.user_id === userId ? friendship.friend : friendship.user;
-      return {
-        id: friend.id,
-        username: friend.username,
-        avatar_url: friend.avatar_url,
-        status: friend.status,
-      };
-    });
-  }
-
-  async getPendingRequests(userId: number) {
-    return this.friendshipsModel.findAll({
-      where: {
-        friend_id: userId,
-        status: 'pending',
-      },
-      include: [
-        {
-          model: this.userModel,
-          as: 'user',
-          attributes: ['id', 'username', 'avatar_url'],
-        },
-      ],
-    });
-  }
-
-  async removeFriend(userId: number, friendId: number) {
-    return this.friendshipsModel.destroy({
-      where: {
-        [Op.or]: [
-          { user_id: userId, friend_id: friendId },
-          { user_id: friendId, friend_id: userId },
-        ],
-      },
-=======
     await request.destroy();
   }
 
@@ -261,7 +185,6 @@ export class FriendshipsService {
         },
         created_at: request.created_at
       };
->>>>>>> friendships
     });
   }
 } 

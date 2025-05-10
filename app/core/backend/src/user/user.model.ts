@@ -32,11 +32,6 @@ export class User extends Model<UserAttributes> {
   declare email: string;
 
 	@AllowNull(false)
-	@Unique
-	@Column(DataType.STRING(255))
-	declare email: string;
-
-	@AllowNull(false)
 	@Column(DataType.STRING(255))
 	declare password: string;
 	
