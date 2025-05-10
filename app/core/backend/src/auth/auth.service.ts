@@ -1,9 +1,10 @@
-import { Injectable, ConflictException, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Injectable, ConflictException, InternalServerErrorException, Logger, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { User } from '../user/user.model';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { Op } from 'sequelize';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
@@ -12,6 +13,7 @@ export class AuthService {
     constructor(
         @InjectModel(User)
         private userModel: typeof User,
+        private jwtService: JwtService,
     ) {}
 
     async register(createUserDto: CreateUserDto): Promise<Partial<User>> {
@@ -69,9 +71,7 @@ export class AuthService {
         }
     }
 
-    // La méthode de login sera ajoutée ici plus tard
-    
-    async login(email: string, password: string): Promise<Partial<User>> {
+    async login(email: string, password: string): Promise<any> {
         this.logger.log(`Login attempt for email: ${email}`);
         
         try {
@@ -80,7 +80,7 @@ export class AuthService {
             
             if (!user) {
                 this.logger.warn(`Login failed: No user found with email ${email}`);
-                throw new Error('Invalid email or password');
+                throw new UnauthorizedException('Invalid email or password');
             }
             
             // Vérifier le mot de passe
@@ -88,17 +88,50 @@ export class AuthService {
             
             if (!isPasswordValid) {
                 this.logger.warn(`Login failed: Invalid password for email ${email}`);
-                throw new Error('Invalid email or password');
+                throw new UnauthorizedException('Invalid email or password');
             }
             
-            // Retourner l'utilisateur sans le mot de passe
+            // Mettre à jour le statut de l'utilisateur
+            user.status = 'online';
+            await user.save();
+            
+            // Generate JWT token
+            const payload = { 
+                sub: user.id, 
+                email: user.email,
+                username: user.username 
+            };
+            
+            // Retourner l'utilisateur sans le mot de passe et le token
             const result = user.get({ plain: true });
             const { password: _, ...userWithoutPassword } = result;
             
             this.logger.log(`User logged in successfully: ${user.username}`);
-            return userWithoutPassword;
+            return {
+                ...userWithoutPassword,
+                access_token: this.jwtService.sign(payload),
+            };
         } catch (error) {
             this.logger.error(`Login error: ${error.message}`);
+            throw error;
+        }
+    }
+    
+    async logout(userId: number): Promise<void> {
+        try {
+            const user = await this.userModel.findByPk(userId);
+            
+            if (!user) {
+                throw new UnauthorizedException('User not found');
+            }
+            
+            // Mettre à jour le statut de l'utilisateur
+            user.status = 'offline';
+            await user.save();
+            
+            this.logger.log(`User logged out successfully: ${user.username}`);
+        } catch (error) {
+            this.logger.error(`Logout error: ${error.message}`);
             throw error;
         }
     }

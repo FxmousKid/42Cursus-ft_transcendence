@@ -2,9 +2,10 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { api } from '../services/api';
 
 interface User {
-  id: number | string;
+  id?: number;
   username: string;
   email: string;
+  token?: string;
 }
 
 interface AuthContextType {
@@ -31,12 +32,23 @@ const DEV_USER: User = {
 const isDevelopmentEnv = import.meta.env.DEV || import.meta.env.MODE === 'development';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [loading, setLoading] = useState(true);
   // Le mode développement ne sera activable que dans l'environnement de développement
   const [isDevMode, setIsDevMode] = useState<boolean>(
     isDevelopmentEnv && localStorage.getItem('devMode') === 'true'
   );
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('user');
+    }
+  }, [user]);
 
   useEffect(() => {
     // Si on n'est pas en environnement de développement et que le mode dev est activé,
@@ -136,17 +148,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       const result = await api.auth.login({ email, password });
       
+      console.log("Login response:", result);
+      
       if (result.error) {
         console.error('Login failed:', result.error);
         return { error: result.error };
       }
       
       if (result.data) {
+        console.log("Login successful, data structure:", JSON.stringify(result.data, null, 2));
+        
         // Store user data in state and localStorage
-        setUser(result.data);
-        localStorage.setItem('token', 'token-value'); // Replace with actual token from API
-        localStorage.setItem('user', JSON.stringify(result.data));
-        return {};
+        const userData = {
+          id: result.data.id,
+          username: result.data.username,
+          email: result.data.email,
+          token: result.data.access_token
+        };
+        
+        setUser(userData);
+        
+        if (result.data.access_token) {
+          localStorage.setItem('token', result.data.access_token);
+          console.log("Token stored in localStorage:", result.data.access_token.substring(0, 20) + "...");
+          
+          // Validate token structure
+          const isTokenValid = api.checkToken();
+          if (!isTokenValid) {
+            console.error("Token validation failed, might not be properly formatted");
+          }
+          
+          // Store the user data separately for future use
+          localStorage.setItem('user', JSON.stringify(userData));
+          return {};
+        } else {
+          console.error("No access_token found in response data");
+          console.log("Full response data:", result.data);
+          return { error: 'Login failed: No token received' };
+        }
       } else {
         return { error: 'Login failed: No user data received' };
       }

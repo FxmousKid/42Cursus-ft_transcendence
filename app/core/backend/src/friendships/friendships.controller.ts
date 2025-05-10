@@ -1,51 +1,96 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, HttpException, HttpStatus } from '@nestjs/common';
 import { FriendshipsService } from './friendships.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('friendships')
-@UseGuards(JwtAuthGuard)
 export class FriendshipsController {
   constructor(private readonly friendshipsService: FriendshipsService) {}
 
-  @Post('request/:friendId')
-  async sendFriendRequest(
-    @Param('friendId') friendId: number,
-    @Body('userId') userId: number,
-  ) {
-    return this.friendshipsService.sendFriendRequest(userId, friendId);
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  async getFriends(@Request() req) {
+    try {
+      return { 
+        success: true, 
+        data: await this.friendshipsService.getFriends(req.user.userId) 
+      };
+    } catch (error) {
+      throw new HttpException(
+        { success: false, message: error.message },
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
 
-  @Post('accept/:friendId')
-  async acceptFriendRequest(
-    @Param('friendId') friendId: number,
-    @Body('userId') userId: number,
-  ) {
-    return this.friendshipsService.acceptFriendRequest(userId, friendId);
+  @UseGuards(JwtAuthGuard)
+  @Get('requests')
+  async getPendingRequests(@Request() req) {
+    try {
+      return { 
+        success: true, 
+        data: await this.friendshipsService.getPendingRequests(req.user.userId) 
+      };
+    } catch (error) {
+      throw new HttpException(
+        { success: false, message: error.message },
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
 
-  @Post('reject/:friendId')
-  async rejectFriendRequest(
-    @Param('friendId') friendId: number,
-    @Body('userId') userId: number,
-  ) {
-    return this.friendshipsService.rejectFriendRequest(userId, friendId);
+  @UseGuards(JwtAuthGuard)
+  @Post('request')
+  async sendFriendRequest(@Request() req, @Body() body: { username: string }) {
+    try {
+      await this.friendshipsService.sendFriendRequest(req.user.userId, body.username);
+      return { success: true };
+    } catch (error) {
+      throw new HttpException(
+        { success: false, message: error.message },
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
 
-  @Get('list/:userId')
-  async getFriends(@Param('userId') userId: number) {
-    return this.friendshipsService.getFriends(userId);
+  @UseGuards(JwtAuthGuard)
+  @Post('accept/:requestId')
+  async acceptFriendRequest(@Request() req, @Param('requestId') requestId: number) {
+    try {
+      await this.friendshipsService.acceptFriendRequest(req.user.userId, requestId);
+      return { success: true };
+    } catch (error) {
+      throw new HttpException(
+        { success: false, message: error.message },
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
 
-  @Get('pending/:userId')
-  async getPendingRequests(@Param('userId') userId: number) {
-    return this.friendshipsService.getPendingRequests(userId);
+  @UseGuards(JwtAuthGuard)
+  @Delete('reject/:requestId')
+  async rejectFriendRequest(@Request() req, @Param('requestId') requestId: number) {
+    try {
+      await this.friendshipsService.rejectFriendRequest(req.user.userId, requestId);
+      return { success: true };
+    } catch (error) {
+      throw new HttpException(
+        { success: false, message: error.message },
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':friendId')
-  async removeFriend(
-    @Param('friendId') friendId: number,
-    @Body('userId') userId: number,
-  ) {
-    return this.friendshipsService.removeFriend(userId, friendId);
+  async removeFriend(@Request() req, @Param('friendId') friendId: number) {
+    try {
+      await this.friendshipsService.removeFriend(req.user.userId, friendId);
+      return { success: true };
+    } catch (error) {
+      throw new HttpException(
+        { success: false, message: error.message },
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
 } 
