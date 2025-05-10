@@ -44,7 +44,4 @@ export class User extends Model<UserAttributes> {
 	@Column(DataType.STRING(255))
 	declare avatar_url: string;
 }
-function Default(arg0: string): (target: User, propertyKey: "status") => void {
-  throw new Error('Function not implemented.');
-}
 
