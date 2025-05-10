@@ -29,3 +29,5 @@ services:
     volumes:
       - ./backend/data:/app/data
       - ../infra/vault/agent/env/:/app/env:rw
+    env_file:
+      - ../infra/vault/agent/env/.env

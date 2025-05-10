@@ -1,7 +1,8 @@
 import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 @WebSocketGateway({
@@ -21,26 +22,48 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   private userSocketMap: Map<number, string> = new Map();
   private socketUserMap: Map<string, number> = new Map();
+  private readonly logger = new Logger(WebsocketGateway.name);
 
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private configService: ConfigService
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token?.split(' ')[1];
       if (!token) {
+        this.logger.warn('No token provided in WebSocket connection');
         client.disconnect();
         return;
       }
 
-      const payload = this.jwtService.verify(token);
-      const userId = payload.sub;
+      // Log token information (première partie seulement pour la sécurité)
+      const tokenParts = token.split('.');
+      this.logger.debug(`Token header: ${tokenParts[0]}`);
+      
+      // Log la clé JWT utilisée (masquée pour la sécurité)
+      const jwtSecret = this.configService.get('JWT_SECRET');
+      this.logger.debug(`JWT Secret being used (first 4 chars): ${jwtSecret?.substring(0, 4)}...`);
+      
+      try {
+        const payload = this.jwtService.verify(token);
+        const userId = payload.sub;
 
-      this.userSocketMap.set(userId, client.id);
-      this.socketUserMap.set(client.id, userId);
+        this.userSocketMap.set(userId, client.id);
+        this.socketUserMap.set(client.id, userId);
 
-      console.log(`Client connected: ${client.id}, User ID: ${userId}`);
+        this.logger.log(`Client connected: ${client.id}, User ID: ${userId}`);
+      } catch (jwtError) {
+        // Analyse avancée de l'erreur JWT
+        this.logger.error(`JWT verification error: ${jwtError.message}`);
+        if (jwtError.name === 'JsonWebTokenError' && jwtError.message === 'invalid signature') {
+          this.logger.error('Token signature invalid - check if JWT_SECRET values match between token generation and verification');
+        }
+        throw jwtError;
+      }
     } catch (error) {
-      console.error('WebSocket connection error:', error);
+      this.logger.error(`WebSocket connection error: ${error.message}`, error.stack);
       client.disconnect();
     }
   }
@@ -50,7 +73,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     if (userId) {
       this.userSocketMap.delete(userId);
       this.socketUserMap.delete(client.id);
-      console.log(`Client disconnected: ${client.id}, User ID: ${userId}`);
+      this.logger.log(`Client disconnected: ${client.id}, User ID: ${userId}`);
     }
   }
 
