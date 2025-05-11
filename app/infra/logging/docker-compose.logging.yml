@@ -59,6 +59,7 @@ services:
       retries: 120
 
 
+
   es01:
     depends_on:
       setup:
@@ -117,7 +118,6 @@ services:
         max-size: "100m"
         max-file: "3"
 
-
   kibana:
     image: docker.elastic.co/kibana/kibana:8.18.0
     labels: 
@@ -159,67 +159,41 @@ services:
       es01:
         condition: service_healthy
 
-  # metricbeat:
-  #   container_name: logging-metricbeat
-  #   user: root
-  #   image: docker.elastic.co/beats/metricbeat:8.18.0
-  #   restart: unless-stopped
-  #   networks:
-  #     - transcendence-network
-  #   depends_on:
-  #     es01:
-  #       condition: service_healthy
-  #     kibana:
-  #       condition: service_healthy
-  #     vault-agent:
-  #       condition: service_healthy
-  #   volumes:
-  #     - certs:/usr/share/metricbeat/certs:ro
-  #     - metricbeatdata01:/usr/share/metricbeat/data
-  #     - "./metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro"
-  #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
-  #     - "/sys/fs/cgroup/:/hostfs/sys/fs/cgroup:ro"
-  #     - "/proc:/hostfs/proc:ro"
-  #     - "/:/hostfs:ro"
-  #     - "../vault/agent/env/:/tmp:rw"
-  #   environment:
-  #     - ELASTIC_USER=elastic
-  #     - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-  #     - ELASTIC_HOSTS=https://es01:9200
-  #     - KIBANA_HOSTS=http://kibana:5601
-  #     - LOGSTASH_HOSTS=http://logstash01:9600
-  #   command: >
-  #     bash -c '
-  #       while [ ! -f /tmp/.env ]; do
-  #         echo "Waiting for env file to be created";
-  #         sleep 3;
-  #       done;
-  #       cp /tmp/.env /usr/share/metricbeat/;
-  #       exec --environment container
-  #     '
-
-  # logstash:
-  #   image: docker.elastic.co/logstash/logstash:8.18.0
-  #   container_name: logging-logstash
-  #   restart: unless-stopped
-  #   networks:
-  #     - transcendence-network
-  #   ports:
-  #     - "5044:5044"         # Beats input
-  #     - "10514:10514/tcp"   # Syslog TCP input
-  #     - "10514:10514/udp"   # Syslog UDP input
-
-  #   depends_on:
-  #     vault-agent:
-  #       condition: service_healthy
-
-  #   volumes:
-  #     - ./logstash/pipeline:/usr/share/logstash/pipeline:rw
-  #     - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:rw
-  #     - ../vault/agent/env/:/usr/share/logstash/env:ro
-
-
       
+  fluentbit:
+    # image: fluent/fluent-bit:sha2 56:33f76bb07fc1c7acf356d33292f95f8465ee47dbf13cc5e6b2db47d3ff02c3fd
+    build:
+      context: ./fluentbit
+      dockerfile: dockerfile
+    container_name: logging-fluentbit
+    volumes:
+      - certs:/fluent-bit/config/certs:ro
+      - ./fluentbit/config:/etc/fluent-bit:ro
+      - ../vault/agent/env/:/fluent-bit/env:ro
+      - /var/log:/var/log:ro
+      - "/var/lib/docker/containers:/var/lib/docker/containers:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro"
+      - "/proc:/hostfs/proc:ro"
+      - "/:/hostfs:ro"
+    ports:
+      - "24224:24224"  # Forward protocol
+    networks:
+      - transcendence-network
+    environment:
+      - FLUENT_ELASTICSEARCH_HOST=es01
+      - FLUENT_ELASTICSEARCH_PORT=9200
+      - FLUENT_ELASTICSEARCH_USER=kibana_system
+      - FLUENT_ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - FLUENT_ELASTICSEARCH_SSL=true
+      - FLUENT_ELASTICSEARCH_SSL_CA=/fluent-bit/certs/ca/ca.crt
+      - FLUENT_ELASTICSEARCH_SSL_VERIFY=true
+    depends_on:
+      es01:
+        condition: service_healthy
+    command: >
+      /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
       
 
 volumes:

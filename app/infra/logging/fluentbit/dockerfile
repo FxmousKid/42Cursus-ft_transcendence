@@ -1,0 +1,20 @@
+FROM debian:12 as builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential cmake flex bison git libyaml-dev\
+    libssl-dev libyaml-dev libpq-dev
+
+# Clone Fluent Bit
+RUN git clone https://github.com/fluent/fluent-bit.git /fluent-bit
+
+# Build with custom jemalloc options
+WORKDIR /fluent-bit/build
+RUN cmake -DFLB_JEMALLOC_OPTIONS="--with-lg-page=14" ..
+RUN make
+
+# Create final image
+FROM debian:bullseye-slim
+COPY --from=builder /fluent-bit/build/bin/fluent-bit /usr/local/bin/fluent-bit
+
+ENTRYPOINT ["/usr/local/bin/fluent-bit"]
