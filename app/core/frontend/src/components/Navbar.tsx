@@ -133,7 +133,7 @@ export function Navbar() {
                     <div className="logo-inner-light"></div>
                   </div>
                 </div>
-                <span className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary tracking-tight hidden sm:inline">42-transcendence</span>
+                <span className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary tracking-tight hidden sm:inline">42-Transcendence</span>
               </Link>
             </div>
 
