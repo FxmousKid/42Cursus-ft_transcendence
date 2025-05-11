@@ -3,7 +3,8 @@ FROM hashicorp/vault:latest
 RUN apk add zsh git curl && \
 	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
 	touch $HOME/.zshrc && \
-	vault -autocomplete-install
+	vault -autocomplete-install && \
+	rm -rf /vault/env/.env
 
 ENV VAULT_ADDR="http://vault-server:8200"
 ENV VAULT_AGENT_CONFIG="/vautlt/config/agent.hcl"
