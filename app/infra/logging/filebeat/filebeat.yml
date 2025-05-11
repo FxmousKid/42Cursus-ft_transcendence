@@ -41,16 +41,18 @@ output.elasticsearch:
     - index: "filebeat-logging-%{[container.name]}-%{[agent.version]}-%{+yyyy.MM.dd}"
       when.or:
         - equals:
-          container.image.name: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+            container.name: logging-es01
         - equals:
-          container.image.name: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+            container.name: logging-kibana
         - equals:
-          container.image.name: docker.elastic.co/beats/filebeat:${STACK_VERSION}
+            container.name: logging-filebeat
 
     - index: "filebeat-vault-%{[container.name]}-%{[agent.version]}-%{+yyyy.MM.dd}"
       when.or:
         - equals:
-          container.image.name: vault:latest
+            container.name: vault-server
+        - equals:
+            container.name: vault-agent
 
     - index: "filebeat-core-%{[container.name]}-%{[agent.version]}-%{+yyyy.MM.dd}"
 
