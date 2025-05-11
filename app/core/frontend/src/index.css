@@ -182,14 +182,38 @@
     mask-composite: exclude;
   }
   
-  /* Logo animation */
+  /* Logo animation - Enhanced with more realistic pulsating effect */
   .logo-breathe {
-    animation: breathe 4s ease-in-out infinite;
+    background: radial-gradient(circle at 40% 40%, 
+      hsl(var(--primary)), 
+      hsl(var(--secondary)), 
+      hsl(var(--accent))
+    );
+    animation: breathe 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5);
   }
   
   .logo-glow {
-    animation: glow 4s ease-in-out infinite;
-    filter: blur(8px);
+    background: radial-gradient(circle at 30% 30%, 
+      hsl(var(--primary) / 0.8), 
+      hsl(var(--secondary) / 0.4) 70%
+    );
+    animation: glow 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    filter: blur(10px);
+  }
+
+  /* Inner light effect for the logo */
+  .logo-inner-light {
+    position: absolute;
+    width: 30%;
+    height: 30%;
+    top: 15%;
+    left: 15%;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    filter: blur(3px);
+    z-index: 10;
+    animation: inner-light 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }
 
@@ -262,24 +286,64 @@
 }
 
 @keyframes breathe {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
+  0% {
+    transform: scale(0.95);
+    opacity: 0.85;
+  }
+  25% {
+    transform: scale(1.02);
+    opacity: 0.95;
   }
   50% {
-    transform: scale(1.1);
-    opacity: 0.9;
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(1.02);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.85;
   }
 }
 
 @keyframes glow {
-  0%, 100% {
+  0% {
+    opacity: 0.3;
+    filter: blur(10px);
+    transform: scale(0.9);
+  }
+  25% {
     opacity: 0.5;
-    filter: blur(8px);
+    filter: blur(12px);
+    transform: scale(1.1);
+  }
+  50% {
+    opacity: 0.7;
+    filter: blur(14px);
+    transform: scale(1.2);
+  }
+  75% {
+    opacity: 0.5;
+    filter: blur(12px);
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0.3;
+    filter: blur(10px);
+    transform: scale(0.9);
+  }
+}
+
+@keyframes inner-light {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.8);
   }
   50% {
     opacity: 0.8;
-    filter: blur(12px);
+    transform: scale(1.1);
   }
 }
 

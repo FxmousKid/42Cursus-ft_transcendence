@@ -129,7 +129,9 @@ export function Navbar() {
               <Link to="/" className="flex items-center gap-3 group">
                 <div className="relative">
                   <div className="h-10 w-10 rounded-full bg-primary/80 absolute inset-0 logo-glow"></div>
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary via-secondary to-accent relative z-10 logo-breathe" />
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary via-secondary to-accent relative z-10 logo-breathe">
+                    <div className="logo-inner-light"></div>
+                  </div>
                 </div>
                 <span className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary tracking-tight hidden sm:inline">42-transcendence</span>
               </Link>
@@ -209,7 +211,9 @@ export function Navbar() {
                       <div className="flex items-center justify-center gap-3">
                         <div className="relative">
                           <div className="h-10 w-10 rounded-full bg-primary/70 absolute inset-0 logo-glow"></div>
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary via-secondary to-accent relative z-10 logo-breathe" />
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary via-secondary to-accent relative z-10 logo-breathe">
+                            <div className="logo-inner-light"></div>
+                          </div>
                         </div>
                         <span className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary tracking-tight">42-transcendence</span>
                       </div>
