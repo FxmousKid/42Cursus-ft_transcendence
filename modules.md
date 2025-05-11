@@ -24,7 +24,7 @@
 ## Cybersecurity
 - [ ] - Major module: Implement WAF/ModSecurity with a hardened configuration and HashiCorp Vault for secrets management
 - [TODO] - Minor module: GDPR compliance options with user anonymization, local data management, and Account Deletion - @Joey/@Iyan
-- [2FA-TODO] - Major module: Implement Two-Factor Authentication (2FA) and JWT - @Iyan/@Joey - [JWT already done, normally...]
+- [2FA-TODO] - Major module: Implement Two-Factor Authentication (2FA) and JWT - Iyan/Joey - [JWT already done, normally...]
 
 ## Devops
 - [X] - Major module: Infrastructure setup for log management
