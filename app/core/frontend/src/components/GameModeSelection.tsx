@@ -80,10 +80,6 @@ export function GameModeSelection() {
           onClick={() => handleModeSelect('friends')}
         />
       </div>
-      
-      <div className="text-center mt-16 text-sm text-gray-400">
-        © Transcendence 2025
-      </div>
     </div>
   );
 }

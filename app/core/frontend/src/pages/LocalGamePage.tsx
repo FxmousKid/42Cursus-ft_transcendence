@@ -13,7 +13,7 @@ const LocalGamePage = () => {
       <div className="absolute bottom-20 right-10 w-72 h-72 rounded-full bg-[#0b2046]/40 blur-3xl -z-10"></div>
       
       {/* Back button */}
-      <div className="pt-16 pb-2 px-6">
+      <div className="pt-6 pb-2 px-6">
         <div className="max-w-6xl mx-auto">
           <Button 
             variant="outline" 
@@ -29,13 +29,6 @@ const LocalGamePage = () => {
       <main className="flex-1 flex items-center justify-center p-4 md:p-8">
         <PongGame />
       </main>
-      
-      {/* Footer */}
-      <footer className="bg-[#0b2046]/80 backdrop-blur-sm py-6 px-4 border-t border-white/10">
-        <div className="max-w-6xl mx-auto text-center">
-          <span className="text-sm text-gray-300">© {new Date().getFullYear()} Transcendence. All rights reserved.</span>
-        </div>
-      </footer>
     </div>
   );
 };
