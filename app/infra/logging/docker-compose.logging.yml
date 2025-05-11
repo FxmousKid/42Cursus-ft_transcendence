@@ -3,20 +3,30 @@ services:
   setup:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
     volumes:
+      - ../vault/agent/env:/tmp/env:ro
       - certs:/usr/share/elasticsearch/config/certs
     user: "0"
+    depends_on:
+      vault-agent:
+        condition: service_healthy
     networks:
       - transcendence-network
     container_name: logging-setup
     command: >
       bash -c '
-        if [ x${ELASTIC_PASSWORD} == x ]; then
+        if [ -f /tmp/env/.env ]; then
+          set -o allexport;
+          source /tmp/env/.env;
+          set +o allexport;
+        fi;
+        if [ x$$ELASTIC_PASSWORD == x ]; then
           echo "Set the ELASTIC_PASSWORD environment variable in the .env file";
+          sleep 1000
           exit 1;
-        elif [ x${KIBANA_PASSWORD} == x ]; then
+        elif [ x$$KIBANA_PASSWORD == x ]; then
           echo "Set the KIBANA_PASSWORD environment variable in the .env file";
           exit 1;
-          fi;
+        fi;
         if [ ! -f config/certs/ca.zip ]; then
           echo "Creating CA";
           bin/elasticsearch-certutil ca --silent --pem -out config/certs/ca.zip;
@@ -49,9 +59,10 @@ services:
         echo "Waiting for Elasticsearch availability";
         until curl -s --cacert config/certs/ca/ca.crt https://es01:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
         echo "Setting kibana_system password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "$$ELASTIC_USER:$$ELASTIC_PASSWORD" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"$$KIBANA_PASSWORD\"}" | grep -q "^{}"; do sleep 10; done;
         echo "All done!";
       '
+
     healthcheck:
       test: ["CMD-SHELL", "[ -f config/certs/es01/es01.crt ]"]
       interval: 1s
@@ -64,21 +75,23 @@ services:
     depends_on:
       setup:
         condition: service_started
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
+    build:
+      context: ./elasticsearch/
+      dockerfile: dockerfile
     container_name: logging-es01
     labels:
       co.elastic.logs/module: elasticsearch
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
       - esdata01:/usr/share/elasticsearch/data
+      - ../vault/agent/env:/tmp/env:ro
+      - ./elasticsearch/entrypoint-wrapper.sh:/entrypoint-wrapper.sh
     ports:
-      - ${ES_PORT}:9200
+      - 9200:9200
     environment:
       - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
       - node.name=es01
-      - cluster.name=${CLUSTER_NAME}
       - discovery.type=single-node
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - bootstrap.memory_lock=true
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=true
@@ -114,32 +127,31 @@ services:
         max-file: "3"
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.18.0
+    build:
+      context: ./kibana/
+      dockerfile: dockerfile
     labels: 
       co.elastic.logs/module: kibana
     restart: unless-stopped
     container_name: logging-kibana
     ports:
-      - ${KIBANA_PORT}:5601
+      - 5601:5601
     environment:
       - TZ=Europe/Paris
       - SERVER_NAME=kibana
       - ELASTICSEARCH_HOSTS=https://es01:9200
       - ELASTICSEARCH_USERNAME=kibana_system
-      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
       - "ELASTICSEARCH_REQUESTTIMEOUT=90000"
       - "ELASTICSEARCH_PINGTIMEOUT=90000"
-      - XPACK_SECURITY_ENCRYPTIONKEY=${ENCRYPTION_KEY}
-      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${ENCRYPTION_KEY}
-      - XPACK_REPORTING_ENCRYPTIONKEY=${ENCRYPTION_KEY}
       - "XPACK_ML_ENABLED=false"
       - "XPACK_REPORTING_ENABLED=false"
       - "XPACK_SECURITY_SECURECOOKIES=false"
-
     volumes:
       - kibanadata:/usr/share/kibana/data
       - certs:/usr/share/kibana/config/certs
+      - ../vault/agent/env:/tmp/env:ro
+      - ./kibana/entrypoint-wrapper.sh:/entrypoint-wrapper.sh
     mem_limit: 2g
     networks:
       - transcendence-network
@@ -169,8 +181,6 @@ services:
       - "../vault/agent/env/:/usr/share/filebeat/env:ro"
     environment:
       - TZ=Europe/Paris
-      - ELASTIC_USER=${ELASTIC_USER}
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - ELASTIC_HOSTS=https://es01:9200
       - KIBANA_HOSTS=http://kibana:5601
     networks:
@@ -188,8 +198,10 @@ services:
         done;
         if [ -f /usr/share/filebeat/env/.env ]; then
           set -o allexport;
+          set -a
           source /usr/share/filebeat/env/.env;
           set +o allexport;
+          set +a
         fi;
         filebeat -e --strict.perms=false
       '
