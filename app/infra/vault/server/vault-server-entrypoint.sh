@@ -54,9 +54,8 @@ fi
 # Check if secrets exist
 if ! vault kv get -field=username kv/elk/elasticsearch >/dev/null 2>&1; then
 	echo "Creating secrets..."
-	vault kv put kv/elk/elasticsearch username=elasticsearchuser password=elasticsearchpass
-	vault kv put kv/elk/kibana username=kibanapass password=kibanapass
-	vault kv put kv/elk/logstash username=logstashuser password=logstashpass
+	vault kv put kv/elk/elasticsearch username=elastic password=changeme
+	vault kv put kv/elk/kibana username=kibana_system password=changeme
 fi
 
 # deleting approle
