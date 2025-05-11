@@ -4,7 +4,7 @@ RUN apk add zsh git curl && \
 	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
 	touch $HOME/.zshrc && \
 	vault -autocomplete-install && \
-	rm -rf /vault/env/.env
+	if [ -f /vault/env/.env ]; then rm /vault/env/.env; fi;
 
 ENV VAULT_ADDR="http://vault-server:8200"
 ENV VAULT_AGENT_CONFIG="/vautlt/config/agent.hcl"
