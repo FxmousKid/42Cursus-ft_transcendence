@@ -181,6 +181,16 @@
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: exclude;
   }
+  
+  /* Logo animation */
+  .logo-breathe {
+    animation: breathe 4s ease-in-out infinite;
+  }
+  
+  .logo-glow {
+    animation: glow 4s ease-in-out infinite;
+    filter: blur(8px);
+  }
 }
 
 /* Keyframes for animations */
@@ -251,6 +261,28 @@
   }
 }
 
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.5;
+    filter: blur(8px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(12px);
+  }
+}
+
 @keyframes gradient-x {
   0% {
     background-position: 0% 50%;
@@ -265,26 +297,26 @@
 
 /* Animation delay utilities */
 .delay-0 {
-  animation-delay: 0s;
+  animation-delay: 0ms;
 }
 
 .delay-1 {
-  animation-delay: 0.1s;
+  animation-delay: 150ms;
 }
 
 .delay-2 {
-  animation-delay: 0.2s;
+  animation-delay: 300ms;
 }
 
 .delay-3 {
-  animation-delay: 0.3s;
+  animation-delay: 450ms;
 }
 
 .delay-4 {
-  animation-delay: 0.4s;
+  animation-delay: 600ms;
 }
 
 .delay-5 {
-  animation-delay: 0.5s;
+  animation-delay: 750ms;
 }
 
