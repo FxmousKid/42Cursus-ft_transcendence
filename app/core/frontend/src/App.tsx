@@ -11,16 +11,25 @@ import LoginPage from '@/pages/Login';
 import { AuthProvider } from '@/context/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Toaster } from '@/components/ui/toaster';
+import { cn } from '@/lib/utils';
 
 // Wrapper component to conditionally render navbar and padding
 const AppContent = () => {
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
+  const isHomePage = location.pathname === '/';
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased">
       {!isLoginPage && <Navbar />}
-      <main className={!isLoginPage ? "pt-20" : ""}>
+      <main 
+        className={cn(
+          // Only add minimal top padding if we have a navbar (not login page)
+          !isLoginPage ? "pt-12" : "",
+          // Special handling for home page which already has spacing in its design
+          isHomePage ? "pt-0" : ""
+        )}
+      >
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<HomePage />} />

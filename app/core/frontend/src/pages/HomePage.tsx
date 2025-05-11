@@ -43,7 +43,7 @@ const HomePage = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero Section - Full screen with dramatic background */}
-      <section className="min-h-[80vh] flex items-center relative overflow-hidden">
+      <section className="min-h-[70vh] flex items-center relative overflow-hidden">
         {/* Background Effects */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90" />
@@ -52,8 +52,8 @@ const HomePage = () => {
           <div className="absolute opacity-20 blur-3xl -bottom-[20%] -right-[10%] w-[80%] h-[80%] rounded-full bg-secondary/40 animate-pulse-slow" style={{ animationDelay: "2s" }} />
         </div>
 
-        <div className="container mx-auto px-6 py-8">
-          <div className="max-w-5xl mx-auto text-center space-y-8">
+        <div className="container mx-auto px-6 pt-0 pb-12">
+          <div className="max-w-5xl mx-auto text-center space-y-6">
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-foreground tracking-tight leading-tight">
               Welcome to{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
@@ -64,7 +64,7 @@ const HomePage = () => {
               Experience the classic game reimagined for the modern era.
               Challenge players, climb the ranks, and become a Pong master.
             </p>
-            <div className="flex flex-wrap justify-center gap-6 pt-8">
+            <div className="flex flex-wrap justify-center gap-6 pt-6">
               <Link to="/game">
                 <Button size="lg" className="rounded-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity text-white text-lg h-16 px-10">
                   <GamepadIcon className="mr-3 h-6 w-6" />
@@ -83,10 +83,10 @@ const HomePage = () => {
       </section>
 
       {/* Team Section - Eye-catching display */}
-      <section className="py-20 bg-card/5 backdrop-blur-sm">
+      <section className="py-16 bg-card/5 backdrop-blur-sm">
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold text-center mb-16">
               Meet <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">The Team</span>
             </h2>
             

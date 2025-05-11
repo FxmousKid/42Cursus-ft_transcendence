@@ -29,7 +29,7 @@ const GameModePage = () => {
       </div>
       
       {/* Main content */}
-      <main className="container mx-auto flex min-h-screen items-center justify-center">
+      <main className="container mx-auto flex min-h-screen items-center justify-center pt-4">
         <GameModeSelection />
       </main>
       

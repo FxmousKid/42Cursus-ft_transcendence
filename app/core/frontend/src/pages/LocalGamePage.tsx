@@ -13,7 +13,7 @@ const LocalGamePage = () => {
       <div className="absolute bottom-20 right-10 w-72 h-72 rounded-full bg-[#0b2046]/40 blur-3xl -z-10"></div>
       
       {/* Back button */}
-      <div className="pt-16 pb-2 px-6">
+      <div className="pt-6 pb-2 px-6">
         <div className="max-w-6xl mx-auto">
           <Button 
             variant="outline" 

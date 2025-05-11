@@ -358,275 +358,281 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-8">
-      {/* Profile Header */}
-      <Card className="mb-6">
-        <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
-            {/* Avatar */}
-            <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
-              <AvatarFallback className="text-2xl">
-                {profile.username[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            
-            {/* Profile Info */}
-            <div className="flex-1 text-center sm:text-left">
-              <h1 className="text-2xl font-bold mb-2">{profile.username}</h1>
-              <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Mail className="h-3.5 w-3.5" />
-                  {profile.email}
-                </Badge>
-                
-                {profile.joinDate && (
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#0b2046] to-[#0056d3] text-white relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-[#0056d3]/20 blur-3xl -z-10"></div>
+      <div className="absolute bottom-20 right-10 w-72 h-72 rounded-full bg-[#0b2046]/40 blur-3xl -z-10"></div>
+      
+      <div className="container max-w-4xl mx-auto px-4 py-8">
+        {/* Profile Header */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
+              {/* Avatar */}
+              <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
+                <AvatarFallback className="text-2xl">
+                  {profile.username[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              
+              {/* Profile Info */}
+              <div className="flex-1 text-center sm:text-left">
+                <h1 className="text-2xl font-bold mb-2">{profile.username}</h1>
+                <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
                   <Badge variant="outline" className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Inscrit depuis {new Date(profile.joinDate).toLocaleDateString()}
+                    <Mail className="h-3.5 w-3.5" />
+                    {profile.email}
                   </Badge>
-                )}
+                  
+                  {profile.joinDate && (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Inscrit depuis {new Date(profile.joinDate).toLocaleDateString()}
+                    </Badge>
+                  )}
+                  
+                  {profile.totalGames !== undefined && profile.totalGames > 0 && (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Trophy className="h-3.5 w-3.5" />
+                      {profile.totalGames} {profile.totalGames > 1 ? 'parties' : 'partie'}
+                    </Badge>
+                  )}
+                </div>
                 
-                {profile.totalGames !== undefined && profile.totalGames > 0 && (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Trophy className="h-3.5 w-3.5" />
-                    {profile.totalGames} {profile.totalGames > 1 ? 'parties' : 'partie'}
-                  </Badge>
+                {profile.winRate !== undefined && profile.winRate > 0 && (
+                  <div className="w-full max-w-xs mx-auto sm:mx-0 mt-3">
+                    <div className="flex justify-between mb-1 text-sm">
+                      <span>Performances</span>
+                      <span className="font-medium">{profile.winRate}%</span>
+                    </div>
+                    <Progress value={profile.winRate} className="h-2" />
+                  </div>
                 )}
               </div>
-              
-              {profile.winRate !== undefined && profile.winRate > 0 && (
-                <div className="w-full max-w-xs mx-auto sm:mx-0 mt-3">
-                  <div className="flex justify-between mb-1 text-sm">
-                    <span>Performances</span>
-                    <span className="font-medium">{profile.winRate}%</span>
-                  </div>
-                  <Progress value={profile.winRate} className="h-2" />
-                </div>
-              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Tabs Section */}
-      <Tabs defaultValue="matches" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="matches" className="flex items-center gap-2">
-            <Trophy className="h-4 w-4" />
-            <span>Matchs</span>
-          </TabsTrigger>
-          <TabsTrigger value="friends" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span>Amis</span>
-            {pendingRequests.length > 0 && (
-              <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                {pendingRequests.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            <span>Paramètres</span>
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Recent Matches */}
-        <TabsContent value="matches">
-          <Card>
-            <CardHeader>
-              <CardTitle>Historique</CardTitle>
-              <CardDescription>Vos matchs récents</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {profile.matches && profile.matches.length > 0 ? (
-                profile.matches.map((match, index) => (
-                  <MatchResult key={index} match={match} />
-                ))
-              ) : (
-                <p className="text-center py-6 text-muted-foreground">
-                  Vous n'avez pas encore joué de matchs
-                </p>
+          </CardContent>
+        </Card>
+        
+        {/* Tabs Section */}
+        <Tabs defaultValue="matches" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="matches" className="flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
+              <span>Matchs</span>
+            </TabsTrigger>
+            <TabsTrigger value="friends" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span>Amis</span>
+              {pendingRequests.length > 0 && (
+                <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                  {pendingRequests.length}
+                </span>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              <span>Paramètres</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Friends */}
-        <TabsContent value="friends">
-          <div className="grid gap-6">
-            {/* Friends List */}
+          {/* Recent Matches */}
+          <TabsContent value="matches">
             <Card>
               <CardHeader>
-                <CardTitle>Mes Amis</CardTitle>
-                <CardDescription>
-                  {friends.length > 0 
-                    ? `Vous avez ${friends.length} ami${friends.length > 1 ? 's' : ''}`
-                    : "Vous n'avez pas encore d'amis"}
-                </CardDescription>
+                <CardTitle>Historique</CardTitle>
+                <CardDescription>Vos matchs récents</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {profile.matches && profile.matches.length > 0 ? (
+                  profile.matches.map((match, index) => (
+                    <MatchResult key={index} match={match} />
+                  ))
+                ) : (
+                  <p className="text-center py-6 text-muted-foreground">
+                    Vous n'avez pas encore joué de matchs
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Friends */}
+          <TabsContent value="friends">
+            <div className="grid gap-6">
+              {/* Friends List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mes Amis</CardTitle>
+                  <CardDescription>
+                    {friends.length > 0 
+                      ? `Vous avez ${friends.length} ami${friends.length > 1 ? 's' : ''}`
+                      : "Vous n'avez pas encore d'amis"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add Friend */}
+                  <div className="flex gap-2 mb-4">
+                    <Input
+                      placeholder="Nom d'utilisateur"
+                      value={newFriendUsername}
+                      onChange={(e) => setNewFriendUsername(e.target.value)}
+                    />
+                    <Button onClick={handleSendFriendRequest}>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Ajouter
+                    </Button>
+                  </div>
+                  
+                  <Separator />
+                  
+                  {/* Friends List */}
+                  {friends.length === 0 ? (
+                    <div className="text-center py-6">
+                      <User className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
+                      <p className="text-muted-foreground">Commencez à ajouter des amis</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 mt-4">
+                      {friends.map((friend) => (
+                        <div key={friend.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs">
+                                {friend.username[0].toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{friend.username}</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveFriend(friend.id)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <UserMinus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Friend Requests */}
+                  {pendingRequests.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="font-medium mb-3 flex items-center gap-2">
+                        Demandes d'ami
+                        <Badge>{pendingRequests.length}</Badge>
+                      </h3>
+                      <div className="space-y-2">
+                        {pendingRequests.map((request) => (
+                          <div key={request.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarFallback className="text-xs">
+                                  {request.sender.username[0].toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{request.sender.username}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAcceptRequest(request.id)}
+                                className="h-8 gap-1"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                                <span className="sr-only sm:not-sr-only">Accepter</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRejectRequest(request.id)}
+                                className="h-8 gap-1 border-rose-200 bg-rose-100/50 text-rose-700 hover:bg-rose-200"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                                <span className="sr-only sm:not-sr-only">Rejeter</span>
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Settings */}
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle>Paramètres du Profil</CardTitle>
+                <CardDescription>Mettez à jour vos informations</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Add Friend */}
-                <div className="flex gap-2 mb-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Nom d'utilisateur</Label>
                   <Input
-                    placeholder="Nom d'utilisateur"
-                    value={newFriendUsername}
-                    onChange={(e) => setNewFriendUsername(e.target.value)}
+                    id="username"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
                   />
-                  <Button onClick={handleSendFriendRequest}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Ajouter
-                  </Button>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password">Nouveau mot de passe</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="Laisser vide pour ne pas changer"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                  />
                 </div>
                 
                 <Separator />
                 
-                {/* Friends List */}
-                {friends.length === 0 ? (
-                  <div className="text-center py-6">
-                    <User className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
-                    <p className="text-muted-foreground">Commencez à ajouter des amis</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 mt-4">
-                    {friends.map((friend) => (
-                      <div key={friend.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {friend.username[0].toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{friend.username}</p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveFriend(friend.id)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <UserMinus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Friend Requests */}
-                {pendingRequests.length > 0 && (
-                  <div className="mt-6">
-                    <h3 className="font-medium mb-3 flex items-center gap-2">
-                      Demandes d'ami
-                      <Badge>{pendingRequests.length}</Badge>
-                    </h3>
-                    <div className="space-y-2">
-                      {pendingRequests.map((request) => (
-                        <div key={request.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="text-xs">
-                                {request.sender.username[0].toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{request.sender.username}</p>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleAcceptRequest(request.id)}
-                              className="h-8 gap-1"
-                            >
-                              <Check className="h-3.5 w-3.5" />
-                              <span className="sr-only sm:not-sr-only">Accepter</span>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRejectRequest(request.id)}
-                              className="h-8 gap-1 border-rose-200 bg-rose-100/50 text-rose-700 hover:bg-rose-200"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                              <span className="sr-only sm:not-sr-only">Rejeter</span>
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <Button 
+                    onClick={handleSaveProfile}
+                    className="gap-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Enregistrer
+                  </Button>
+                  
+                  <Button 
+                    variant="destructive"
+                    className="gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Déconnexion
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
-
-        {/* Settings */}
-        <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Paramètres du Profil</CardTitle>
-              <CardDescription>Mettez à jour vos informations</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Nom d'utilisateur</Label>
-                <Input
-                  id="username"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Nouveau mot de passe</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Laisser vide pour ne pas changer"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                />
-              </div>
-              
-              <Separator />
-              
-              <div className="flex justify-between">
-                <Button 
-                  onClick={handleSaveProfile}
-                  className="gap-2"
-                >
-                  <Edit className="h-4 w-4" />
-                  Enregistrer
-                </Button>
-                
-                <Button 
-                  variant="destructive"
-                  className="gap-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Déconnexion
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
