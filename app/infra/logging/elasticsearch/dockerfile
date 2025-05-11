@@ -1,0 +1,4 @@
+FROM elastic/elasticsearch:8.18.0
+
+
+ENTRYPOINT ["/entrypoint-wrapper.sh"]

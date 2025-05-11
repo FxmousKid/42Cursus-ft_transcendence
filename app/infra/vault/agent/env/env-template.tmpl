@@ -1,7 +1,10 @@
+# Elasticsearch creds
+ELASTIC_USER={{ with secret "kv/data/elk/elasticsearch" }}{{ .Data.data.username }}{{ end }}
 ELASTIC_USERNAME={{ with secret "kv/data/elk/elasticsearch" }}{{ .Data.data.username }}{{ end }}
 ELASTIC_PASSWORD={{ with secret "kv/data/elk/elasticsearch" }}{{ .Data.data.password }}{{ end }}
-LOGSTASH_USERNAME={{ with secret "kv/data/elk/logstash" }}{{ .Data.data.username }}{{ end }}
-LOGSTASH_PASSWORD={{ with secret "kv/data/elk/logstash" }}{{ .Data.data.password }}{{ end }}
+
+# Kibana creds
+KIBANA_USER={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.username }}{{ end }}
 KIBANA_USERNAME={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.username }}{{ end }}
 KIBANA_PASSWORD={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.password }}{{ end }}
 
@@ -42,7 +45,7 @@ API_PREFIX="/api"
 SWAGGER_PATH="/docs" 
 
 # Version of Elastic products
-STACK_VERSION=8.7.1
+STACK_VERSION=8.18.0
 
 # Set the cluster name for elasticsearch
 CLUSTER_NAME=docker-cluster
@@ -57,12 +60,11 @@ ES_PORT=9200
 # Port to expose Kibana to the host
 KIBANA_PORT=5601
 
-# Increase or decrease based on the available host memory (in bytes)
-ES_MEM_LIMIT=1073741824
-KB_MEM_LIMIT=1073741824
-LS_MEM_LIMIT=1073741824
-
-# SAMPLE Predefined Key only to be used in POC environments
+## SAMPLE Predefined Key only to be used in POC environments
 ENCRYPTION_KEY=c34d38b3a14956121ff2170e5030b471551370178f43e5626eec58b04a30fae2
 
-# Swagger
+ELASTICSEARCH_PASSWORD=$KIBANA_PASSWORD
+XPACK_SECURITY_ENCRYPTIONKEY=$ENCRYPTION_KEY
+XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=$ENCRYPTION_KEY
+XPACK_REPORTING_ENCRYPTIONKEY=$ENCRYPTION_KEY
+ 
