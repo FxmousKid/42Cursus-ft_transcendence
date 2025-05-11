@@ -14,7 +14,11 @@ services:
     networks:
       - transcendence-network
     depends_on:
-      - backend
+      kibana:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
 
   backend:
     build:
@@ -22,8 +26,11 @@ services:
       dockerfile: ./docker/dockerfile
     container_name: backend
     depends_on:
-      es01:
+      # filebeat:
+        # condition: service_healthy
+      kibana:
         condition: service_healthy
+
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -34,3 +41,12 @@ services:
       - ../infra/vault/agent/env/:/app/env:rw
     env_file:
       - ../infra/vault/agent/env/.env
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -X GET 'http://localhost:3001'"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 50

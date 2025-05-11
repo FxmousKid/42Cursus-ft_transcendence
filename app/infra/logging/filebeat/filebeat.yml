@@ -1,0 +1,58 @@
+filebeat.inputs:
+- type: filestream
+  id: default-filestream
+  paths:
+    - /var/log/*.log
+
+- type: container
+  paths:
+    - /var/lib/docker/containers/*/*.log
+
+processors:
+  - add_docker_metadata:
+      host: "unix:///var/run/docker.sock"
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+
+  - decode_json_fields:
+      fields: ["message"]
+      target: "json"
+      overwrite_keys: true
+
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: true
+
+setup.kibana:
+  hosts: ["https://kibana:5601"]
+  username: ${ELASTIC_USER}
+  password: ${ELASTIC_PASSWORD}
+  ssl.certificate_authorities: "certs/ca/ca.crt"
+  ssl.verification_mode: certificate
+
+output.elasticsearch:
+  hosts: ["https://es01:9200"]
+  username: ${ELASTIC_USER}
+  password: ${ELASTIC_PASSWORD}
+  ssl.enabled: true
+  ssl.certificate_authorities: ["certs/ca/ca.crt"]
+  indices:
+    - index: "filebeat-logging-%{[container.name]}-%{[agent.version]}-%{+yyyy.MM.dd}"
+      when.or:
+        - equals:
+          container.image.name: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+        - equals:
+          container.image.name: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+        - equals:
+          container.image.name: docker.elastic.co/beats/filebeat:${STACK_VERSION}
+
+    - index: "filebeat-vault-%{[container.name]}-%{[agent.version]}-%{+yyyy.MM.dd}"
+      when.or:
+        - equals:
+          container.image.name: vault:latest
+
+    - index: "filebeat-core-%{[container.name]}-%{[agent.version]}-%{+yyyy.MM.dd}"
+
+logging.json: true
+logging.metrics.enabled: false

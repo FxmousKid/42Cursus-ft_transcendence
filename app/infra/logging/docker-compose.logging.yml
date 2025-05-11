@@ -63,7 +63,7 @@ services:
   es01:
     depends_on:
       setup:
-        condition: service_healthy
+        condition: service_started
     image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
     container_name: logging-es01
     labels:
@@ -122,6 +122,7 @@ services:
     ports:
       - ${KIBANA_PORT}:5601
     environment:
+      - TZ=Europe/Paris
       - SERVER_NAME=kibana
       - ELASTICSEARCH_HOSTS=https://es01:9200
       - ELASTICSEARCH_USERNAME=kibana_system
@@ -135,6 +136,7 @@ services:
       - "XPACK_ML_ENABLED=false"
       - "XPACK_REPORTING_ENABLED=false"
       - "XPACK_SECURITY_SECURECOOKIES=false"
+
     volumes:
       - kibanadata:/usr/share/kibana/data
       - certs:/usr/share/kibana/config/certs
@@ -154,7 +156,43 @@ services:
       es01:
         condition: service_healthy
 
-      
+  filebeat:
+    container_name: logging-filebeat
+    image: docker.elastic.co/beats/filebeat:8.18.0
+    user: root  # Required to access logs
+    volumes:
+      - certs:/usr/share/filebeat/certs
+      - filebeatdata01:/usr/share/filebeat/data
+      - "./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+      - "/var/lib/docker:/var/lib/docker:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "../vault/agent/env/:/usr/share/filebeat/env:ro"
+    environment:
+      - TZ=Europe/Paris
+      - ELASTIC_USER=${ELASTIC_USER}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_HOSTS=https://es01:9200
+      - KIBANA_HOSTS=http://kibana:5601
+    networks:
+      - transcendence-network
+    depends_on:
+      es01:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    command: >
+      bash -c '
+        while [ ! -f /usr/share/filebeat/env/.env ]; do
+          echo "Waiting for env file to be created";
+          sleep 3;
+        done;
+        if [ -f /usr/share/filebeat/env/.env ]; then
+          set -o allexport;
+          source /usr/share/filebeat/env/.env;
+          set +o allexport;
+        fi;
+        filebeat -e --strict.perms=false
+      '
      
 
 volumes:
