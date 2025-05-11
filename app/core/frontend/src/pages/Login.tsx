@@ -66,6 +66,7 @@ const Login = () => {
           description: "Account created successfully. Please log in.",
         });
         
+        // Réinitialiser le formulaire et passer à l'onglet login
         resetForm();
         setActiveTab("login");
       } else {
@@ -132,7 +133,12 @@ const Login = () => {
       {/* Logo at top - centered */}
       <div className="absolute top-0 left-0 w-full p-5 flex justify-center items-center">
         <div className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary via-secondary to-accent" />
+          <div className="relative">
+            <div className="h-10 w-10 rounded-full bg-primary/80 absolute inset-0 logo-glow"></div>
+            <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary via-secondary to-accent relative z-10 logo-breathe">
+              <div className="logo-inner-light"></div>
+            </div>
+          </div>
           <div className="flex flex-col">
             <span className="text-xl font-bold text-white">42-Transcendence</span>
           </div>
@@ -143,12 +149,15 @@ const Login = () => {
       <div className="w-full max-w-md z-10">
         <Card className="border-2 border-[#0b2046]/50 bg-[#0b2046]/30 backdrop-blur-md shadow-xl overflow-hidden rounded-xl">
           <CardHeader className="space-y-6 flex flex-col items-center pt-8 pb-3">
-            <div className="bg-[#0b2046]/30 p-2 rounded-full w-fit">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-[#0056d3] via-[#0056d3] to-[#0056d3]" />
+            <div className="bg-[#0b2046]/30 p-2 rounded-full w-fit relative">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-[#0056d3] via-[#0056d3] to-[#0056d3] relative z-10 logo-breathe">
+                <div className="logo-inner-light"></div>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-[#0056d3]/80 absolute inset-0 logo-glow"></div>
             </div>
             
             {/* Cute rounded toggle for Sign In/Sign Up */}
-            <Tabs defaultValue="login" onValueChange={setActiveTab} className="w-full">
+            <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full max-w-[250px] grid-cols-2 mx-auto rounded-full p-1 bg-[#0b2046]/20 border border-[#0b2046]/30">
                 <TabsTrigger 
                   value="login" 
