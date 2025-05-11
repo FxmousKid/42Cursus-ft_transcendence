@@ -456,13 +456,6 @@ const FriendsGamePage = () => {
           </div>
         </div>
       </main>
-      
-      {/* Footer */}
-      <footer className="bg-[#0b2046]/80 backdrop-blur-sm py-6 px-4 border-t border-white/10">
-        <div className="max-w-6xl mx-auto text-center">
-          <span className="text-sm text-gray-300">© {new Date().getFullYear()} Transcendence. All rights reserved.</span>
-        </div>
-      </footer>
     </div>
   );
 };

@@ -182,21 +182,6 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-
-      {/* Footer - Simple but elegant */}
-      <footer className="py-10 mt-auto border-t border-border/10">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-primary to-secondary" />
-              <span className="text-2xl font-bold">PONG TRANSCENDENCE</span>
-            </div>
-            <div className="text-muted-foreground">
-              © {new Date().getFullYear()} Pong Transcendence. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

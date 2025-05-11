@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import HomePage from '@/pages/HomePage';
 import GameModePage from '@/pages/GameModePage';
 import LocalGamePage from '@/pages/LocalGamePage';
@@ -20,10 +21,11 @@ const AppContent = () => {
   const isHomePage = location.pathname === '/';
 
   return (
-    <div className="min-h-screen bg-background text-foreground antialiased">
+    <div className="min-h-screen bg-background text-foreground antialiased flex flex-col">
       {!isLoginPage && <Navbar />}
       <main 
         className={cn(
+          "flex-1", // Add flex-1 to make main content take available space
           // Only add minimal top padding if we have a navbar (not login page)
           !isLoginPage ? "pt-12" : "",
           // Special handling for home page which already has spacing in its design
@@ -70,6 +72,7 @@ const AppContent = () => {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
+      {!isLoginPage && <Footer />}
       <Toaster />
     </div>
   );

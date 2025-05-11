@@ -41,13 +41,6 @@ const GamePage = () => {
           </div>
         </div>
       </section>
-      
-      {/* Footer */}
-      <footer className="bg-card/40 backdrop-blur-sm py-6 px-4 border-t border-border">
-        <div className="max-w-6xl mx-auto text-center">
-          <span className="text-sm text-muted-foreground">© {new Date().getFullYear()} Pong Arcade. All rights reserved.</span>
-        </div>
-      </footer>
     </div>
   );
 };

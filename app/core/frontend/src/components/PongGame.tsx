@@ -284,11 +284,6 @@ const PongGame: React.FC<PongGameProps> = ({
           GIVE UP
         </Button>
       </div>
-      
-      {/* Footer */}
-      <div className="text-center mt-8 text-sm text-gray-400">
-        © Transcendence 2025
-      </div>
     </div>
   );
 };
