@@ -33,7 +33,7 @@ interface FriendRequest {
 
 const ProfilePage = () => {
   // Auth context
-  const { user: authUser } = useAuth();
+  const { user: authUser, logout } = useAuth();
   
   // State
   const [profile, setProfile] = useState<UserProfileData | null>(null);
@@ -277,7 +277,38 @@ const ProfilePage = () => {
 
   const handleLogout = () => {
     // Implement logout functionality
+    logout();
     console.log("Logout");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.")) {
+      try {
+        // This will need to be implemented on the backend
+        const res = await api.user.deleteAccount();
+        
+        if (res.error) {
+          throw new Error(res.error);
+        }
+        
+        toast({
+          title: "Compte supprimé",
+          description: "Votre compte a été supprimé avec succès",
+        });
+        
+        // Logout the user after account deletion
+        logout();
+        
+        // Redirect to homepage
+        window.location.href = "/";
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: error instanceof Error ? error.message : "Une erreur est survenue lors de la suppression du compte",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   // Loading state
@@ -319,6 +350,7 @@ const ProfilePage = () => {
             profile={profile}
             onSaveProfile={handleSaveProfile}
             onLogout={handleLogout}
+            onDeleteAccount={handleDeleteAccount}
           />
         );
       default:

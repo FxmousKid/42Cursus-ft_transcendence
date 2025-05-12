@@ -20,16 +20,13 @@ const initialFormData: FormData = {
   password: ""
 };
 
-// Détection de l'environnement de développement
-const isDevelopmentEnv = import.meta.env.DEV || import.meta.env.MODE === 'development';
-
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("login");
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, register, toggleDevMode, isDevMode } = useAuth();
+  const { login, register } = useAuth();
   const { toast } = useToast();
   
   // Get the 'from' location from router state or default to home page
@@ -78,7 +75,13 @@ const Login = () => {
         const result = await login(formData.email, formData.password);
         
         if (result && result.error) {
-          throw new Error(result.error);
+          // Ensure consistent error message formatting
+          if (result.error.includes('Invalid email or password') || 
+              result.error.includes('Invalid token')) {
+            throw new Error('Invalid email or password');
+          } else {
+            throw new Error(result.error);
+          }
         }
 
         toast({
@@ -90,10 +93,12 @@ const Login = () => {
         navigate(from);
       }
     } catch (error) {
-      console.error("Form submission error:", error);
+      // Afficher seulement le message d'erreur sans la trace complète
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong";
+      
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Something went wrong",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -106,20 +111,6 @@ const Login = () => {
       title: "Info",
       description: `${provider} login not implemented yet`,
     });
-  };
-
-  const handleDevModeToggle = () => {
-    toggleDevMode();
-    
-    if (!isDevMode) { // Vérifie l'état actuel avant le basculement
-      toast({
-        title: "Mode Développeur Activé",
-        description: "Vous êtes maintenant automatiquement connecté en mode développement.",
-      });
-      
-      // Redirection vers la page d'accueil après activation du mode dev
-      navigate(from);
-    }
   };
   
   return (
@@ -305,19 +296,6 @@ const Login = () => {
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Home
       </Button>
-      
-      {/* Dev Mode Toggle Button - affichage conditionnel selon l'environnement */}
-      {isDevelopmentEnv && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`absolute bottom-4 right-4 opacity-30 hover:opacity-100 transition-opacity ${isDevMode ? 'bg-amber-700/30 text-amber-400' : 'text-gray-500'}`}
-          onClick={handleDevModeToggle}
-        >
-          <Terminal className="w-4 h-4 mr-1" />
-          {isDevMode ? "Dev Mode ON" : "Dev Mode"}
-        </Button>
-      )}
     </div>
   );
 };

@@ -1,7 +1,8 @@
-import { Controller, Get, Param, Patch, Body, UseGuards, Request, HttpException, HttpStatus, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Body, UseGuards, Request, HttpException, HttpStatus, ParseIntPipe, Delete, Put } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from './user.model';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UserController {
@@ -62,6 +63,39 @@ export class UserController {
     try {
       const user = await this.userService.updateStatus(req.user.userId, status);
       return { success: true, data: user };
+    } catch (error) {
+      throw new HttpException(
+        { success: false, message: error.message },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
+  // Mettre à jour le profil de l'utilisateur actuel
+  @UseGuards(JwtAuthGuard)
+  @Put('profile')
+  async updateUserProfile(
+    @Request() req,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<{ success: boolean; data: User }> {
+    try {
+      const user = await this.userService.updateProfile(req.user.userId, updateUserDto);
+      return { success: true, data: user };
+    } catch (error) {
+      throw new HttpException(
+        { success: false, message: error.message },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
+  // Supprimer le compte de l'utilisateur actuel
+  @UseGuards(JwtAuthGuard)
+  @Delete('profile')
+  async deleteUserAccount(@Request() req): Promise<{ success: boolean; message: string }> {
+    try {
+      await this.userService.deleteUser(req.user.userId);
+      return { success: true, message: 'Account deleted successfully' };
     } catch (error) {
       throw new HttpException(
         { success: false, message: error.message },

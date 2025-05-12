@@ -164,12 +164,18 @@ class ApiService {
       
       console.log(`[API] Response status: ${response.status} ${response.statusText}`);
       
-      // Handle authentication errors specifically
+      // Handle authentication errors specifically - with minimal logging
+      let authError = false;
       if (response.status === 401) {
-        console.error('[API] Authentication failed - clearing credentials');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        throw new Error('Invalid token');
+        // For login endpoint, just flag the error without detailed logging
+        if (endpoint === '/auth/login') {
+          authError = true;
+        } else {
+          // For other endpoints, clear credentials and log the issue
+          console.error('[API] Authentication failed - clearing credentials');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
       }
       
       // Traiter différents types de réponses
@@ -193,6 +199,15 @@ class ApiService {
 
       if (!response.ok) {
         const message = data?.message || `Error ${response.status}: ${response.statusText}`;
+        
+        // For login auth errors, don't log the full error stack
+        if (authError && endpoint === '/auth/login') {
+          // Throw the error but don't log the stack trace
+          const error = new Error(message);
+          error.name = 'AuthError'; // Custom error type to identify auth errors
+          throw error;
+        }
+        
         throw new Error(message);
       }
 
@@ -290,6 +305,13 @@ class ApiService {
       this.request<User>('/users/status', {
         method: 'PATCH',
         body: JSON.stringify({ status }),
+      }),
+      
+    // Delete user account
+    deleteAccount: () =>
+      this.request<{ success: boolean }>('/users/profile', {
+        method: 'DELETE',
+        body: JSON.stringify({}),
       }),
   };
 

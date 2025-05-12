@@ -2,7 +2,7 @@
 
 ## Web
 - [X] - Major module: Use a framework to build the backend - NestJS + Fastify
-- [X] - Minor module: Use a framework or a toolkit to build the frontend - React Typescript / Tailwind
+- [ ] - Minor module: Use a framework or a toolkit to build the frontend - React Typescript / Tailwind
 - [X] - Minor module: Use a database for the backend - SQLite
 - [TODO] - Major module: Store the score of a tournament in the Blockchain - Avalanche / Solidity - @John
 
@@ -45,6 +45,6 @@
 - [ ] - Major module: Replace basic Pong with server-side Pong and implement an API
 - [ ] - Major module: Enabling Pong gameplay via CLI against web users with API integration
 
-# TOTAL POINTS = 4.5 | 5 MINORS + 2 MAJORS
+# TOTAL POINTS = 4 | 4 MINORS + 2 MAJORS
 # 100% --> 7 points
 # 125% --> 9.5 points

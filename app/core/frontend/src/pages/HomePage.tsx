@@ -57,7 +57,7 @@ const HomePage = () => {
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-foreground tracking-tight leading-tight">
               Welcome to{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-                Pong Transcendence
+                ft_transcendence
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
