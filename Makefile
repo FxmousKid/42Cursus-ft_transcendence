@@ -8,6 +8,7 @@ all: build up
 
 # Build all services
 build:
+	# Generating self signed certs
 	if [ ! -f ./app/core/modsec-nginx/certs/server.crt ]; then \
 		echo "Generating self-signed certificates..."; \
 		mkdir -p ./app/core/modsec-nginx/certs; \
@@ -17,6 +18,12 @@ build:
 			-subj "/C=FR/ST=France/L=Paris/O=42/OU=42/CN=localhost" \
 		> /dev/null 2>&1; \
 	fi
+
+	# Creating some files
+	mkdir -p ./app/core/modsec-nginx/logs/nginx
+	touch ./app/core/modsec-nginx/logs/modsec_audit.log
+	touch ./app/core/modsec-nginx/logs/modsec_erorr.log
+
 	$(DOCC) -f $(MAIN_COMPOSE) build
 
 
