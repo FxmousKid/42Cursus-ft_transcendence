@@ -15,6 +15,15 @@
 **/vault/server/file/*
 **/vault/agent/file/*
 
+# nginx certificates
+**/modsec-nginx/certs/*
+**/modsec-nginx/certs/.gitkeep
+
+# nginx logs
+**/modsec-nginx/logs/nginx/*
+**/modsec-nginx/logs/nginx/.gitkeep
+
+
 # Environment files
 app/infra/vault/agent/env/.env
 

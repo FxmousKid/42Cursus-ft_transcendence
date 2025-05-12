@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - "5173:5173"
     volumes:
       - ./frontend:/app
       - ../infra/vault/agent/env/:/app/env:rw
@@ -16,9 +16,8 @@ services:
     depends_on:
       kibana:
         condition: service_healthy
-      backend:
+      modsec-nginx:
         condition: service_healthy
-
 
   backend:
     build:
@@ -50,3 +49,39 @@ services:
       interval: 10s
       timeout: 3s
       retries: 50
+
+  modsec-nginx:
+    image: owasp/modsecurity-crs:nginx
+    container_name: modsec-nginx
+    restart: unless-stopped
+    user: root
+    ports:
+      # - "80:80"
+      - "443:8443"
+    networks:
+      - transcendence-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./modsec-nginx/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./modsec-nginx/certs/:/etc/nginx/conf:ro
+      - ./modsec-nginx/logs/:/var/log/:rw
+    environment:
+      - PORT=8080
+      - SSL_PORT=8443
+      - SERVER_NAME=localhost
+      - BACKEND=http://backend:3001
+      - MODSEC_AUDIT_ENGINE=on
+      - MODSEC_AUDIT_LOG=/var/log/modsec_audit.log
+      - LOGLEVEL=warn
+      - ERRORLOG=/var/log/modsec_error.log
+      - BLOCKING_PARANOIA=2
+      - DETECTION_PARANOIA=2
+      - ENFORCE_BODYPROC_URLENCODED=1
+      - ANOMALY_INBOUND=10
+      - ANOMALY_OUTBOUND=5
+      - ALLOWED_METHODS=GET POST PUT
+      - ALLOWED_REQUEST_CONTENT_TYPE=text/xml|application/xml|text/plain|application/json
+      - ALLOWED_REQUEST_CONTENT_TYPE_CHARSET=utf-8|iso-8859-1
+      - ALLOWED_HTTP_VERSIONS=HTTP/1.1 HTTP/2 HTTP/2.0
