@@ -8,6 +8,15 @@ all: build up
 
 # Build all services
 build:
+	if [ ! -f ./app/core/modsec-nginx/certs/server.crt ]; then \
+		echo "Generating self-signed certificates..."; \
+		mkdir -p ./app/core/modsec-nginx/certs; \
+		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+			-keyout ./app/core/modsec-nginx/certs/server.key \
+			-out ./app/core/modsec-nginx/certs/server.crt \
+			-subj "/C=FR/ST=France/L=Paris/O=42/OU=42/CN=localhost" \
+		> /dev/null 2>&1; \
+	fi
 	$(DOCC) -f $(MAIN_COMPOSE) build
 
 

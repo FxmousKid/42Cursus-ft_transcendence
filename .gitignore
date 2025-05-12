@@ -7,13 +7,18 @@
 **/init.txt
 
 
-# Logs
-**/logs/*
-!**/logs/.gitkeep
-
 # vault file storage
 **/vault/server/file/*
 **/vault/agent/file/*
+
+# nginx certificates
+**/modsec-nginx/certs/*
+**/modsec-nginx/certs/.gitkeep
+
+# nginx logs
+**/modsec-nginx/logs/nginx/*
+**/modsec-nginx/logs/nginx/.gitkeep
+
 
 # Environment files
 app/infra/vault/agent/env/.env
@@ -22,7 +27,6 @@ app/infra/vault/agent/env/.env
 
 
 # Logs
-logs
 *.log
 npm-debug.log*
 yarn-debug.log*
