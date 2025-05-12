@@ -38,8 +38,6 @@ services:
     volumes:
       - ./backend/data:/app/data
       - ../infra/vault/agent/env/:/app/env:rw
-    env_file:
-      - ../infra/vault/agent/env/.env
     healthcheck:
       test:
         [
@@ -66,7 +64,7 @@ services:
     volumes:
       - ./modsec-nginx/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ./modsec-nginx/certs/:/etc/nginx/conf:ro
-      - ./modsec-nginx/logs/:/var/log/:rw
+      - ./modsec-nginx/logs/nginx/:/var/log/nginx/:rw
     environment:
       - PORT=8080
       - SSL_PORT=8443
