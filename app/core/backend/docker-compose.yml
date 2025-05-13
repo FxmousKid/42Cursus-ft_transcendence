@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+   backend:
+     build:
+       context: .
+       dockerfile: Dockerfile
+     container_name: transcendence-backend
+     ports:
+       - "3001:3001"
+     volumes:
+       - ./:/app
+       - /app/node_modules
+     environment:
+       - PORT=3001
+       - HOST=0.0.0.0
+       - NODE_ENV=development
+       - JWT_SECRET=your_jwt_secret_key_here
+       - JWT_EXPIRES_IN=24h
+       - DATABASE_PATH=/app/database.sqlite
+     restart: unless-stopped
