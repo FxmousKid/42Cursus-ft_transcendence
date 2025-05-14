@@ -7,7 +7,7 @@ interface FriendshipRequest {
 
 export function registerFriendshipRoutes(fastify: FastifyInstance) {
   // Get all friends
-  fastify.get('/api/friends', {
+  fastify.get('/friendships', {
     schema: {
       response: {
         200: {
@@ -85,7 +85,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
   });
 
   // Send friend request
-  fastify.post<{ Body: FriendshipRequest }>('/api/friends/request', {
+  fastify.post<{ Body: FriendshipRequest }>('/friendships/request', {
     schema: {
       body: {
         type: 'object',
@@ -159,7 +159,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
   });
 
   // Get pending friend requests
-  fastify.get('/api/friends/requests', {
+  fastify.get('/friendships/requests', {
     schema: {
       response: {
         200: {
@@ -220,7 +220,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
   });
 
   // Accept friend request
-  fastify.put<{ Body: FriendshipRequest }>('/api/friends/accept', {
+  fastify.put<{ Body: FriendshipRequest }>('/friendships/accept', {
     schema: {
       body: {
         type: 'object',
@@ -283,7 +283,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
   });
 
   // Reject friend request
-  fastify.put<{ Body: FriendshipRequest }>('/api/friends/reject', {
+  fastify.put<{ Body: FriendshipRequest }>('/friendships/reject', {
     schema: {
       body: {
         type: 'object',
@@ -340,7 +340,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
   });
 
   // Remove friend
-  fastify.delete<{ Params: FriendshipRequest }>('/api/friends/:friend_id', {
+  fastify.delete<{ Params: FriendshipRequest }>('/friendships/:friend_id', {
     schema: {
       params: {
         type: 'object',

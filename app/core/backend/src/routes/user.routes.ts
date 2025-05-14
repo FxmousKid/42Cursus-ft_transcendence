@@ -14,7 +14,7 @@ interface StatusUpdateBody {
 // Define the route handler
 export function registerUserRoutes(fastify: FastifyInstance) {
   // Get all users
-  fastify.get('/api/users', {
+  fastify.get('/users', {
     schema: {
       response: {
         200: {
@@ -53,7 +53,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
   });
 
   // Get online users
-  fastify.get('/api/users/online', {
+  fastify.get('/users/online', {
     schema: {
       response: {
         200: {
@@ -93,7 +93,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
   });
 
   // Get user profile
-  fastify.get('/api/users/profile', {
+  fastify.get('/users/profile', {
     schema: {
       response: {
         200: {
@@ -134,7 +134,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
   });
 
   // Update user status
-  fastify.patch<{ Body: StatusUpdateBody }>('/api/users/status', {
+  fastify.patch<{ Body: StatusUpdateBody }>('/users/status', {
     schema: {
       body: {
         type: 'object',
@@ -189,7 +189,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
   });
 
   // Update user profile
-  fastify.put<{ Body: UserUpdateBody }>('/api/users/profile', {
+  fastify.put<{ Body: UserUpdateBody }>('/users/profile', {
     schema: {
       body: {
         type: 'object',
@@ -244,7 +244,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
   });
 
   // Delete user account
-  fastify.delete('/api/users/profile', {
+  fastify.delete('/users/profile', {
     schema: {
       response: {
         200: {

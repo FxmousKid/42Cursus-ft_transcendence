@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { Match } from '../models/match.model';
 
 interface CreateMatchBody {
   player2_id: number;
@@ -16,8 +17,8 @@ interface MatchParams {
 }
 
 export function registerMatchRoutes(fastify: FastifyInstance) {
-  // Get all matches for the authenticated user
-  fastify.get('/api/matches', {
+  // Get all matches
+  fastify.get('/matches', {
     schema: {
       response: {
         200: {
@@ -30,29 +31,13 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
                 type: 'object',
                 properties: {
                   id: { type: 'number' },
-                  player1_id: { type: 'number' },
-                  player2_id: { type: 'number' },
-                  player1_score: { type: 'number' },
-                  player2_score: { type: 'number' },
-                  winner_id: { type: ['number', 'null'] },
+                  user1_id: { type: 'number' },
+                  user2_id: { type: 'number' },
+                  user1_score: { type: 'number' },
+                  user2_score: { type: 'number' },
                   status: { type: 'string' },
-                  match_date: { type: 'string', format: 'date-time' },
-                  player1: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'number' },
-                      username: { type: 'string' },
-                      avatar_url: { type: ['string', 'null'] }
-                    }
-                  },
-                  player2: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'number' },
-                      username: { type: 'string' },
-                      avatar_url: { type: ['string', 'null'] }
-                    }
-                  }
+                  created_at: { type: 'string' },
+                  updated_at: { type: 'string' },
                 }
               }
             }
@@ -63,32 +48,9 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
     preHandler: fastify.authenticate,
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const { Match, User } = fastify.db.models;
-        const userId = request.user.id;
-        
-        // Find all matches where the user is a player
-        const matches = await Match.findAll({
-          where: {
-            [fastify.db.sequelize.Op.or]: [
-              { player1_id: userId },
-              { player2_id: userId }
-            ]
-          },
-          include: [
-            {
-              model: User,
-              as: 'player1',
-              attributes: ['id', 'username', 'avatar_url']
-            },
-            {
-              model: User,
-              as: 'player2',
-              attributes: ['id', 'username', 'avatar_url']
-            }
-          ],
-          order: [['match_date', 'DESC']]
+        const matches = await fastify.db.models.Match.findAll({
+          order: [['created_at', 'DESC']]
         });
-        
         return { success: true, data: matches };
       } catch (error) {
         fastify.log.error(error);
@@ -97,14 +59,124 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Get user matches
+  fastify.get('/matches/user', {
+    schema: {
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  user1_id: { type: 'number' },
+                  user2_id: { type: 'number' },
+                  user1_score: { type: 'number' },
+                  user2_score: { type: 'number' },
+                  status: { type: 'string' },
+                  created_at: { type: 'string' },
+                  updated_at: { type: 'string' },
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    preHandler: fastify.authenticate,
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const userId = request.user.id;
+        const matches = await fastify.db.models.Match.findAll({
+          where: {
+            [fastify.db.Sequelize.Op.or]: [
+              { user1_id: userId },
+              { user2_id: userId }
+            ]
+          },
+          order: [['created_at', 'DESC']]
+        });
+        return { success: true, data: matches };
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(400).send({ success: false, message: error.message });
+      }
+    }
+  });
+
+  // Get match by ID
+  fastify.get('/matches/:id', {
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: { type: 'number' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                user1_id: { type: 'number' },
+                user2_id: { type: 'number' },
+                user1_score: { type: 'number' },
+                user2_score: { type: 'number' },
+                status: { type: 'string' },
+                created_at: { type: 'string' },
+                updated_at: { type: 'string' },
+              }
+            }
+          }
+        }
+      }
+    },
+    preHandler: fastify.authenticate,
+    handler: async (request: FastifyRequest<{ Params: { id: number } }>, reply: FastifyReply) => {
+      try {
+        const match = await fastify.db.models.Match.findByPk(request.params.id);
+        
+        if (!match) {
+          return reply.status(404).send({ success: false, message: 'Match not found' });
+        }
+        
+        return { success: true, data: match };
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(400).send({ success: false, message: error.message });
+      }
+    }
+  });
+
   // Create a new match
-  fastify.post<{ Body: CreateMatchBody }>('/api/matches', {
+  fastify.post<{
+    Body: {
+      user1_id: number;
+      user2_id: number;
+      user1_score?: number;
+      user2_score?: number;
+      status?: string;
+    }
+  }>('/matches', {
     schema: {
       body: {
         type: 'object',
-        required: ['player2_id'],
+        required: ['user1_id', 'user2_id'],
         properties: {
-          player2_id: { type: 'number' }
+          user1_id: { type: 'number' },
+          user2_id: { type: 'number' },
+          user1_score: { type: 'number', default: 0 },
+          user2_score: { type: 'number', default: 0 },
+          status: { type: 'string', default: 'ongoing' }
         }
       },
       response: {
@@ -116,12 +188,13 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 id: { type: 'number' },
-                player1_id: { type: 'number' },
-                player2_id: { type: 'number' },
-                player1_score: { type: 'number' },
-                player2_score: { type: 'number' },
+                user1_id: { type: 'number' },
+                user2_id: { type: 'number' },
+                user1_score: { type: 'number' },
+                user2_score: { type: 'number' },
                 status: { type: 'string' },
-                match_date: { type: 'string', format: 'date-time' }
+                created_at: { type: 'string' },
+                updated_at: { type: 'string' },
               }
             }
           }
@@ -129,30 +202,28 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
       }
     },
     preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Body: CreateMatchBody }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{
+      Body: {
+        user1_id: number;
+        user2_id: number;
+        user1_score?: number;
+        user2_score?: number;
+        status?: string;
+      }
+    }>, reply: FastifyReply) => {
       try {
-        const { Match } = fastify.db.models;
-        const userId = request.user.id;
-        const { player2_id } = request.body;
+        // Set default values for optional fields
+        const matchData = {
+          user1_id: request.body.user1_id,
+          user2_id: request.body.user2_id,
+          user1_score: request.body.user1_score || 0,
+          user2_score: request.body.user2_score || 0,
+          status: request.body.status || 'ongoing'
+        };
         
-        if (userId === player2_id) {
-          return reply.status(400).send({ 
-            success: false, 
-            message: 'You cannot create a match against yourself' 
-          });
-        }
+        const match = await fastify.db.models.Match.create(matchData);
         
-        // Create new match
-        const newMatch = await Match.create({
-          player1_id: userId,
-          player2_id,
-          player1_score: 0,
-          player2_score: 0,
-          status: 'scheduled',
-          match_date: new Date()
-        });
-        
-        return reply.status(201).send({ success: true, data: newMatch });
+        return reply.status(201).send({ success: true, data: match });
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });
@@ -160,105 +231,29 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Get match details
-  fastify.get<{ Params: MatchParams }>('/api/matches/:match_id', {
-    schema: {
-      params: {
-        type: 'object',
-        required: ['match_id'],
-        properties: {
-          match_id: { type: 'number' }
-        }
-      },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                id: { type: 'number' },
-                player1_id: { type: 'number' },
-                player2_id: { type: 'number' },
-                player1_score: { type: 'number' },
-                player2_score: { type: 'number' },
-                winner_id: { type: ['number', 'null'] },
-                status: { type: 'string' },
-                match_date: { type: 'string', format: 'date-time' },
-                player1: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    username: { type: 'string' },
-                    avatar_url: { type: ['string', 'null'] }
-                  }
-                },
-                player2: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'number' },
-                    username: { type: 'string' },
-                    avatar_url: { type: ['string', 'null'] }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Params: MatchParams }>, reply: FastifyReply) => {
-      try {
-        const { Match, User } = fastify.db.models;
-        const { match_id } = request.params;
-        
-        // Find the match with related users
-        const match = await Match.findByPk(match_id, {
-          include: [
-            {
-              model: User,
-              as: 'player1',
-              attributes: ['id', 'username', 'avatar_url']
-            },
-            {
-              model: User,
-              as: 'player2',
-              attributes: ['id', 'username', 'avatar_url']
-            }
-          ]
-        });
-        
-        if (!match) {
-          return reply.status(404).send({ success: false, message: 'Match not found' });
-        }
-        
-        return { success: true, data: match };
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(400).send({ success: false, message: error.message });
-      }
+  // Update a match
+  fastify.put<{
+    Params: { id: number };
+    Body: {
+      user1_score?: number;
+      user2_score?: number;
+      status?: string;
     }
-  });
-
-  // Update match details
-  fastify.put<{ Params: MatchParams, Body: UpdateMatchBody }>('/api/matches/:match_id', {
+  }>('/matches/:id', {
     schema: {
       params: {
         type: 'object',
-        required: ['match_id'],
+        required: ['id'],
         properties: {
-          match_id: { type: 'number' }
+          id: { type: 'number' }
         }
       },
       body: {
         type: 'object',
         properties: {
-          player1_score: { type: 'number' },
-          player2_score: { type: 'number' },
-          winner_id: { type: 'number' },
-          status: { type: 'string', enum: ['scheduled', 'in_progress', 'completed', 'cancelled'] }
+          user1_score: { type: 'number' },
+          user2_score: { type: 'number' },
+          status: { type: 'string', enum: ['ongoing', 'completed', 'cancelled'] }
         }
       },
       response: {
@@ -270,12 +265,13 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 id: { type: 'number' },
-                player1_id: { type: 'number' },
-                player2_id: { type: 'number' },
-                player1_score: { type: 'number' },
-                player2_score: { type: 'number' },
-                winner_id: { type: ['number', 'null'] },
-                status: { type: 'string' }
+                user1_id: { type: 'number' },
+                user2_id: { type: 'number' },
+                user1_score: { type: 'number' },
+                user2_score: { type: 'number' },
+                status: { type: 'string' },
+                created_at: { type: 'string' },
+                updated_at: { type: 'string' },
               }
             }
           }
@@ -283,42 +279,28 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
       }
     },
     preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Params: MatchParams, Body: UpdateMatchBody }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{
+      Params: { id: number };
+      Body: {
+        user1_score?: number;
+        user2_score?: number;
+        status?: string;
+      }
+    }>, reply: FastifyReply) => {
       try {
-        const { Match } = fastify.db.models;
-        const userId = request.user.id;
-        const { match_id } = request.params;
+        const { id } = request.params;
         const updateData = request.body;
         
-        // Find the match
-        const match = await Match.findByPk(match_id);
+        const match = await fastify.db.models.Match.findByPk(id);
         
         if (!match) {
           return reply.status(404).send({ success: false, message: 'Match not found' });
         }
         
-        // Verify user is a participant in the match
-        if (match.player1_id !== userId && match.player2_id !== userId) {
-          return reply.status(403).send({ 
-            success: false, 
-            message: 'You are not authorized to update this match' 
-          });
-        }
-        
-        // Update match fields
-        if (updateData.player1_score !== undefined) match.player1_score = updateData.player1_score;
-        if (updateData.player2_score !== undefined) match.player2_score = updateData.player2_score;
-        if (updateData.winner_id !== undefined) {
-          // Validate winner is a participant
-          if (updateData.winner_id !== match.player1_id && updateData.winner_id !== match.player2_id) {
-            return reply.status(400).send({ 
-              success: false, 
-              message: 'Winner must be a participant in the match' 
-            });
-          }
-          match.winner_id = updateData.winner_id;
-        }
-        if (updateData.status !== undefined) match.status = updateData.status;
+        // Update only provided fields
+        if (updateData.user1_score !== undefined) match.user1_score = updateData.user1_score;
+        if (updateData.user2_score !== undefined) match.user2_score = updateData.user2_score;
+        if (updateData.status) match.status = updateData.status;
         
         await match.save();
         
@@ -330,14 +312,14 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Cancel a match
-  fastify.delete<{ Params: MatchParams }>('/api/matches/:match_id', {
+  // Delete a match
+  fastify.delete('/matches/:id', {
     schema: {
       params: {
         type: 'object',
-        required: ['match_id'],
+        required: ['id'],
         properties: {
-          match_id: { type: 'number' }
+          id: { type: 'number' }
         }
       },
       response: {
@@ -351,43 +333,18 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
       }
     },
     preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Params: MatchParams }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Params: { id: number } }>, reply: FastifyReply) => {
       try {
-        const { Match } = fastify.db.models;
-        const userId = request.user.id;
-        const { match_id } = request.params;
-        
-        // Find the match
-        const match = await Match.findByPk(match_id);
+        const { id } = request.params;
+        const match = await fastify.db.models.Match.findByPk(id);
         
         if (!match) {
           return reply.status(404).send({ success: false, message: 'Match not found' });
         }
         
-        // Verify user is a participant in the match
-        if (match.player1_id !== userId && match.player2_id !== userId) {
-          return reply.status(403).send({ 
-            success: false, 
-            message: 'You are not authorized to cancel this match' 
-          });
-        }
+        await match.destroy();
         
-        // Check if match can be cancelled
-        if (match.status === 'completed') {
-          return reply.status(400).send({ 
-            success: false, 
-            message: 'Completed matches cannot be cancelled' 
-          });
-        }
-        
-        // Update match status to cancelled
-        match.status = 'cancelled';
-        await match.save();
-        
-        return { 
-          success: true, 
-          message: 'Match cancelled successfully' 
-        };
+        return { success: true, message: 'Match deleted successfully' };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });

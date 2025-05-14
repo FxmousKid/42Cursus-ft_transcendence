@@ -14,7 +14,7 @@ interface RegisterBody {
 
 export function registerAuthRoutes(fastify: FastifyInstance) {
   // User registration
-  fastify.post<{ Body: RegisterBody }>('/api/auth/register', {
+  fastify.post<{ Body: RegisterBody }>('/auth/register', {
     schema: {
       body: {
         type: 'object',
@@ -100,7 +100,7 @@ export function registerAuthRoutes(fastify: FastifyInstance) {
   });
 
   // User login
-  fastify.post<{ Body: LoginBody }>('/api/auth/login', {
+  fastify.post<{ Body: LoginBody }>('/auth/login', {
     schema: {
       body: {
         type: 'object',
@@ -185,7 +185,7 @@ export function registerAuthRoutes(fastify: FastifyInstance) {
   });
 
   // Logout
-  fastify.post('/api/auth/logout', {
+  fastify.post('/auth/logout', {
     schema: {
       response: {
         200: {

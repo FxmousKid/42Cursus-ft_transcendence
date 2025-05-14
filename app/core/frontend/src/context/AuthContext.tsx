@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '../services/api';
+import type { AuthResponse } from '../services/api';
 
 interface User {
   id?: number;
@@ -103,19 +104,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.data) {
         console.log("Login successful, data structure:", JSON.stringify(result.data, null, 2));
         
+        // Cast the result data to our expected type with token
+        const authData = result.data as unknown as AuthResponse;
+        
         // Store user data in state and localStorage
         const userData = {
-          id: result.data.id,
-          username: result.data.username,
-          email: result.data.email,
-          token: result.data.access_token
+          id: authData.id,
+          username: authData.username,
+          email: authData.email,
+          token: authData.token
         };
         
         setUser(userData);
         
-        if (result.data.access_token) {
-          localStorage.setItem('token', result.data.access_token);
-          console.log("Token stored in localStorage:", result.data.access_token.substring(0, 20) + "...");
+        if (authData.token) {
+          localStorage.setItem('token', authData.token);
+          console.log("Token stored in localStorage:", authData.token.substring(0, 20) + "...");
           
           // Validate token structure
           const isTokenValid = api.checkToken();
@@ -127,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem('user', JSON.stringify(userData));
           return {};
         } else {
-          console.error("No access_token found in response data");
+          console.error("No token found in response data");
           console.log("Full response data:", result.data);
           return { error: 'Login failed: No token received' };
         }

@@ -12,7 +12,7 @@ export interface AuthResponse {
   id: number;
   username: string;
   email: string;
-  access_token: string;
+  token: string;
 }
 
 export interface RegisterData {
@@ -215,14 +215,14 @@ class ApiService {
       console.log("Raw API response data:", data);
       
       if (data?.success === true) {
-        // Backend returns { success: true, ...userData, access_token }
-        if (data?.access_token) {
+        // Backend returns { success: true, ...userData, token }
+        if (data?.token) {
           // This is a login response with directly embedded user data and token
-          console.log("Found access_token in response, returning full data object:", data);
+          console.log("Found token in response, returning full data object:", data);
           
           // Ensure the token is properly structured
           try {
-            const tokenParts = data.access_token.split('.');
+            const tokenParts = data.token.split('.');
             if (tokenParts.length !== 3) {
               console.error("[API] Warning: JWT token format is invalid");
             } else {
@@ -238,7 +238,7 @@ class ApiService {
           console.log("Found user object in response:", data.user);
           return { data: data.user as T };
         } else if (data?.data) {
-          // Response with data field
+          // Found data field in response
           console.log("Found data field in response:", data.data);
           return { data: data.data as T };
         }
@@ -326,10 +326,10 @@ class ApiService {
         method: 'GET',
       }),
     
-    sendRequest: (username: string) =>
+    sendRequest: (friendId: number) =>
       this.request('/friendships/request', {
         method: 'POST',
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ friend_id: friendId }),
       }),
     
     acceptRequest: (requestId: number) =>

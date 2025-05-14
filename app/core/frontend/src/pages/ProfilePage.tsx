@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
 import { api } from '@/services/api';
-import type { UserProfileData } from '@/services/api';
+import type { UserProfileData, User } from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { websocketService } from '../services/websocket.service';
@@ -200,18 +200,51 @@ const ProfilePage = () => {
   const handleSendFriendRequest = async (username: string) => {
     if (!username.trim()) return;
 
-    const res = await api.friendship.sendRequest(username);
-    if (res.error) {
+    try {
+      // First, find the user by username
+      const usersRes = await api.user.getAllUsers();
+      if (usersRes.error) {
+        toast({
+          title: "Erreur",
+          description: usersRes.error,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const users = usersRes.data as User[];
+      const targetUser = users.find(user => user.username === username);
+      
+      if (!targetUser) {
+        toast({
+          title: "Erreur",
+          description: `Utilisateur "${username}" introuvable`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Now send the request with the user's ID
+      const res = await api.friendship.sendRequest(Number(targetUser.id));
+      if (res.error) {
+        toast({
+          title: "Erreur",
+          description: res.error,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Succès",
+          description: `Demande d'ami envoyée à ${username}`,
+        });
+      }
+    } catch (error) {
       toast({
         title: "Erreur",
-        description: res.error,
+        description: "Une erreur est survenue lors de l'envoi de la demande d'ami",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Succès",
-        description: `Demande d'ami envoyée à ${username}`,
-      });
+      console.error("Error sending friend request:", error);
     }
   };
 
