@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>42 Transcendence</title>
+  <link rel="stylesheet" href="css/output.css">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <!-- Navigation -->
+  <nav class="bg-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <h1 class="text-xl font-bold">Transcendence</h1>
+          </div>
+          <div class="hidden md:block">
+            <div class="ml-10 flex items-baseline space-x-4" id="nav-links">
+              <!-- Les liens de navigation seront injectés ici via JavaScript -->
+            </div>
+          </div>
+        </div>
+        <div class="hidden md:block">
+          <div class="ml-4 flex items-center md:ml-6" id="auth-buttons">
+            <!-- Les boutons d'authentification seront injectés ici via JavaScript -->
+          </div>
+        </div>
+        <div class="-mr-2 flex md:hidden">
+          <button id="mobile-menu-button" class="bg-gray-800 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none">
+            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Menu mobile -->
+    <div class="hidden md:hidden" id="mobile-menu">
+      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3" id="mobile-nav-links">
+        <!-- Les liens de navigation mobile seront injectés ici via JavaScript -->
+      </div>
+      <div class="pt-4 pb-3 border-t border-gray-700">
+        <div class="flex items-center px-5" id="mobile-auth-buttons">
+          <!-- Les boutons d'authentification mobile seront injectés ici via JavaScript -->
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contenu principal -->
+  <main id="app-container" class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <!-- Le contenu de l'application sera injecté ici via JavaScript -->
+  </main>
+
+  <!-- Notifications -->
+  <div id="toast-container" class="fixed top-5 right-5 w-80 z-50">
+    <!-- Les notifications seront injectées ici via JavaScript -->
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/bundle.js"></script>
+</body>
+</html> 

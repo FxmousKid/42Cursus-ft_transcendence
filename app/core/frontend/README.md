@@ -1,4 +1,57 @@
-# Pong Arcade
+# Frontend du Projet Transcendence
+
+Ce dossier contient l'implémentation frontend du projet Transcendence.
+
+## Structure du dossier
+
+```
+frontend/
+├── src/                      # Implémentation principale (TypeScript + TailwindCSS)
+│   ├── index.html            # Document HTML principal
+│   ├── package.json          # Dépendances et scripts
+│   ├── tailwind.config.js    # Configuration TailwindCSS
+│   ├── tsconfig.json         # Configuration TypeScript
+│   └── src/                  # Code source
+│       └── ...
+│
+├── temp_backup/              # Sauvegarde de l'ancien frontend React (à des fins de référence uniquement)
+│   ├── src/                  # Code source React
+│   ├── package.json          # Dépendances et scripts React
+│   └── ...
+│
+└── README.md                 # Ce fichier
+```
+
+Cette structure est similaire à celle du backend, avec un dossier `src` pour l'implémentation actuelle et un dossier `temp_backup` pour conserver l'ancienne implémentation.
+
+## Lancement du frontend
+
+```bash
+cd app/core/frontend/src
+./start.sh
+```
+
+ou manuellement :
+
+```bash
+cd app/core/frontend/src
+npm install
+npm run start
+```
+
+Le site sera disponible à l'adresse: http://localhost:5174
+
+## Développement
+
+Le frontend utilise TypeScript et TailwindCSS vanille (sans framework comme React) pour une meilleure performance et une base de code plus légère.
+
+### Principales fonctionnalités
+
+- **Authentification** : Connexion, inscription et gestion de session
+- **Jeu de Pong** : Mode local et multijoueur en temps réel
+- **Profil utilisateur** : Statistiques, matches récents et achievements
+- **Classement** : Tableau des meilleurs joueurs par ELO
+- **Communication temps réel** : WebSocket pour le jeu et les notifications
 
 ## Project info
 
