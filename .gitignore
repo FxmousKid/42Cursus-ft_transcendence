@@ -24,7 +24,7 @@
 app/infra/vault/agent/env/.env
 
 **/db.sqlite
-
+**/database.sqlite
 
 # Logs
 *.log
