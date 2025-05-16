@@ -35,7 +35,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { User, Friendship } = fastify.db.models;
-        const userId = request.user.id;
+        const userId = request.user!.id;
         
         // Find all friendships where the current user is involved
         const friendships = await Friendship.findAll({
@@ -116,7 +116,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest<{ Body: FriendshipRequest }>, reply: FastifyReply) => {
       try {
         const { Friendship } = fastify.db.models;
-        const userId = request.user.id;
+        const userId = request.user!.id;
         const { friend_id } = request.body;
         
         if (userId === friend_id) {
@@ -194,7 +194,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { User, Friendship } = fastify.db.models;
-        const userId = request.user.id;
+        const userId = request.user!.id;
         
         // Find pending friend requests
         const pendingRequests = await Friendship.findAll({
@@ -251,7 +251,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest<{ Body: FriendshipRequest }>, reply: FastifyReply) => {
       try {
         const { Friendship } = fastify.db.models;
-        const userId = request.user.id;
+        const userId = request.user!.id;
         const { friend_id } = request.body;
         
         // Find the friendship request
@@ -306,7 +306,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest<{ Body: FriendshipRequest }>, reply: FastifyReply) => {
       try {
         const { Friendship } = fastify.db.models;
-        const userId = request.user.id;
+        const userId = request.user!.id;
         const { friend_id } = request.body;
         
         // Find the friendship request
@@ -363,7 +363,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest<{ Params: FriendshipRequest }>, reply: FastifyReply) => {
       try {
         const { Friendship } = fastify.db.models;
-        const userId = request.user.id;
+        const userId = request.user!.id;
         const { friend_id } = request.params;
         
         // Find the friendship

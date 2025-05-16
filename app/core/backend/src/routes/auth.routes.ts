@@ -201,7 +201,7 @@ export function registerAuthRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         // Update user status to offline
-        const user = await fastify.db.models.User.findByPk(request.user.id);
+        const user = await fastify.db.models.User.findByPk(request.user!.id);
         
         if (user) {
           user.status = 'offline';

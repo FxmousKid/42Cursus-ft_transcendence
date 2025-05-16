@@ -9,7 +9,7 @@ import { configureAuthPlugin } from './plugins/auth';
 import { setupWebSocket } from './websocket';
 
 // Environment variables
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Create Fastify server instance
@@ -57,8 +57,7 @@ async function setup() {
       uiConfig: {
         docExpansion: 'list',
         deepLinking: true,
-      },
-      staticCSS: true,
+      }
     });
 
     // Register database plugin
