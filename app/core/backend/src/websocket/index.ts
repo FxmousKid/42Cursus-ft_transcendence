@@ -1,7 +1,9 @@
 import { Server, Socket } from 'socket.io';
 import { User } from '../models/user.model';
 import { Friendship } from '../models/friendship.model';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
+import { Sequelize } from 'sequelize-typescript';
+import { Op } from 'sequelize';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
@@ -10,7 +12,17 @@ interface UserSocket extends Socket {
   username?: string;
 }
 
-export function setupWebSocket(io: Server, db: any) {
+interface DB {
+  sequelize: Sequelize;
+  models: {
+    User: typeof User;
+    Friendship: typeof Friendship;
+    Match: any;
+  };
+  Sequelize?: typeof Sequelize;
+}
+
+export function setupWebSocket(io: Server, db: DB) {
   // Store online users
   const onlineUsers = new Map<number, string>(); // userId -> socketId
 
@@ -96,7 +108,7 @@ export function setupWebSocket(io: Server, db: any) {
         // Check if friendship already exists
         const existingFriendship = await db.models.Friendship.findOne({
           where: {
-            [db.sequelize.Op.or]: [
+            [Op.or]: [
               { user_id: userId, friend_id: friendId },
               { user_id: friendId, friend_id: userId }
             ]
@@ -109,29 +121,33 @@ export function setupWebSocket(io: Server, db: any) {
         }
         
         // Create friendship request
-        const friendship = await db.models.Friendship.create({
-          user_id: userId,
-          friend_id: friendId,
-          status: 'pending'
-        });
-        
-        // Notify the friend if they're online
-        const friendSocketId = onlineUsers.get(friendId);
-        if (friendSocketId) {
-          io.to(friendSocketId).emit('friend-request-received', {
-            id: friendship.id,
+        if (userId !== undefined) {
+          const friendship = await db.models.Friendship.create({
             user_id: userId,
-            username: username,
+            friend_id: friendId,
             status: 'pending'
           });
+          
+          // Notify the friend if they're online
+          const friendSocketId = onlineUsers.get(friendId);
+          if (friendSocketId) {
+            io.to(friendSocketId).emit('friend-request-received', {
+              id: friendship.id,
+              user_id: userId,
+              username: username,
+              status: 'pending'
+            });
+          }
+          
+          socket.emit('friend-request-sent', {
+            id: friendship.id,
+            friend_id: friendId,
+            friend_username: friend.username,
+            status: 'pending'
+          });
+        } else {
+          socket.emit('error', { message: 'User ID is undefined' });
         }
-        
-        socket.emit('friend-request-sent', {
-          id: friendship.id,
-          friend_id: friendId,
-          friend_username: friend.username,
-          status: 'pending'
-        });
       } catch (error) {
         console.error('Error sending friend request:', error);
         socket.emit('error', { message: 'Failed to send friend request' });
@@ -200,7 +216,7 @@ export function setupWebSocket(io: Server, db: any) {
         // Check if users are friends
         const friendship = await db.models.Friendship.findOne({
           where: {
-            [db.sequelize.Op.or]: [
+            [Op.or]: [
               { user_id: userId, friend_id: friendId },
               { user_id: friendId, friend_id: userId }
             ],
@@ -300,7 +316,7 @@ export function setupWebSocket(io: Server, db: any) {
       // Find all friends
       const friendships = await db.models.Friendship.findAll({
         where: {
-          [db.sequelize.Op.or]: [
+          [Op.or]: [
             { user_id: userId },
             { friend_id: userId }
           ],

@@ -1,5 +1,5 @@
 import fp from 'fastify-plugin';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import { FastifyRequest, FastifyReply } from 'fastify';
 
 // JWT configuration
@@ -26,7 +26,7 @@ declare module 'fastify' {
 export const configureAuthPlugin = fp(async (fastify, options) => {
   // Generate JWT token
   const generateToken = (payload: any): string => {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    return jwt.sign(payload, JWT_SECRET);
   };
 
   // Verify JWT token

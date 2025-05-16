@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { Match } from '../models/match.model';
+import { Op } from 'sequelize';
 
 interface CreateMatchBody {
   player2_id: number;
@@ -90,12 +91,12 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
     preHandler: fastify.authenticate,
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const userId = request.user.id;
+        const userId = request.user!.id;
         const matches = await fastify.db.models.Match.findAll({
           where: {
-            [fastify.db.Sequelize.Op.or]: [
-              { user1_id: userId },
-              { user2_id: userId }
+            [Op.or]: [
+              { player1_id: userId },
+              { player2_id: userId }
             ]
           },
           order: [['created_at', 'DESC']]
@@ -160,22 +161,22 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
   // Create a new match
   fastify.post<{
     Body: {
-      user1_id: number;
-      user2_id: number;
-      user1_score?: number;
-      user2_score?: number;
+      player1_id: number;
+      player2_id: number;
+      player1_score?: number;
+      player2_score?: number;
       status?: string;
     }
   }>('/matches', {
     schema: {
       body: {
         type: 'object',
-        required: ['user1_id', 'user2_id'],
+        required: ['player1_id', 'player2_id'],
         properties: {
-          user1_id: { type: 'number' },
-          user2_id: { type: 'number' },
-          user1_score: { type: 'number', default: 0 },
-          user2_score: { type: 'number', default: 0 },
+          player1_id: { type: 'number' },
+          player2_id: { type: 'number' },
+          player1_score: { type: 'number', default: 0 },
+          player2_score: { type: 'number', default: 0 },
           status: { type: 'string', default: 'ongoing' }
         }
       },
@@ -188,10 +189,10 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 id: { type: 'number' },
-                user1_id: { type: 'number' },
-                user2_id: { type: 'number' },
-                user1_score: { type: 'number' },
-                user2_score: { type: 'number' },
+                player1_id: { type: 'number' },
+                player2_id: { type: 'number' },
+                player1_score: { type: 'number' },
+                player2_score: { type: 'number' },
                 status: { type: 'string' },
                 created_at: { type: 'string' },
                 updated_at: { type: 'string' },
@@ -204,21 +205,22 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
     preHandler: fastify.authenticate,
     handler: async (request: FastifyRequest<{
       Body: {
-        user1_id: number;
-        user2_id: number;
-        user1_score?: number;
-        user2_score?: number;
+        player1_id: number;
+        player2_id: number;
+        player1_score?: number;
+        player2_score?: number;
         status?: string;
       }
     }>, reply: FastifyReply) => {
       try {
         // Set default values for optional fields
         const matchData = {
-          user1_id: request.body.user1_id,
-          user2_id: request.body.user2_id,
-          user1_score: request.body.user1_score || 0,
-          user2_score: request.body.user2_score || 0,
-          status: request.body.status || 'ongoing'
+          player1_id: request.body.player1_id,
+          player2_id: request.body.player2_id,
+          player1_score: request.body.player1_score || 0,
+          player2_score: request.body.player2_score || 0,
+          status: request.body.status || 'ongoing',
+          match_date: new Date()
         };
         
         const match = await fastify.db.models.Match.create(matchData);
@@ -235,8 +237,8 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
   fastify.put<{
     Params: { id: number };
     Body: {
-      user1_score?: number;
-      user2_score?: number;
+      player1_score?: number;
+      player2_score?: number;
       status?: string;
     }
   }>('/matches/:id', {
@@ -251,8 +253,8 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
       body: {
         type: 'object',
         properties: {
-          user1_score: { type: 'number' },
-          user2_score: { type: 'number' },
+          player1_score: { type: 'number' },
+          player2_score: { type: 'number' },
           status: { type: 'string', enum: ['ongoing', 'completed', 'cancelled'] }
         }
       },
@@ -265,10 +267,10 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 id: { type: 'number' },
-                user1_id: { type: 'number' },
-                user2_id: { type: 'number' },
-                user1_score: { type: 'number' },
-                user2_score: { type: 'number' },
+                player1_id: { type: 'number' },
+                player2_id: { type: 'number' },
+                player1_score: { type: 'number' },
+                player2_score: { type: 'number' },
                 status: { type: 'string' },
                 created_at: { type: 'string' },
                 updated_at: { type: 'string' },
@@ -282,8 +284,8 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest<{
       Params: { id: number };
       Body: {
-        user1_score?: number;
-        user2_score?: number;
+        player1_score?: number;
+        player2_score?: number;
         status?: string;
       }
     }>, reply: FastifyReply) => {
@@ -298,8 +300,8 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
         }
         
         // Update only provided fields
-        if (updateData.user1_score !== undefined) match.user1_score = updateData.user1_score;
-        if (updateData.user2_score !== undefined) match.user2_score = updateData.user2_score;
+        if (updateData.player1_score !== undefined) match.player1_score = updateData.player1_score;
+        if (updateData.player2_score !== undefined) match.player2_score = updateData.player2_score;
         if (updateData.status) match.status = updateData.status;
         
         await match.save();

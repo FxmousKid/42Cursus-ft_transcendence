@@ -8,6 +8,21 @@ import { Match } from '../models/match.model';
 // Database configuration
 const DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, '../../database.sqlite');
 
+// Define the db property on FastifyInstance
+declare module 'fastify' {
+  interface FastifyInstance {
+    db: {
+      sequelize: Sequelize;
+      models: {
+        User: typeof User;
+        Friendship: typeof Friendship;
+        Match: typeof Match;
+      };
+      Sequelize?: typeof Sequelize;
+    };
+  }
+}
+
 // Create Sequelize instance
 const sequelize = new Sequelize({
   dialect: 'sqlite',
@@ -25,7 +40,9 @@ export const configureDatabasePlugin = fp(async (fastify, options) => {
     
     // Sync models (in development only)
     if (process.env.NODE_ENV !== 'production') {
-      await sequelize.sync({ alter: true });
+      // WARNING: This will drop and recreate tables in development mode
+      fastify.log.warn('Development mode: Dropping and recreating database tables...');
+      await sequelize.sync({ force: true });
       fastify.log.info('Database models synchronized.');
     }
 
