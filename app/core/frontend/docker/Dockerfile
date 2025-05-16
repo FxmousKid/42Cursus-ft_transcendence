@@ -9,14 +9,14 @@ RUN npm install -g pnpm
 RUN rm -f package-lock.json bun.lockb
 
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json ./
 
 # Install dependencies
-RUN pnpm install
+RUN npm install
 
 # Copy the rest of the application
 COPY . .
 
 EXPOSE 5173
 
-CMD ["pnpm", "run", "dev", "--", "--host"] 
+CMD ["npm", "run", "dev", "--", "--host"] 
