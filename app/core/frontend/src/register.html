@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - ft_transcendence</title>
+    <link rel="stylesheet" href="css/output.css">
+    <meta name="description" content="Inscrivez-vous à ft_transcendence pour jouer au Pong en ligne et discuter avec vos amis.">
+</head>
+<body class="flex flex-col min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+    <!-- En-tête -->
+    <div id="header-container"></div>
+    
+    <!-- Contenu principal -->
+    <main class="flex-grow container mx-auto px-4 py-8 flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md transform transition-transform hover:scale-[1.01]">
+            <div class="text-center mb-8">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
+                </svg>
+                <h1 class="text-2xl font-bold mt-2 text-gray-800 dark:text-white">Inscription</h1>
+                <p class="text-gray-600 dark:text-gray-300 mt-1">Créez votre compte pour jouer au Pong</p>
+            </div>
+            
+            <div id="error-message" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 9a1 1 0 01-1-1v-4a1 1 0 112 0v4a1 1 0 01-1 1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm" id="error-text"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <form id="register-form" class="space-y-6">
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-semibold mb-2" for="username">
+                        Nom d'utilisateur
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <input class="input-field pl-10" id="username" type="text" placeholder="Votre nom d'utilisateur" required>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-semibold mb-2" for="email">
+                        Email
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                            </svg>
+                        </div>
+                        <input class="input-field pl-10" id="email" type="email" placeholder="exemple@email.com" required>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-semibold mb-2" for="password">
+                        Mot de passe
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <input class="input-field pl-10" id="password" type="password" placeholder="Choisissez un mot de passe" required>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Le mot de passe doit contenir au moins 6 caractères</p>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-semibold mb-2" for="confirm-password">
+                        Confirmer le mot de passe
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <input class="input-field pl-10" id="confirm-password" type="password" placeholder="Confirmez votre mot de passe" required>
+                    </div>
+                </div>
+                
+                <div class="flex items-center">
+                    <input id="terms" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" required>
+                    <label for="terms" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                        J'accepte les <a href="#" class="text-blue-600 hover:underline">conditions d'utilisation</a>
+                    </label>
+                </div>
+                
+                <div>
+                    <button class="btn-primary w-full flex justify-center py-3" type="submit">
+                        <span>S'inscrire</span>
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Déjà un compte? 
+                    <a href="login.html" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
+                        Se connecter
+                    </a>
+                </p>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Pied de page -->
+    <div id="footer-container"></div>
+    
+    <!-- Scripts -->
+    <script>
+        // Charger les composants
+        fetch('components/header.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('header-container').innerHTML = data;
+            })
+            .catch(error => console.error('Erreur lors du chargement du header:', error));
+            
+        fetch('components/footer.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('footer-container').innerHTML = data;
+            })
+            .catch(error => console.error('Erreur lors du chargement du footer:', error));
+    </script>
+    <script src="js/register.js"></script>
+</body>
+</html> 

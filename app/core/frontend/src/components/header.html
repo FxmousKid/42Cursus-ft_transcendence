@@ -1,0 +1,136 @@
+<header class="bg-gradient-to-r from-blue-600 to-indigo-800 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/index.html" class="flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+            </svg>
+            <span class="text-2xl font-bold tracking-tight">ft_transcendence</span>
+        </a>
+        
+        <nav class="hidden md:flex items-center space-x-6">
+            <a href="/index.html" class="hover:text-blue-200 font-medium transition-colors duration-200">Accueil</a>
+            <a href="/game.html" class="hover:text-blue-200 font-medium transition-colors duration-200">Pong</a>
+            <a href="/chat.html" class="hover:text-blue-200 font-medium transition-colors duration-200">Chat</a>
+            <a href="/profile.html" class="hover:text-blue-200 font-medium transition-colors duration-200">Profil</a>
+            
+            <div class="auth-buttons flex space-x-2 ml-4" id="auth-section">
+                <a href="/login.html" class="login-btn px-4 py-2 bg-blue-500 hover:bg-blue-700 rounded-md font-medium transition-colors duration-200">Connexion</a>
+                <a href="/register.html" class="register-btn px-4 py-2 bg-indigo-500 hover:bg-indigo-700 rounded-md font-medium transition-colors duration-200">Inscription</a>
+            </div>
+            
+            <div class="user-section hidden space-x-2 items-center" id="user-section">
+                <span id="username-display" class="font-medium"></span>
+                <button id="logout-button" class="px-4 py-2 bg-red-500 hover:bg-red-700 rounded-md font-medium transition-colors duration-200">
+                    Déconnexion
+                </button>
+            </div>
+        </nav>
+        
+        <button id="menu-toggle" class="md:hidden text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+            </svg>
+        </button>
+    </div>
+    
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="hidden md:hidden px-4 pb-3 bg-blue-700">
+        <div class="space-y-2 pt-2">
+            <a href="/index.html" class="block py-2 hover:bg-blue-800 rounded px-3 transition-colors duration-200">Accueil</a>
+            <a href="/game.html" class="block py-2 hover:bg-blue-800 rounded px-3 transition-colors duration-200">Pong</a>
+            <a href="/chat.html" class="block py-2 hover:bg-blue-800 rounded px-3 transition-colors duration-200">Chat</a>
+            <a href="/profile.html" class="block py-2 hover:bg-blue-800 rounded px-3 transition-colors duration-200">Profil</a>
+            
+            <div class="auth-buttons pt-2 space-y-2" id="mobile-auth-section">
+                <a href="/login.html" class="login-btn block w-full text-center py-2 bg-blue-500 hover:bg-blue-600 rounded-md transition-colors duration-200">Connexion</a>
+                <a href="/register.html" class="register-btn block w-full text-center py-2 bg-indigo-500 hover:bg-indigo-600 rounded-md transition-colors duration-200">Inscription</a>
+            </div>
+            
+            <div class="user-section hidden space-y-2 pt-2" id="mobile-user-section">
+                <div id="mobile-username-display" class="font-medium"></div>
+                <button id="mobile-logout-button" class="block w-full text-center py-2 bg-red-500 hover:bg-red-600 rounded-md transition-colors duration-200">
+                    Déconnexion
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<script>
+    // Mobile menu toggle
+    const menuToggle = document.getElementById('menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    if (menuToggle && mobileMenu) {
+        menuToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+    
+    // Check authentication status on page load
+    function checkAuth() {
+        const token = localStorage.getItem('auth_token');
+        const username = localStorage.getItem('username');
+        
+        const authSection = document.getElementById('auth-section');
+        const userSection = document.getElementById('user-section');
+        const mobileAuthSection = document.getElementById('mobile-auth-section');
+        const mobileUserSection = document.getElementById('mobile-user-section');
+        const usernameDisplay = document.getElementById('username-display');
+        const mobileUsernameDisplay = document.getElementById('mobile-username-display');
+        
+        if (token && username) {
+            // User is logged in
+            if (authSection) authSection.classList.add('hidden');
+            if (userSection) {
+                userSection.classList.remove('hidden');
+                usernameDisplay.textContent = username;
+            }
+            
+            if (mobileAuthSection) mobileAuthSection.classList.add('hidden');
+            if (mobileUserSection) {
+                mobileUserSection.classList.remove('hidden');
+                mobileUsernameDisplay.textContent = username;
+            }
+            
+            // Setup logout functionality
+            const logoutButton = document.getElementById('logout-button');
+            const mobileLogoutButton = document.getElementById('mobile-logout-button');
+            
+            const handleLogout = async () => {
+                try {
+                    // Call logout API with full URL
+                    await fetch('http://localhost:3000/auth/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error during logout:', error);
+                } finally {
+                    // Clear local storage
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_id');
+                    localStorage.removeItem('username');
+                    
+                    // Redirect to login page
+                    window.location.href = '/login.html';
+                }
+            };
+            
+            if (logoutButton) logoutButton.addEventListener('click', handleLogout);
+            if (mobileLogoutButton) mobileLogoutButton.addEventListener('click', handleLogout);
+        } else {
+            // User is not logged in
+            if (authSection) authSection.classList.remove('hidden');
+            if (userSection) userSection.classList.add('hidden');
+            
+            if (mobileAuthSection) mobileAuthSection.classList.remove('hidden');
+            if (mobileUserSection) mobileUserSection.classList.add('hidden');
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', checkAuth);
+</script> 

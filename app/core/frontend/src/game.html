@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu Pong - ft_transcendence</title>
+    <link rel="stylesheet" href="css/output.css">
+    <meta name="description" content="Jouez au Pong en ligne avec ft_transcendence et affrontez d'autres joueurs.">
+</head>
+<body class="flex flex-col min-h-screen bg-gray-50">
+    <!-- En-tête -->
+    <div id="header-container"></div>
+    
+    <!-- Contenu principal -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6 text-center">Jeu de Pong</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <p class="text-gray-700 mb-4 text-center">
+                La page de jeu est en cours de développement. Elle sera bientôt disponible !
+            </p>
+            
+            <div class="bg-gray-900 rounded-lg shadow-2xl aspect-video relative overflow-hidden mx-auto max-w-2xl mb-6">
+                <div class="absolute left-4 top-1/2 transform -translate-y-1/2 w-3 h-16 bg-white rounded"></div>
+                <div class="absolute right-4 top-1/2 transform -translate-y-1/2 w-3 h-16 bg-white rounded"></div>
+                <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full animate-ping"></div>
+                <div class="absolute left-0 top-1/2 w-full h-px bg-white opacity-30"></div>
+            </div>
+            
+            <div class="text-center">
+                <a href="/" class="btn-primary inline-block py-2 px-4">
+                    Retour à l'accueil
+                </a>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Pied de page -->
+    <div id="footer-container"></div>
+    
+    <!-- Scripts -->
+    <script>
+        // Charger les composants
+        fetch('components/header.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('header-container').innerHTML = data;
+            })
+            .catch(error => console.error('Erreur lors du chargement du header:', error));
+            
+        fetch('components/footer.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('footer-container').innerHTML = data;
+            })
+            .catch(error => console.error('Erreur lors du chargement du footer:', error));
+    </script>
+</body>
+</html> 

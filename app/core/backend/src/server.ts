@@ -24,10 +24,12 @@ async function setup() {
     // Register plugins
     await server.register(cors, {
       origin: [
-        'http://localhost:5173',  // Local development
-        'http://localhost:3000',  // Alternative local port
-        'http://frontend:5173',   // Docker container name
-        'http://127.0.0.1:5173',  // Docker host
+        'http://localhost:5173',  // Frontend port
+        'http://localhost:37505', // Alternative frontend port
+        'http://localhost:45477', // Another alternative frontend port
+        'http://localhost:35331', // Another alternative frontend port
+        'http://localhost:46593', // Another potential port from your logs
+        // Add any other frontend URLs you might use
       ],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       credentials: true,

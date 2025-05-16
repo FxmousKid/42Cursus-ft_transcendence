@@ -1,0 +1,94 @@
+<footer class="bg-gray-800 text-white py-6 mt-auto">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-4 md:mb-0">
+                <div class="flex items-center space-x-2 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="text-xl font-semibold">ft_transcendence</span>
+                </div>
+                <p class="text-gray-400">&copy; 2023 École 42. Tous droits réservés.</p>
+            </div>
+            
+            <div class="flex space-x-4">
+                <div>
+                    <h3 class="font-semibold mb-2">Langues</h3>
+                    <div class="flex space-x-3">
+                        <button class="language-btn hover:text-blue-300" data-lang="fr">Français</button>
+                        <button class="language-btn hover:text-blue-300" data-lang="en">English</button>
+                        <button class="language-btn hover:text-blue-300" data-lang="es">Español</button>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="font-semibold mb-2">Accessibilité</h3>
+                    <div class="flex space-x-3">
+                        <button id="contrast-toggle" class="hover:text-blue-300">Contraste</button>
+                        <button id="font-size-toggle" class="hover:text-blue-300">Taille texte</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Accessibility features
+    const contrastToggle = document.getElementById('contrast-toggle');
+    const fontSizeToggle = document.getElementById('font-size-toggle');
+    const root = document.documentElement;
+    
+    if (contrastToggle) {
+        contrastToggle.addEventListener('click', () => {
+            document.body.classList.toggle('high-contrast');
+            if (document.body.classList.contains('high-contrast')) {
+                localStorage.setItem('high-contrast', 'true');
+            } else {
+                localStorage.setItem('high-contrast', 'false');
+            }
+        });
+    }
+    
+    if (fontSizeToggle) {
+        fontSizeToggle.addEventListener('click', () => {
+            const currentSize = parseFloat(getComputedStyle(root).fontSize);
+            if (currentSize >= 20) {
+                root.style.fontSize = '16px';
+                localStorage.setItem('font-size', '16px');
+            } else {
+                root.style.fontSize = (currentSize + 2) + 'px';
+                localStorage.setItem('font-size', (currentSize + 2) + 'px');
+            }
+        });
+    }
+    
+    // Apply saved accessibility settings
+    function applyAccessibilitySettings() {
+        const highContrast = localStorage.getItem('high-contrast');
+        const fontSize = localStorage.getItem('font-size');
+        
+        if (highContrast === 'true') {
+            document.body.classList.add('high-contrast');
+        }
+        
+        if (fontSize) {
+            root.style.fontSize = fontSize;
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', applyAccessibilitySettings);
+    
+    // Language switcher
+    const languageButtons = document.querySelectorAll('.language-btn');
+    
+    languageButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const lang = button.getAttribute('data-lang');
+            localStorage.setItem('language', lang);
+            // Dans un vrai cas, on changerait les textes ici
+            // Pour cet exemple, on va juste recharger la page
+            window.location.reload();
+        });
+    });
+</script> 

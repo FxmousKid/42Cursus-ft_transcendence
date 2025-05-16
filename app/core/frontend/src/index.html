@@ -1,65 +1,176 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>42 Transcendence</title>
-  <link rel="stylesheet" href="css/output.css">
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - ft_transcendence</title>
+    <link rel="stylesheet" href="css/output.css">
+    <meta name="description" content="ft_transcendence - Jouez au Pong en ligne, discutez avec vos amis et mesurez-vous aux autres joueurs.">
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-  <!-- Navigation -->
-  <nav class="bg-gray-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <h1 class="text-xl font-bold">Transcendence</h1>
-          </div>
-          <div class="hidden md:block">
-            <div class="ml-10 flex items-baseline space-x-4" id="nav-links">
-              <!-- Les liens de navigation seront injectés ici via JavaScript -->
+<body class="flex flex-col min-h-screen bg-gray-50">
+    <!-- En-tête -->
+    <div id="header-container"></div>
+    
+    <!-- Contenu principal -->
+    <main class="flex-grow">
+        <!-- Hero Section -->
+        <section class="bg-gradient-to-r from-blue-600 to-indigo-800 text-white py-16">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-col md:flex-row items-center">
+                    <div class="md:w-1/2 mb-8 md:mb-0 md:pr-8">
+                        <h1 class="text-4xl font-bold mb-4">Bienvenue sur ft_transcendence</h1>
+                        <p class="text-xl mb-6">Le jeu de Pong en ligne moderne et social. Affrontez vos amis, améliorez votre classement et rejoignez la communauté.</p>
+                        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                            <a href="/game.html" class="btn-primary py-3 px-6 text-center font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
+                                Jouer maintenant
+                            </a>
+                            <a href="#features" class="bg-transparent border-2 border-white text-white hover:bg-white hover:text-indigo-800 py-3 px-6 rounded font-bold text-center transition-colors duration-200">
+                                En savoir plus
+                            </a>
+                        </div>
+                    </div>
+                    <div class="md:w-1/2">
+                        <div class="relative">
+                            <!-- Animation simplifiée du jeu de Pong -->
+                            <div class="bg-gray-900 rounded-lg shadow-2xl aspect-video relative overflow-hidden">
+                                <div class="absolute left-4 top-1/2 transform -translate-y-1/2 w-3 h-16 bg-white rounded"></div>
+                                <div class="absolute right-4 top-1/2 transform -translate-y-1/2 w-3 h-16 bg-white rounded"></div>
+                                <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full animate-ping"></div>
+                                <div class="absolute left-0 top-1/2 w-full h-px bg-white opacity-30"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        <div class="hidden md:block">
-          <div class="ml-4 flex items-center md:ml-6" id="auth-buttons">
-            <!-- Les boutons d'authentification seront injectés ici via JavaScript -->
-          </div>
-        </div>
-        <div class="-mr-2 flex md:hidden">
-          <button id="mobile-menu-button" class="bg-gray-800 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none">
-            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-    <!-- Menu mobile -->
-    <div class="hidden md:hidden" id="mobile-menu">
-      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3" id="mobile-nav-links">
-        <!-- Les liens de navigation mobile seront injectés ici via JavaScript -->
-      </div>
-      <div class="pt-4 pb-3 border-t border-gray-700">
-        <div class="flex items-center px-5" id="mobile-auth-buttons">
-          <!-- Les boutons d'authentification mobile seront injectés ici via JavaScript -->
-        </div>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Contenu principal -->
-  <main id="app-container" class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <!-- Le contenu de l'application sera injecté ici via JavaScript -->
-  </main>
-
-  <!-- Notifications -->
-  <div id="toast-container" class="fixed top-5 right-5 w-80 z-50">
-    <!-- Les notifications seront injectées ici via JavaScript -->
-  </div>
-
-  <!-- Scripts -->
-  <script src="js/bundle.js"></script>
+        </section>
+        
+        <!-- Fonctionnalités -->
+        <section id="features" class="py-16">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Fonctionnalités principales</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="card text-center hover:shadow-lg transition-shadow duration-200">
+                        <div class="mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">Matchmaking intelligent</h3>
+                        <p class="text-gray-600">Trouvez des adversaires de votre niveau grâce à notre système de matchmaking basé sur vos compétences.</p>
+                    </div>
+                    
+                    <div class="card text-center hover:shadow-lg transition-shadow duration-200">
+                        <div class="mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">Tournois passionnants</h3>
+                        <p class="text-gray-600">Participez à des tournois réguliers et gagnez des prix. Montrez vos compétences au monde entier.</p>
+                    </div>
+                    
+                    <div class="card text-center hover:shadow-lg transition-shadow duration-200">
+                        <div class="mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">Chat en temps réel</h3>
+                        <p class="text-gray-600">Communiquez avec vos amis, créez des groupes et partagez vos stratégies grâce au système de chat intégré.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Comment jouer -->
+        <section class="py-16 bg-gray-100">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Comment jouer</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="flex flex-col items-center text-center">
+                        <div class="bg-blue-600 rounded-full w-12 h-12 flex items-center justify-center text-white font-bold text-xl mb-4">1</div>
+                        <h3 class="font-semibold text-lg mb-2">Créez un compte</h3>
+                        <p class="text-gray-600">Inscrivez-vous gratuitement en quelques secondes.</p>
+                    </div>
+                    
+                    <div class="flex flex-col items-center text-center">
+                        <div class="bg-blue-600 rounded-full w-12 h-12 flex items-center justify-center text-white font-bold text-xl mb-4">2</div>
+                        <h3 class="font-semibold text-lg mb-2">Personnalisez votre profil</h3>
+                        <p class="text-gray-600">Ajoutez une photo et personnalisez vos paramètres.</p>
+                    </div>
+                    
+                    <div class="flex flex-col items-center text-center">
+                        <div class="bg-blue-600 rounded-full w-12 h-12 flex items-center justify-center text-white font-bold text-xl mb-4">3</div>
+                        <h3 class="font-semibold text-lg mb-2">Trouvez un adversaire</h3>
+                        <p class="text-gray-600">Utilisez notre matchmaking ou défiez directement vos amis.</p>
+                    </div>
+                    
+                    <div class="flex flex-col items-center text-center">
+                        <div class="bg-blue-600 rounded-full w-12 h-12 flex items-center justify-center text-white font-bold text-xl mb-4">4</div>
+                        <h3 class="font-semibold text-lg mb-2">Jouez et gagnez !</h3>
+                        <p class="text-gray-600">Améliorez vos compétences et grimpez dans le classement.</p>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-12">
+                    <a href="/register.html" class="btn-primary py-3 px-6 inline-block font-bold">Commencer maintenant</a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Statistiques -->
+        <section class="py-16 bg-blue-600 text-white">
+            <div class="container mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Notre communauté</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <div>
+                        <div class="text-4xl font-bold mb-2">500+</div>
+                        <p class="text-xl">Joueurs actifs</p>
+                    </div>
+                    
+                    <div>
+                        <div class="text-4xl font-bold mb-2">10,000+</div>
+                        <p class="text-xl">Parties jouées</p>
+                    </div>
+                    
+                    <div>
+                        <div class="text-4xl font-bold mb-2">50+</div>
+                        <p class="text-xl">Tournois organisés</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Pied de page -->
+    <div id="footer-container"></div>
+    
+    <!-- Scripts -->
+    <script>
+        // Charger les composants
+        fetch('components/header.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('header-container').innerHTML = data;
+            })
+            .catch(error => console.error('Erreur lors du chargement du header:', error));
+            
+        fetch('components/footer.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('footer-container').innerHTML = data;
+            })
+            .catch(error => console.error('Erreur lors du chargement du footer:', error));
+        
+        // Vérifier l'authentification pour rediriger si nécessaire
+        document.addEventListener('DOMContentLoaded', () => {
+            // Aucune redirection obligatoire sur la page d'accueil
+            // Elle est accessible à tous, connectés ou non
+        });
+    </script>
+    <script src="js/index.js"></script>
 </body>
 </html> 
