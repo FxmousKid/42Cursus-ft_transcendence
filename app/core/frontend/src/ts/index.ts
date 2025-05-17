@@ -1,3 +1,6 @@
+import { api } from './api';
+import { websocketService } from './websocket';
+
 document.addEventListener('DOMContentLoaded', () => {
     // Check if user is logged in
     const token = localStorage.getItem('auth_token');
@@ -8,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/login.html';
         return;
     }
+    
+    // Connect to WebSocket
+    websocketService.connect();
     
     // Display username
     const usernameDisplay = document.getElementById('username-display');
@@ -31,14 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
             try {
-                // Call logout API with full URL
-                const response = await fetch('http://localhost:3000/auth/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+                // Use API service for logout
+                await api.auth.logout();
+                
+                // Disconnect from WebSocket
+                websocketService.disconnect();
                 
                 // Clear local storage
                 localStorage.removeItem('auth_token');

@@ -4,7 +4,7 @@
   "description": "Frontend for ft_transcendence project",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && tailwindcss -i ./src/css/input.css -o ./dist/css/output.css && mkdir -p ./dist/components && mkdir -p ./dist/js && cp -r ./src/*.html ./dist/ && cp -r ./src/components/*.html ./dist/components/",
+    "build": "tsc && tailwindcss -i ./src/css/input.css -o ./dist/css/output.css && mkdir -p ./dist/components && cp -r ./src/*.html ./dist/ && cp -r ./src/components/*.html ./dist/components/",
     "dev": "concurrently \"tsc --watch\" \"tailwindcss -i ./src/css/input.css -o ./dist/css/output.css --watch\" \"serve dist -p 5173\"",
     "serve": "fastify static -r ./dist",
     "start": "npm run build && serve dist -p 5173"
