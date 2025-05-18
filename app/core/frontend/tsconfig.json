@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2016",
-    "module": "ES6",
-    "rootDir": "./src/ts",
+    "target": "es6",
+    "module": "es6",
     "outDir": "./dist/js",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "rootDir": "./src/ts",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "moduleResolution": "node",
-    "lib": ["DOM", "ES2017"]
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["dom", "es2015"],
+    "moduleResolution": "node"
   },
   "include": ["src/ts/**/*"]
 } 

@@ -4,13 +4,13 @@
   "description": "Frontend for ft_transcendence project",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && tailwindcss -i ./src/css/input.css -o ./dist/css/output.css && mkdir -p ./dist/components && cp -r ./src/*.html ./dist/ && cp -r ./src/components/*.html ./dist/components/",
-    "dev": "concurrently \"tsc --watch\" \"tailwindcss -i ./src/css/input.css -o ./dist/css/output.css --watch\" \"serve dist -p 5173\"",
-    "serve": "fastify static -r ./dist",
-    "start": "npm run build && serve dist -p 5173",
+    "build": "webpack && tailwindcss -i ./src/css/input.css -o ./src/css/output.css && cp -r ./src/*.html ./dist/ && cp -r ./src/components ./dist/ && cp -r ./src/css ./dist/",
+    "dev": "concurrently \"webpack --watch\" \"tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch\" \"serve src -p 5173\"",
+    "serve": "fastify static -r ./src",
+    "start": "npm run build && serve src -p 5173",
     "test": "node tests/run-tests.js",
     "test:api": "node tests/api-tests.js",
-    "test:frontend": "node tests/tests.js", 
+    "test:frontend": "node tests/tests.js",
     "test:websocket": "node tests/websocket-tests.js",
     "test:performance": "node tests/perf-tests.js",
     "test:console": "node tests/console-check.js"
@@ -28,6 +28,9 @@
     "postcss": "^8.4.27",
     "serve": "^14.2.1",
     "tailwindcss": "^3.3.3",
-    "typescript": "^5.1.6"
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
+    "webpack": "^5.99.8",
+    "webpack-cli": "^6.0.1"
   }
 }

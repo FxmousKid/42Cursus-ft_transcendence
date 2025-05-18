@@ -1,5 +1,3 @@
-import { api, AuthResponse } from './api';
-
 // Constants
 const TOKEN_KEY = 'auth_token';
 const USER_ID_KEY = 'user_id';
@@ -20,7 +18,7 @@ interface AuthState {
   expiresAt: number | null;
 }
 
-class AuthService {
+export class AuthService {
   private state: AuthState;
   private refreshTimeout: number | null = null;
 
@@ -57,13 +55,26 @@ class AuthService {
    */
   public async login(email: string, password: string, rememberMe: boolean): Promise<boolean> {
     try {
+      console.log('Auth: Attempting login for:', email);
+      
+      // Get global API instance
+      const api = (window as any).api;
+      if (!api || !api.auth) {
+        console.error('API not initialized');
+        return false;
+      }
+
       const response = await api.auth.login(email, password);
+      console.log('Auth: Login response:', response);
       
       if (response.success && response.data) {
+        console.log('Auth: Login successful, setting auth state');
         // Set auth state
         this.setAuthState(response.data, rememberMe);
         return true;
       }
+      
+      console.log('Auth: Login failed:', response.message || 'Unknown error');
       return false;
     } catch (error) {
       console.error('Login error:', error);
@@ -76,6 +87,13 @@ class AuthService {
    */
   public async register(username: string, email: string, password: string): Promise<boolean> {
     try {
+      // Get global API instance
+      const api = (window as any).api;
+      if (!api || !api.auth) {
+        console.error('API not initialized');
+        return false;
+      }
+      
       const response = await api.auth.register(username, email, password);
       
       if (response.success && response.data) {
@@ -95,8 +113,12 @@ class AuthService {
    */
   public async logout(): Promise<void> {
     try {
-      // Call logout API endpoint
-      await api.auth.logout();
+      // Get global API instance
+      const api = (window as any).api;
+      if (api && api.auth) {
+        // Call logout API endpoint
+        await api.auth.logout();
+      }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -109,7 +131,45 @@ class AuthService {
    * Check if user is authenticated
    */
   public isAuthenticated(): boolean {
-    return this.state.isAuthenticated;
+    console.log('Auth: Checking authentication status');
+    
+    // Vérifier si l'utilisateur est authentifié par l'état interne
+    if (this.state.isAuthenticated && this.state.token) {
+      console.log('Auth: State has authenticated=true and token is present');
+      
+      // Vérifier si le token est expiré
+      if (this.state.expiresAt && this.state.expiresAt > Date.now()) {
+        console.log('Auth: Token is valid, user is authenticated');
+        return true;
+      } else {
+        console.log('Auth: Token is expired, clearing session');
+        // Si le token est expiré, on nettoie la session
+        this.clearSession();
+        return false;
+      }
+    }
+    
+    // Vérifier si le token est présent dans localStorage ou sessionStorage
+    const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+    console.log('Auth: Token in storage:', !!token);
+    
+    if (token) {
+      // Vérifier si un ID utilisateur est associé
+      const userId = localStorage.getItem(USER_ID_KEY) || sessionStorage.getItem(USER_ID_KEY);
+      console.log('Auth: User ID in storage:', !!userId);
+      
+      if (userId) {
+        console.log('Auth: Found token and userID in storage, restoring session');
+        // Restaurer l'état si les informations existent mais ne sont pas chargées dans l'état
+        this.restoreSession();
+        // Revérifier l'état après restauration
+        console.log('Auth: After restoration, isAuthenticated =', this.state.isAuthenticated);
+        return this.state.isAuthenticated;
+      }
+    }
+    
+    console.log('Auth: No valid auth data found, user is not authenticated');
+    return false;
   }
 
   /**
@@ -170,9 +230,17 @@ class AuthService {
   /**
    * Set authentication state from login/register response
    */
-  private setAuthState(authData: AuthResponse, rememberMe: boolean): void {
+  private setAuthState(authData: any, rememberMe: boolean): void {
+    console.log('Auth: Setting auth state with data:', {
+      id: authData.id,
+      username: authData.username,
+      tokenPresent: !!authData.token,
+      rememberMe
+    });
+    
     // Calculate token expiry time
     const expiresAt = Date.now() + DEFAULT_TOKEN_EXPIRY;
+    console.log('Auth: Token will expire at:', new Date(expiresAt).toLocaleString());
     
     // Update state
     this.state = {
@@ -189,13 +257,23 @@ class AuthService {
     
     // Schedule token refresh
     this.scheduleTokenRefresh();
+    
+    // Verify the data was stored correctly
+    console.log('Auth: Session data persisted, state is now:', {
+      isAuthenticated: this.state.isAuthenticated,
+      username: this.state.username,
+      rememberMe: this.state.rememberMe
+    });
   }
 
   /**
    * Persist session data in storage
    */
   private persistSession(): void {
+    console.log('Auth: Persisting session data, rememberMe =', this.state.rememberMe);
+    
     const storage = this.state.rememberMe ? localStorage : sessionStorage;
+    const storageType = this.state.rememberMe ? 'localStorage' : 'sessionStorage';
     
     storage.setItem(TOKEN_KEY, this.state.token || '');
     storage.setItem(USER_ID_KEY, this.state.userId || '');
@@ -204,12 +282,20 @@ class AuthService {
     
     // Always store remember me preference in localStorage
     localStorage.setItem(REMEMBER_ME_KEY, this.state.rememberMe.toString());
+    
+    console.log(`Auth: Session persisted in ${storageType}`, {
+      token: !!this.state.token,
+      userId: this.state.userId,
+      username: this.state.username
+    });
   }
 
   /**
    * Restore session from storage
    */
   private restoreSession(): void {
+    console.log('Auth: Attempting to restore session from storage');
+    
     // Try to get token from localStorage first (for remember me)
     let token = localStorage.getItem(TOKEN_KEY);
     let userId = localStorage.getItem(USER_ID_KEY);
@@ -217,20 +303,25 @@ class AuthService {
     let expiresAtStr = localStorage.getItem(TOKEN_EXPIRY_KEY);
     let rememberMe = localStorage.getItem(REMEMBER_ME_KEY) === 'true';
     
+    console.log('Auth: LocalStorage has token:', !!token, 'userId:', !!userId, 'username:', !!username);
+    
     // If not found in localStorage and not using remember me, try sessionStorage
     if (!token && !rememberMe) {
       token = sessionStorage.getItem(TOKEN_KEY);
       userId = sessionStorage.getItem(USER_ID_KEY);
       username = sessionStorage.getItem(USERNAME_KEY);
       expiresAtStr = sessionStorage.getItem(TOKEN_EXPIRY_KEY);
+      console.log('Auth: SessionStorage has token:', !!token, 'userId:', !!userId, 'username:', !!username);
     }
     
     // If token exists and is not expired
     if (token && userId && username) {
       const expiresAt = expiresAtStr ? parseInt(expiresAtStr, 10) : null;
+      console.log('Auth: Found auth data in storage, expiry:', expiresAt ? new Date(expiresAt).toLocaleString() : 'none');
       
       // Check if token is still valid
       if (expiresAt && expiresAt > Date.now()) {
+        console.log('Auth: Token is still valid, restoring session');
         this.state = {
           isAuthenticated: true,
           token,
@@ -239,13 +330,13 @@ class AuthService {
           rememberMe,
           expiresAt
         };
-        
-        // Schedule token refresh
-        this.scheduleTokenRefresh();
       } else {
-        // Token expired, clear session
+        console.log('Auth: Token is expired or missing expiry, clearing session');
+        // Token is expired, clear session
         this.clearSession();
       }
+    } else {
+      console.log('Auth: Missing required auth data (token, userId, or username)');
     }
   }
 
@@ -253,51 +344,54 @@ class AuthService {
    * Schedule token refresh before expiry
    */
   private scheduleTokenRefresh(): void {
-    // Clear existing timeout if any
+    // Clear any existing timeout
     if (this.refreshTimeout) {
       window.clearTimeout(this.refreshTimeout);
       this.refreshTimeout = null;
     }
     
-    if (!this.state.expiresAt) return;
-    
-    // Calculate time to refresh (5 minutes before expiry)
-    const timeToRefresh = this.state.expiresAt - Date.now() - (5 * 60 * 1000);
-    
-    if (timeToRefresh <= 0) {
-      // Token already expired or about to expire, refresh immediately
-      this.refreshToken();
-    } else {
+    // If token is set to expire
+    if (this.state.expiresAt) {
+      // Calculate time until refresh (15 minutes before expiry)
+      const refreshTime = this.state.expiresAt - Date.now() - (15 * 60 * 1000);
+      
       // Schedule refresh
-      this.refreshTimeout = window.setTimeout(() => this.refreshToken(), timeToRefresh);
+      if (refreshTime > 0) {
+        this.refreshTimeout = window.setTimeout(() => {
+          this.refreshToken();
+        }, refreshTime);
+      } else {
+        // Token is about to expire or already expired, refresh immediately
+        this.refreshToken();
+      }
     }
   }
 
   /**
-   * Refresh authentication token
+   * Refresh auth token
    */
   private async refreshToken(): Promise<void> {
     try {
-      // Check if user is authenticated
-      if (!this.state.isAuthenticated || !this.state.token) {
-        return;
+      // For now, we don't have a token refresh endpoint
+      // This is where you would call the refresh token API
+      // For now, we'll just check token validity and logout if expired
+      
+      if (this.state.expiresAt && this.state.expiresAt < Date.now()) {
+        console.log('Token expired, logging out');
+        this.clearSession();
+        
+        // Redirect to login page if not already there
+        if (window.location.pathname !== '/login.html') {
+          window.location.href = '/login.html';
+        }
+      } else {
+        // Re-schedule the refresh for the remaining time
+        this.scheduleTokenRefresh();
       }
-      
-      // TODO: Implement token refresh endpoint on backend
-      // For now, we'll just extend the expiry time
-      const expiresAt = Date.now() + DEFAULT_TOKEN_EXPIRY;
-      this.state.expiresAt = expiresAt;
-      
-      // Update expiry in storage
-      const storage = this.state.rememberMe ? localStorage : sessionStorage;
-      storage.setItem(TOKEN_EXPIRY_KEY, expiresAt.toString());
-      
-      // Schedule next refresh
-      this.scheduleTokenRefresh();
     } catch (error) {
-      console.error('Token refresh error:', error);
+      console.error('Failed to refresh token:', error);
       
-      // If refresh fails, logout user
+      // If refresh fails, clear session and redirect to login
       this.clearSession();
       
       // Redirect to login page if not already there
@@ -308,20 +402,29 @@ class AuthService {
   }
 
   /**
-   * Check token validity and refresh if needed
+   * Check token validity when window gains focus
    */
   private checkTokenValidity(): void {
-    if (this.state.isAuthenticated && this.state.expiresAt) {
-      // If token expires in less than 5 minutes, refresh it
-      if (this.state.expiresAt - Date.now() < 5 * 60 * 1000) {
-        this.refreshToken();
+    // If token is expired, clear session and redirect to login
+    if (this.state.expiresAt && this.state.expiresAt < Date.now()) {
+      console.log('Token expired on window focus, logging out');
+      this.clearSession();
+      
+      // Redirect to login page if not already there
+      if (window.location.pathname !== '/login.html') {
+        window.location.href = '/login.html';
       }
     }
   }
 }
 
-// Export singleton instance
+// Create and export auth service instance
 export const authService = new AuthService();
 
-// Make it globally available
-(window as any).authService = authService; 
+// Initialize auth service
+authService.init();
+
+// Make auth service globally available for legacy code
+if (typeof window !== 'undefined') {
+  (window as any).authService = authService;
+} 

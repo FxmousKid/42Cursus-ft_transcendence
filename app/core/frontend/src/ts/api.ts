@@ -1,81 +1,40 @@
 // API URL configuration
 const API_URL = 'http://localhost:3000';
 
-// Import auth service (will be imported from module using this file)
-// This is done to avoid circular dependency
-let _authService: any = null;
-
-// Response and data interfaces
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
-
-export interface AuthResponse {
-  id: number;
-  username: string;
-  email: string;
-  token: string;
-}
-
+// Types for API responses
 export interface UserProfile {
   id: number;
   username: string;
   email: string;
-  status: string;
   avatar_url?: string;
-  created_at?: string;
+  status?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface MatchData {
   id: number;
   player1_id: number;
   player2_id: number;
+  player1_username: string;
+  player2_username: string;
   player1_score: number;
   player2_score: number;
   created_at: string;
-  player1_username?: string;
-  player2_username?: string;
-}
-
-export interface FriendRequest {
-  id: number;
-  user_id: number;
-  friend_id: number;
-  status: string;
-  user?: UserProfile;
-  created_at?: string;
-}
-
-export interface Friend {
-  id: number;
-  username: string;
-  status: string;
-  avatar_url?: string;
-}
-
-// Set auth service reference
-export function setAuthService(authService: any) {
-  _authService = authService;
+  updated_at: string;
 }
 
 // Helper for API requests
-async function request<T>(
+async function request(
   endpoint: string,
   options: RequestInit = {}
-): Promise<ApiResponse<T>> {
+): Promise<any> {
   try {
     const url = `${API_URL}${endpoint}`;
     console.log(`[API] Making ${options.method || 'GET'} request to: ${url}`);
     
-    // Get token from auth service if available, otherwise fallback to localStorage
-    let token = null;
-    if (_authService && _authService.getToken) {
-      token = _authService.getToken();
-    } else {
-      token = localStorage.getItem('auth_token');
-    }
+    // Get token from localStorage
+    const token = localStorage.getItem('auth_token');
     
     // Prepare headers
     const headers = {
@@ -96,10 +55,11 @@ async function request<T>(
     
     // Handle authentication errors
     if (response.status === 401) {
-      // If auth service is available, clear session
-      if (_authService && _authService.clearSession) {
-        _authService.clearSession();
-      }
+      // Clear session data
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('username');
+      localStorage.removeItem('avatar_url');
       
       // Redirect to login page if not already there
       if (window.location.pathname !== '/login.html') {
@@ -109,6 +69,16 @@ async function request<T>(
       return { 
         success: false, 
         message: 'Authentication required' 
+      };
+    }
+    
+    // Handle 404 errors
+    if (response.status === 404) {
+      console.warn(`[API] Endpoint not found: ${endpoint}`);
+      return {
+        success: false,
+        message: `Endpoint not found: ${endpoint}`,
+        data: [] // Renvoyer un tableau vide par défaut
       };
     }
     
@@ -141,136 +111,113 @@ async function request<T>(
     console.error('API request failed:', error);
     return { 
       success: false, 
-      message: error instanceof Error ? error.message : 'Unknown error' 
+      message: error instanceof Error ? error.message : 'Unknown error',
+      data: [] // Renvoyer un tableau vide par défaut
     };
   }
 }
 
-// Auth services
-const auth = {
-  async login(email: string, password: string): Promise<ApiResponse<AuthResponse>> {
-    return request<AuthResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password })
-    });
-  },
-  
-  async register(username: string, email: string, password: string): Promise<ApiResponse<AuthResponse>> {
-    return request<AuthResponse>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ username, email, password })
-    });
-  },
-  
-  async logout(): Promise<ApiResponse<void>> {
-    return request<void>('/auth/logout', {
-      method: 'POST'
-    });
-  }
-};
-
-// User services
-const user = {
-  async getProfile(userId?: number): Promise<ApiResponse<UserProfile>> {
-    // Get userId from auth service if available
-    if (!userId && _authService && _authService.getUserId) {
-      const id = _authService.getUserId();
-      if (id) {
-        return request<UserProfile>(`/users/${id}`);
-      }
-    }
-    
-    const id = userId || localStorage.getItem('user_id');
-    return request<UserProfile>(`/users/${id}`);
-  },
-  
-  async updateProfile(data: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> {
-    // Get userId from auth service if available
-    let userId = null;
-    if (_authService && _authService.getUserId) {
-      userId = _authService.getUserId();
-    } else {
-      userId = localStorage.getItem('user_id');
-    }
-    
-    return request<UserProfile>(`/users/${userId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data)
-    });
-  },
-  
-  async getMatches(userId?: number): Promise<ApiResponse<MatchData[]>> {
-    // Get userId from auth service if available
-    if (!userId && _authService && _authService.getUserId) {
-      const id = _authService.getUserId();
-      if (id) {
-        return request<MatchData[]>(`/users/${id}/matches`);
-      }
-    }
-    
-    const id = userId || localStorage.getItem('user_id');
-    return request<MatchData[]>(`/users/${id}/matches`);
-  },
-  
-  async getAll(): Promise<ApiResponse<UserProfile[]>> {
-    return request<UserProfile[]>('/users');
-  }
-};
-
-// Friendship services
-const friendship = {
-  async getFriends(): Promise<ApiResponse<Friend[]>> {
-    return request<Friend[]>('/friendships');
-  },
-  
-  async getPendingRequests(): Promise<ApiResponse<FriendRequest[]>> {
-    return request<FriendRequest[]>('/friendships/requests');
-  },
-  
-  async sendFriendRequest(friendId: number): Promise<ApiResponse<FriendRequest>> {
-    return request<FriendRequest>('/friendships/request', {
-      method: 'POST',
-      body: JSON.stringify({ friend_id: friendId })
-    });
-  },
-  
-  async acceptFriendRequest(requestId: number): Promise<ApiResponse<void>> {
-    return request<void>(`/friendships/accept/${requestId}`, {
-      method: 'POST'
-    });
-  },
-  
-  async rejectFriendRequest(requestId: number): Promise<ApiResponse<void>> {
-    return request<void>(`/friendships/reject/${requestId}`, {
-      method: 'POST'
-    });
-  },
-  
-  async removeFriend(friendId: number): Promise<ApiResponse<void>> {
-    return request<void>(`/friendships/${friendId}`, {
-      method: 'DELETE'
-    });
-  }
-};
-
-// Game services
-const game = {
-  async getLeaderboard(): Promise<ApiResponse<UserProfile[]>> {
-    return request<UserProfile[]>('/leaderboard');
-  },
-  
-  async getAllMatches(): Promise<ApiResponse<MatchData[]>> {
-    return request<MatchData[]>('/matches');
-  }
-};
-
+// Create and export API object
 export const api = {
   baseUrl: API_URL,
-  auth,
-  user,
-  friendship,
-  game
+  
+  // Auth services
+  auth: {
+    async login(email: string, password: string) {
+      return request('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      });
+    },
+    
+    async register(username: string, email: string, password: string) {
+      return request('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ username, email, password })
+      });
+    },
+    
+    async logout() {
+      return request('/auth/logout', {
+        method: 'POST'
+      });
+    }
+  },
+  
+  // User services
+  user: {
+    async getProfile(userId?: number) {
+      const id = userId || localStorage.getItem('user_id');
+      return request(`/users/${id}`);
+    },
+    
+    async updateProfile(data: any) {
+      const userId = localStorage.getItem('user_id');
+      return request(`/users/${userId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data)
+      });
+    },
+    
+    async getMatches(userId?: number) {
+      const id = userId || localStorage.getItem('user_id');
+      return request(`/users/${id}/matches`);
+    },
+    
+    async getAll() {
+      return request('/users');
+    },
+    
+    async searchUsers(username: string) {
+      return request(`/users/search?username=${encodeURIComponent(username)}`);
+    }
+  },
+  
+  // Friendship services
+  friendship: {
+    async getFriends() {
+      return request('/friendships');
+    },
+    
+    async getPendingRequests() {
+      return request('/friendships/requests');
+    },
+    
+    async sendFriendRequest(friendId: number) {
+      return request('/friendships/request', {
+        method: 'POST',
+        body: JSON.stringify({ friend_id: friendId })
+      });
+    },
+    
+    async acceptFriendRequest(requestId: number) {
+      return request(`/friendships/accept/${requestId}`, {
+        method: 'POST'
+      });
+    },
+    
+    async rejectFriendRequest(requestId: number) {
+      return request(`/friendships/reject/${requestId}`, {
+        method: 'POST'
+      });
+    },
+    
+    async removeFriend(friendId: number) {
+      return request(`/friendships/${friendId}`, {
+        method: 'DELETE'
+      });
+    }
+  },
+  
+  // Game services
+  game: {
+    async getAllMatches() {
+      return request('/matches');
+    }
+  }
 };
 
-// Make API globally available
-(window as any).api = api; 
+// Pour la rétrocompatibilité, on expose aussi API globalement
+if (typeof window !== 'undefined') {
+  (window as any).api = api;
+} 

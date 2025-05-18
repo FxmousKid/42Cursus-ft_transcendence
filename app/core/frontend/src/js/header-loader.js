@@ -1,0 +1,33 @@
+/*
+ * ATTENTION: The "eval" devtool has been used (maybe by default in mode: "development").
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "./src/ts/header-loader.ts":
+/*!*********************************!*\
+  !*** ./src/ts/header-loader.ts ***!
+  \*********************************/
+/***/ (function() {
+
+eval("\n/**\n * Script pour charger le header approprié selon l'état d'authentification\n */\nvar __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {\n    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }\n    return new (P || (P = Promise))(function (resolve, reject) {\n        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }\n        function rejected(value) { try { step(generator[\"throw\"](value)); } catch (e) { reject(e); } }\n        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }\n        step((generator = generator.apply(thisArg, _arguments || [])).next());\n    });\n};\ndocument.addEventListener('DOMContentLoaded', () => {\n    console.log('Header loader initialized');\n    // Obtenir authService depuis le contexte global\n    const authService = window.authService;\n    console.log('AuthService available in header-loader:', !!authService);\n    const headerContainer = document.getElementById('header-container');\n    if (!headerContainer) {\n        console.error('Header container not found');\n        return;\n    }\n    // Initialiser authService si disponible\n    if (authService && authService.init) {\n        console.log('Initializing auth service');\n        authService.init();\n    }\n    else {\n        console.warn('Auth service not available or missing init method');\n    }\n    // Vérifier si l'utilisateur est authentifié de façon sécurisée\n    const isAuthenticated = authService &&\n        authService.isAuthenticated &&\n        typeof authService.isAuthenticated === 'function' &&\n        authService.isAuthenticated();\n    console.log('User is authenticated:', isAuthenticated);\n    // Charger le header approprié\n    const headerFile = isAuthenticated ? 'components/header.html' : 'components/header-guest.html';\n    console.log('Loading header file:', headerFile);\n    fetch(headerFile)\n        .then(response => {\n        if (!response.ok) {\n            throw new Error(`HTTP error! Status: ${response.status}`);\n        }\n        return response.text();\n    })\n        .then(data => {\n        headerContainer.innerHTML = data;\n        // Initialiser les comportements après le chargement du header\n        initHeaderBehaviors(isAuthenticated);\n    })\n        .catch(error => {\n        console.error('Erreur lors du chargement du header:', error);\n        // En cas d'erreur, charger le header invité par défaut\n        fetch('components/header-guest.html')\n            .then(response => response.text())\n            .then(data => {\n            headerContainer.innerHTML = data;\n            initHeaderBehaviors(false);\n        });\n    });\n});\n/**\n * Initialiser les comportements interactifs du header\n */\nfunction initHeaderBehaviors(isAuthenticated) {\n    console.log('Initializing header behaviors, authenticated:', isAuthenticated);\n    // Menu mobile toggle\n    const menuToggle = document.getElementById('menu-toggle');\n    const mobileMenu = document.getElementById('mobile-menu');\n    if (menuToggle && mobileMenu) {\n        menuToggle.addEventListener('click', () => {\n            mobileMenu.classList.toggle('hidden');\n        });\n    }\n    // Ne configurer les comportements de déconnexion que si l'utilisateur est authentifié\n    if (isAuthenticated) {\n        setupLogoutHandlers();\n    }\n}\n/**\n * Configurer les gestionnaires d'événements pour la déconnexion\n */\nfunction setupLogoutHandlers() {\n    // Bouton de déconnexion\n    const logoutButton = document.getElementById('logout-button');\n    const mobileLogoutButton = document.getElementById('mobile-logout-button');\n    const authService = window.authService;\n    if (logoutButton && authService && authService.logout) {\n        logoutButton.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {\n            e.preventDefault();\n            try {\n                // Afficher l'état de chargement\n                logoutButton.innerHTML = `<svg class=\"animate-spin h-4 w-4 mr-1 inline\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\">\n          <circle class=\"opacity-25\" cx=\"12\" cy=\"12\" r=\"10\" stroke=\"currentColor\" stroke-width=\"4\"></circle>\n          <path class=\"opacity-75\" fill=\"currentColor\" d=\"M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z\"></path>\n        </svg> Déconnexion...`;\n                // Déconnecter l'utilisateur via le service d'authentification\n                yield authService.logout();\n                // Rediriger vers la page de connexion\n                window.location.href = '/login.html';\n            }\n            catch (error) {\n                console.error('Erreur lors de la déconnexion:', error);\n                // Rediriger quand même en cas d'erreur\n                window.location.href = '/login.html';\n            }\n        }));\n    }\n    // Événement pour le bouton de déconnexion mobile\n    if (mobileLogoutButton && logoutButton) {\n        mobileLogoutButton.addEventListener('click', (e) => {\n            e.preventDefault();\n            logoutButton.click();\n        });\n    }\n}\n\n\n//# sourceURL=webpack://ft-transcendence-frontend/./src/ts/header-loader.ts?");
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = {};
+/******/ 	__webpack_modules__["./src/ts/header-loader.ts"]();
+/******/ 	
+/******/ })()
+;

@@ -2,40 +2,79 @@
 // Global authService will be available from auth.js
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Register page loaded');
+    
     // Get authService from global scope
     const authService = (window as any).authService;
+    console.log('AuthService available:', !!authService);
     
     const registerForm = document.getElementById('register-form') as HTMLFormElement;
     const errorMessage = document.getElementById('error-message') as HTMLDivElement;
     const errorText = document.getElementById('error-text') as HTMLSpanElement;
     
+    if (!registerForm) {
+        console.error('Register form not found');
+        return;
+    }
+    
     // Initialize auth service if available
-    if (authService) {
+    if (authService && authService.init) {
+        console.log('Initializing auth service');
         authService.init();
         
         // Redirect if already logged in
-        if (authService.isAuthenticated()) {
+        if (authService.isAuthenticated && authService.isAuthenticated()) {
+            console.log('User already authenticated, redirecting');
             window.location.href = '/index.html';
             return;
+        }
+    } else {
+        console.warn('Auth service not available or missing init method');
+    }
+    
+    // Display error function
+    function showError(message: string) {
+        if (errorText && errorMessage) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+        } else {
+            alert(message);
         }
     }
     
     registerForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         
-        const username = (document.getElementById('username') as HTMLInputElement).value;
-        const email = (document.getElementById('email') as HTMLInputElement).value;
-        const password = (document.getElementById('password') as HTMLInputElement).value;
-        const confirmPassword = (document.getElementById('confirm-password') as HTMLInputElement).value;
+        // Clear previous error
+        if (errorMessage) {
+            errorMessage.classList.add('hidden');
+        }
         
-        // Password validation
+        // Get form values
+        const username = (document.getElementById('username') as HTMLInputElement)?.value;
+        const email = (document.getElementById('email') as HTMLInputElement)?.value;
+        const password = (document.getElementById('password') as HTMLInputElement)?.value;
+        const confirmPassword = (document.getElementById('confirm-password') as HTMLInputElement)?.value;
+        
+        // Field validation
+        if (!username || !email || !password || !confirmPassword) {
+            showError('Veuillez remplir tous les champs');
+            return;
+        }
+        
         if (password !== confirmPassword) {
-            errorText.textContent = 'Les mots de passe ne correspondent pas.';
-            errorMessage.classList.remove('hidden');
+            showError('Les mots de passe ne correspondent pas');
+            return;
+        }
+        
+        if (password.length < 8) {
+            showError('Le mot de passe doit comporter au moins 8 caractères');
             return;
         }
         
         try {
+            console.log('Attempting registration for:', email);
+            
             // Show loading state
             const submitButton = registerForm.querySelector('button[type="submit"]') as HTMLButtonElement;
             const originalText = submitButton.innerHTML;
@@ -45,30 +84,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg><span>Inscription en cours...</span>`;
             
-            // Use auth service instead of direct API call
+            // Check if auth service is available
+            if (!authService || !authService.register) {
+                console.error('Auth service register method not available');
+                showError('Service d\'authentification non disponible. Veuillez réessayer.');
+                
+                // Reset button
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+                return;
+            }
+            
+            // Use the auth service instead of direct API call
             const success = await authService.register(username, email, password);
+            console.log('Registration success:', success);
             
             if (success) {
-                // Redirect to home page on successful registration
-                window.location.href = '/index.html';
+                // Redirect to login page with success message
+                window.location.href = '/login.html?registered=true';
             } else {
-                // Show error message
-                errorText.textContent = 'Erreur d\'inscription. Cet email est peut-être déjà utilisé.';
-                errorMessage.classList.remove('hidden');
+                // Show generic error message
+                showError('Erreur lors de l\'inscription. Veuillez réessayer.');
                 
                 // Reset button
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalText;
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error during registration:', error);
-            errorText.textContent = 'Erreur de connexion au serveur. Veuillez réessayer plus tard.';
-            errorMessage.classList.remove('hidden');
+            
+            // Determine error message based on error response
+            let errorMsg = 'Erreur lors de l\'inscription. Veuillez réessayer.';
+            
+            if (error.message) {
+                if (error.message.includes('email already exists')) {
+                    errorMsg = 'Cet email est déjà utilisé.';
+                } else if (error.message.includes('username already exists')) {
+                    errorMsg = 'Ce nom d\'utilisateur est déjà pris.';
+                }
+            } 
+            
+            showError(errorMsg);
             
             // Reset button
             const submitButton = registerForm.querySelector('button[type="submit"]') as HTMLButtonElement;
-            submitButton.disabled = false;
-            submitButton.innerHTML = `<span>S'inscrire</span>`;
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = `<span>S'inscrire</span>`;
+            }
         }
     });
 }); 

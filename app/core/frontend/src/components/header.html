@@ -16,31 +16,29 @@
                 <a href="/" class="nav-link">Accueil</a>
                 <a href="/game.html" class="nav-link">Jouer</a>
                 <a href="/friends.html" class="nav-link">Amis</a>
-                <a href="/leaderboard.html" class="nav-link">Classement</a>
             </nav>
             
             <!-- User menu -->
             <div class="flex items-center space-x-4">
                 <div class="hidden md:block">
-                    <span id="username-display" class="text-gray-700">Bonjour, Utilisateur</span>
+                    <a href="/profile.html" class="text-gray-700 hover:text-blue-600 transition-colors">
+                        <span id="username-display" class="font-medium">Utilisateur</span>
+                    </a>
                 </div>
                 
                 <div class="relative">
-                    <button class="flex items-center focus:outline-none group">
-                        <div class="w-8 h-8 bg-gray-300 rounded-full overflow-hidden">
+                    <button id="user-menu-button" class="flex items-center focus:outline-none">
+                        <div id="avatar-container" class="w-8 h-8 bg-gray-300 rounded-full overflow-hidden">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full text-gray-500 p-1" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                             </svg>
                         </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 text-gray-500 group-hover:text-gray-700" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
                     </button>
                     
                     <!-- Dropdown menu -->
-                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden opacity-0 transform -translate-y-2 transition z-10 group-hover:opacity-100 group-hover:translate-y-0 group-hover:block">
+                    <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
                         <a href="/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mon profil</a>
-                        <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Déconnexion</a>
+                        <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Déconnexion</a>
                     </div>
                 </div>
                 
@@ -61,7 +59,6 @@
                 <a href="/" class="mobile-nav-link">Accueil</a>
                 <a href="/game.html" class="mobile-nav-link">Jouer</a>
                 <a href="/friends.html" class="mobile-nav-link">Amis</a>
-                <a href="/leaderboard.html" class="mobile-nav-link">Classement</a>
                 <a href="/profile.html" class="mobile-nav-link">Mon profil</a>
                 <a href="#" id="mobile-logout-button" class="mobile-nav-link text-red-600">Déconnexion</a>
             </div>
@@ -93,9 +90,41 @@
 </style>
 
 <script>
-    // Add event listener for mobile logout button
-    document.getElementById('mobile-logout-button')?.addEventListener('click', function(e) {
-        e.preventDefault();
-        document.getElementById('logout-button')?.click();
-    });
+    // Afficher le nom d'utilisateur
+    const username = localStorage.getItem('username');
+    if (username) {
+        const usernameDisplay = document.getElementById('username-display');
+        if (usernameDisplay) {
+            usernameDisplay.textContent = username;
+        }
+    }
+    
+    // Afficher l'avatar si disponible
+    const avatarUrl = localStorage.getItem('avatar_url');
+    if (avatarUrl) {
+        const avatarContainer = document.getElementById('avatar-container');
+        if (avatarContainer) {
+            avatarContainer.innerHTML = `<img src="${avatarUrl}" alt="Avatar" class="w-full h-full object-cover">`;
+        }
+    }
+    
+    // Toggle dropdown menu
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userDropdown = document.getElementById('user-dropdown');
+    
+    if (userMenuButton && userDropdown) {
+        userMenuButton.addEventListener('click', () => {
+            userDropdown.classList.toggle('hidden');
+        });
+        
+        // Fermer le dropdown en cliquant ailleurs
+        document.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target && !userMenuButton.contains(target) && !userDropdown.contains(target)) {
+                userDropdown.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Logout functionality is handled by header-loader.ts
 </script> 

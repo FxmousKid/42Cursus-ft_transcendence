@@ -1,19 +1,36 @@
-import { api } from './api';
-import { websocketService } from './websocket';
-import { Friend, FriendRequest, UserProfile } from './api';
+// This file will be compiled to JS and included in the HTML directly
+// Global services and types will be available
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check if user is logged in
-    const token = localStorage.getItem('auth_token');
+    console.log('Friends page loaded');
     
-    if (!token) {
-        // Redirect to login page if not logged in
+    // Get services from global scope
+    const api = (window as any).api;
+    const websocketService = (window as any).websocketService;
+    console.log('API available:', !!api);
+    console.log('WebSocket service available:', !!websocketService);
+    
+    // Check if API is available
+    if (!api || !api.friendship) {
+        console.error('API or friendship module not available');
         window.location.href = '/login.html';
         return;
     }
     
-    // Connect to WebSocket for real-time updates
-    websocketService.connect();
+    // Connect to WebSocket if available
+    if (websocketService && websocketService.connect) {
+        console.log('Connecting to WebSocket');
+        websocketService.connect();
+    }
+    
+    // Check if user is logged in
+    const token = localStorage.getItem('auth_token');
+    
+    if (!token) {
+        console.log('No auth token, redirecting to login');
+        window.location.href = '/login.html';
+        return;
+    }
     
     // DOM elements
     const friendsContainer = document.getElementById('friends-container') as HTMLElement;
@@ -33,6 +50,48 @@ document.addEventListener('DOMContentLoaded', async () => {
     const searchErrorText = document.getElementById('search-error-text') as HTMLElement;
     const friendsSearch = document.getElementById('friends-search') as HTMLInputElement;
     
+    // Register WebSocket event handlers if available
+    if (websocketService && websocketService.onMessage) {
+        websocketService.onMessage('friend-request', (data: any) => {
+            console.log('Received friend request:', data);
+            loadFriendRequests(); // Refresh requests
+        });
+        
+        websocketService.onMessage('friend-accepted', (data: any) => {
+            console.log('Friend request accepted:', data);
+            loadFriends(); // Refresh friends list
+        });
+        
+        websocketService.onMessage('friend-status-changed', (data: any) => {
+            console.log('Friend status changed:', data);
+            updateFriendStatus(data.userId, data.status);
+        });
+    }
+    
+    // Function to update friend status in UI
+    function updateFriendStatus(userId: number, newStatus: string) {
+        const friendItem = document.querySelector(`.friend-item[data-id="${userId}"]`);
+        if (!friendItem) return;
+        
+        const statusIndicator = friendItem.querySelector('.friend-status-indicator') as HTMLElement;
+        const status = friendItem.querySelector('.friend-status') as HTMLElement;
+        
+        // Remove existing status classes
+        statusIndicator.classList.remove('bg-green-500', 'bg-blue-500', 'bg-gray-500');
+        
+        // Set new status
+        if (newStatus === 'online') {
+            statusIndicator.classList.add('bg-green-500');
+            status.textContent = 'En ligne';
+        } else if (newStatus === 'in_game') {
+            statusIndicator.classList.add('bg-blue-500');
+            status.textContent = 'En jeu';
+        } else {
+            statusIndicator.classList.add('bg-gray-500');
+            status.textContent = 'Hors ligne';
+        }
+    }
+    
     // Function to load friends list
     async function loadFriends() {
         try {
@@ -47,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     friendsContainer.innerHTML = '';
                     
                     // Add each friend to the container
-                    friends.forEach(friend => {
+                    friends.forEach((friend: any) => {
                         addFriendToUI(friend);
                     });
                 } else {
@@ -64,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     // Function to add a friend to the UI
-    function addFriendToUI(friend: Friend) {
+    function addFriendToUI(friend: any) {
         const friendElement = document.importNode(friendTemplate.content, true);
         
         // Set friend details
@@ -125,17 +184,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Add event listener to invite button
         inviteButton.addEventListener('click', () => {
-            // Send game invitation via WebSocket
-            websocketService.send('game-invite', { 
-                friendId: friend.id, 
-                friendUsername: friend.username 
-            });
-            
-            alert(`Invitation à jouer envoyée à ${friend.username}`);
+            // Send game invitation via API
+            sendGameInvitation(friend.id, friend.username);
         });
         
         // Add to container
         friendsContainer.appendChild(friendElement);
+    }
+    
+    // Function to send game invitation
+    function sendGameInvitation(friendId: number, friendUsername: string) {
+        // Check if websocket available
+        const websocketService = (window as any).websocketService;
+        
+        if (websocketService && websocketService.send) {
+            // Send game invitation via WebSocket
+            websocketService.send('game-invite', { 
+                friendId: friendId, 
+                friendUsername: friendUsername 
+            });
+            
+            alert(`Invitation à jouer envoyée à ${friendUsername}`);
+        } else {
+            // Fallback to API
+            api.game.sendInvitation(friendId)
+                .then((response: any) => {
+                    if (response.success) {
+                        alert(`Invitation à jouer envoyée à ${friendUsername}`);
+                    } else {
+                        alert(`Erreur lors de l'envoi de l'invitation: ${response.message}`);
+                    }
+                })
+                .catch((error: any) => {
+                    console.error('Error sending game invitation:', error);
+                    alert("Erreur lors de l'envoi de l'invitation");
+                });
+        }
     }
     
     // Function to load friend requests
@@ -152,7 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     friendRequestsContainer.innerHTML = '';
                     
                     // Add each request to the container
-                    requests.forEach(request => {
+                    requests.forEach((request: any) => {
                         addFriendRequestToUI(request);
                     });
                 } else {
@@ -169,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     // Function to add a friend request to the UI
-    function addFriendRequestToUI(request: FriendRequest) {
+    function addFriendRequestToUI(request: any) {
         if (!request.user) return;
         
         const requestElement = document.importNode(friendRequestTemplate.content, true);
@@ -249,51 +333,65 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Function to search for users
     async function searchUsers(username: string) {
         try {
-            // Call users search API
-            const response = await fetch(`${api['baseUrl'] || 'http://localhost:3000'}/users/search?username=${encodeURIComponent(username)}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            searchResults.innerHTML = '';
             
-            const data = await response.json();
+            if (!username.trim()) {
+                searchResultsContainer.classList.add('hidden');
+                return;
+            }
             
-            if (response.ok && data.success) {
-                searchResultsContainer.classList.remove('hidden');
+            // Show loading state
+            searchResults.innerHTML = `
+                <div class="text-center py-4">
+                    <svg class="animate-spin h-8 w-8 mx-auto text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            `;
+            searchResultsContainer.classList.remove('hidden');
+            
+            // Search users via API
+            const response = await api.user.searchUsers(username);
+            
+            if (response.success) {
+                const data = response.data;
                 searchResults.innerHTML = '';
-                searchError.classList.add('hidden');
                 
-                if (data.data.length > 0) {
-                    data.data.forEach((user: UserProfile) => {
+                if (data.length > 0) {
+                    data.forEach((user: any) => {
                         addSearchResultToUI(user);
                     });
                 } else {
-                    searchResults.innerHTML = '<p class="text-center py-4 text-gray-500">Aucun utilisateur trouvé</p>';
+                    searchResults.innerHTML = `
+                        <div class="text-center py-4 text-gray-500">
+                            Aucun utilisateur trouvé pour "${username}"
+                        </div>
+                    `;
                 }
             } else {
-                searchError.classList.remove('hidden');
-                searchErrorText.textContent = data.message || 'Erreur lors de la recherche d\'utilisateurs';
-                searchResultsContainer.classList.add('hidden');
+                throw new Error(response.message || 'Failed to search users');
             }
         } catch (error) {
             console.error('Error searching users:', error);
             searchError.classList.remove('hidden');
-            searchErrorText.textContent = 'Erreur de connexion au serveur';
-            searchResultsContainer.classList.add('hidden');
+            searchErrorText.textContent = 'Erreur lors de la recherche. Veuillez réessayer.';
+            
+            // Hide error after 3 seconds
+            setTimeout(() => {
+                searchError.classList.add('hidden');
+            }, 3000);
         }
     }
     
     // Function to add a search result to the UI
-    function addSearchResultToUI(user: UserProfile) {
+    function addSearchResultToUI(user: any) {
         const resultElement = document.importNode(searchResultTemplate.content, true);
         
         // Set user details
         const username = resultElement.querySelector('.result-username') as HTMLElement;
         const avatar = resultElement.querySelector('.result-avatar') as HTMLElement;
-        const statusIndicator = resultElement.querySelector('.result-status-indicator') as HTMLElement;
-        const status = resultElement.querySelector('.result-status') as HTMLElement;
-        const addButton = resultElement.querySelector('.add-friend-button') as HTMLButtonElement;
+        const addButton = resultElement.querySelector('.add-friend-button') as HTMLElement;
         
         // Set username
         username.textContent = user.username;
@@ -303,18 +401,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             avatar.innerHTML = `<img src="${user.avatar_url}" alt="${user.username}" class="w-full h-full object-cover">`;
         }
         
-        // Set status indicator color and text
-        if (user.status === 'online') {
-            statusIndicator.classList.add('bg-green-500');
-            status.textContent = 'En ligne';
-        } else if (user.status === 'in_game') {
-            statusIndicator.classList.add('bg-blue-500');
-            status.textContent = 'En jeu';
-        } else {
-            statusIndicator.classList.add('bg-gray-500');
-            status.textContent = 'Hors ligne';
-        }
-        
         // Add user ID as data attribute
         const resultItem = resultElement.querySelector('.search-result-item') as HTMLElement;
         resultItem.dataset.id = user.id.toString();
@@ -322,21 +408,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Add event listener to add button
         addButton.addEventListener('click', async () => {
             try {
+                // Disable button to prevent multiple clicks
+                (addButton as HTMLButtonElement).disabled = true;
+                addButton.innerHTML = `
+                    <svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                `;
+                
+                // Send friend request via API
                 const response = await api.friendship.sendFriendRequest(user.id);
                 
                 if (response.success) {
-                    // Disable add button and change text
-                    addButton.disabled = true;
-                    addButton.textContent = 'Demande envoyée';
-                    addButton.classList.add('bg-gray-500');
+                    // Update button to show success
+                    addButton.innerHTML = `
+                        <svg class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                    `;
                     addButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    addButton.classList.add('bg-gray-300', 'cursor-not-allowed');
                 } else {
-                    console.error('Failed to send friend request:', response.message);
-                    alert(`Erreur: ${response.message || 'Impossible d\'envoyer la demande d\'ami'}`);
+                    // Reset button and show error
+                    (addButton as HTMLButtonElement).disabled = false;
+                    addButton.innerHTML = `<span>Ajouter</span>`;
+                    
+                    throw new Error(response.message || 'Failed to send friend request');
                 }
             } catch (error) {
                 console.error('Error sending friend request:', error);
-                alert('Erreur de connexion au serveur');
+                
+                // Show error message
+                searchError.classList.remove('hidden');
+                searchErrorText.textContent = 'Erreur lors de l\'envoi de la demande d\'ami.';
+                
+                // Hide error after 3 seconds
+                setTimeout(() => {
+                    searchError.classList.add('hidden');
+                }, 3000);
             }
         });
         
@@ -344,61 +454,61 @@ document.addEventListener('DOMContentLoaded', async () => {
         searchResults.appendChild(resultElement);
     }
     
-    // Filter friends functionality
-    friendsSearch.addEventListener('input', () => {
-        const searchTerm = friendsSearch.value.toLowerCase();
-        const friendItems = friendsContainer.querySelectorAll('.friend-item');
-        
-        friendItems.forEach(item => {
-            const username = item.querySelector('.friend-username')?.textContent?.toLowerCase() || '';
-            
-            if (username.includes(searchTerm)) {
-                (item as HTMLElement).style.display = '';
-            } else {
-                (item as HTMLElement).style.display = 'none';
-            }
+    // Event listener for search form submission
+    if (searchUserForm) {
+        searchUserForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            searchUsers(searchUsername.value);
         });
-    });
+    }
     
-    // Search form submission
-    searchUserForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const username = searchUsername.value.trim();
-        
-        if (username) {
-            searchUsers(username);
-        } else {
-            searchError.classList.remove('hidden');
-            searchErrorText.textContent = 'Veuillez entrer un nom d\'utilisateur';
-            searchResultsContainer.classList.add('hidden');
-        }
-    });
-    
-    // Listen for friend request events via WebSocket
-    websocketService.on('friend-request-received', (data) => {
-        loadFriendRequests();
-    });
-    
-    websocketService.on('friend-request-accepted', (data) => {
-        loadFriends();
-    });
-    
-    websocketService.on('online-users', (data) => {
-        // Update status of friends in the UI
-        const friendItems = friendsContainer.querySelectorAll('.friend-item');
-        
-        friendItems.forEach(item => {
-            const friendId = parseInt((item as HTMLElement).dataset.id || '0');
+    // Event listener for friends search input
+    if (friendsSearch) {
+        friendsSearch.addEventListener('input', () => {
+            const query = friendsSearch.value.toLowerCase();
+            const friendItems = friendsContainer.querySelectorAll('.friend-item');
             
-            if (data.includes(friendId)) {
-                const statusIndicator = item.querySelector('.friend-status-indicator') as HTMLElement;
-                const status = item.querySelector('.friend-status') as HTMLElement;
+            friendItems.forEach((item) => {
+                const username = item.querySelector('.friend-username')?.textContent?.toLowerCase() || '';
                 
-                statusIndicator.className = 'friend-status-indicator w-2 h-2 rounded-full mr-1 bg-green-500';
-                status.textContent = 'En ligne';
+                if (username.includes(query)) {
+                    (item as HTMLElement).style.display = '';
+                } else {
+                    (item as HTMLElement).style.display = 'none';
+                }
+            });
+            
+            // Show "no results" message if all friends are hidden
+            let allHidden = true;
+            friendItems.forEach((item) => {
+                if ((item as HTMLElement).style.display !== 'none') {
+                    allHidden = false;
+                }
+            });
+            
+            if (allHidden && friendItems.length > 0) {
+                // Create or update no results message
+                let noResults = document.getElementById('no-search-results');
+                
+                if (!noResults) {
+                    noResults = document.createElement('div');
+                    noResults.id = 'no-search-results';
+                    noResults.className = 'text-center py-4 text-gray-500';
+                    noResults.textContent = `Aucun ami trouvé pour "${query}"`;
+                    friendsContainer.appendChild(noResults);
+                } else {
+                    noResults.textContent = `Aucun ami trouvé pour "${query}"`;
+                    noResults.classList.remove('hidden');
+                }
+            } else {
+                // Hide no results message if it exists
+                const noResults = document.getElementById('no-search-results');
+                if (noResults) {
+                    noResults.classList.add('hidden');
+                }
             }
         });
-    });
+    }
     
     // Initial loading
     loadFriends();

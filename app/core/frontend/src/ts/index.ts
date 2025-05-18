@@ -2,78 +2,49 @@
 // Global services will be available
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Index page loaded');
+    
     // Get services from global scope
     const authService = (window as any).authService;
-    const websocketService = (window as any).websocketService;
+    console.log('AuthService available:', !!authService);
     
     // Initialize auth service if available
-    if (authService) {
+    if (authService && authService.init) {
+        console.log('Initializing auth service');
         authService.init();
+    } else {
+        console.warn('Auth service not available or missing init method');
+    }
+    
+    // Update UI based on authentication status
+    updateUI();
+    
+    function updateUI() {
+        const isAuthenticated = authService && authService.isAuthenticated && authService.isAuthenticated();
+        console.log('User is authenticated:', isAuthenticated);
         
-        // Check if user is logged in
-        if (!authService.isAuthenticated()) {
-            // Redirect to login page if not logged in
-            window.location.href = '/login.html';
-            return;
-        }
-    }
-    
-    // Connect to WebSocket if available
-    if (websocketService) {
-        websocketService.connect();
-    }
-    
-    // Display username
-    const usernameDisplay = document.getElementById('username-display');
-    if (usernameDisplay && authService) {
-        usernameDisplay.textContent = `Bonjour, ${authService.getUsername() || 'Utilisateur'}`;
-    }
-    
-    // Mobile menu toggle
-    const menuToggle = document.getElementById('menu-toggle');
-    const mobileMenu = document.getElementById('mobile-menu');
-    
-    if (menuToggle && mobileMenu) {
-        menuToggle.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
-    }
-    
-    // Logout functionality
-    const logoutButton = document.getElementById('logout-button');
-    const mobileLogoutButton = document.getElementById('mobile-logout-button');
-    
-    if (logoutButton && authService) {
-        logoutButton.addEventListener('click', async () => {
-            try {
-                // Show loading state
-                logoutButton.innerHTML = `<svg class="animate-spin h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg> Déconnexion...`;
-                
-                // Disconnect from WebSocket if available
-                if (websocketService) {
-                    websocketService.disconnect();
-                }
-                
-                // Use auth service for logout
-                await authService.logout();
-                
-                // Redirect to login page
-                window.location.href = '/login.html';
-            } catch (error) {
-                console.error('Error during logout:', error);
-                // Still redirect to login even if API call fails
-                window.location.href = '/login.html';
+        // Elements that should only appear for authenticated users
+        const authElements = document.querySelectorAll('.auth-only');
+        
+        // Elements that should only appear for non-authenticated users
+        const guestElements = document.querySelectorAll('.guest-only');
+        
+        if (isAuthenticated) {
+            // Show auth elements, hide guest elements
+            authElements.forEach(el => el.classList.remove('hidden'));
+            guestElements.forEach(el => el.classList.add('hidden'));
+            
+            // Update username if displayed
+            const usernameDisplay = document.getElementById('username-display');
+            if (usernameDisplay && authService.getUsername) {
+                usernameDisplay.textContent = `Bonjour, ${authService.getUsername() || 'Utilisateur'}`;
             }
-        });
-    }
-    
-    if (mobileLogoutButton) {
-        mobileLogoutButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            logoutButton?.click();
-        });
+            
+            // Note: Logout functionality is now handled by header-loader.ts
+        } else {
+            // Hide auth elements, show guest elements
+            authElements.forEach(el => el.classList.add('hidden'));
+            guestElements.forEach(el => el.classList.remove('hidden'));
+        }
     }
 }); 

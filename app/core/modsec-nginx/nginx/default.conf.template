@@ -18,7 +18,7 @@ server {
 
     # ── Reverse‑proxy to the NestJS back‑end ──────────────────────────────────────
     location / {
-        proxy_pass         ${BACKEND};        # ← env BACKEND=http://backend:3001
+        proxy_pass         ${BACKEND};        # ← env BACKEND=http://backend:3000
         proxy_set_header   Host              $host;
         proxy_set_header   X-Real-IP         $remote_addr;
         proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;

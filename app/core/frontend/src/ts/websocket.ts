@@ -6,8 +6,9 @@ class WebSocketService {
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
   private reconnectTimer: number | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private maxReconnectAttempts = 3; // Réduit à 3 tentatives
   private reconnectDelay = 3000; // 3 seconds initial delay
+  private isBackendAvailable = true; // Flag pour suivre la disponibilité du backend
 
   // Connect to the WebSocket server
   connect() {
@@ -16,9 +17,15 @@ class WebSocketService {
       return;
     }
 
+    // Si le backend a été marqué comme indisponible, ne pas tenter de se reconnecter
+    if (!this.isBackendAvailable) {
+      console.log('[WebSocket] Backend previously marked as unavailable, skipping connection attempt');
+      return;
+    }
+
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      console.error('[WebSocket] No token available for connection');
+      console.log('[WebSocket] No token available for connection');
       return;
     }
 
@@ -33,6 +40,7 @@ class WebSocketService {
       this.socket.addEventListener('open', () => {
         console.log('[WebSocket] Connected successfully');
         this.reconnectAttempts = 0;
+        this.isBackendAvailable = true; // Marquer le backend comme disponible
         if (this.reconnectTimer) {
           clearTimeout(this.reconnectTimer);
           this.reconnectTimer = null;
@@ -66,7 +74,7 @@ class WebSocketService {
 
       // Connection error
       this.socket.addEventListener('error', (error) => {
-        console.error('[WebSocket] Connection error:', error);
+        console.warn('[WebSocket] Connection error - Backend may not be running WebSocket server');
         this.attemptReconnect();
       });
     } catch (error) {
@@ -116,7 +124,7 @@ class WebSocketService {
   // Send a message to the server
   send(type: string, data: any) {
     if (this.socket?.readyState !== WebSocket.OPEN) {
-      console.error('[WebSocket] Cannot send message: connection not open');
+      console.warn('[WebSocket] Cannot send message: connection not open');
       return;
     }
 
@@ -137,13 +145,15 @@ class WebSocketService {
     if (this.reconnectTimer) return;
 
     this.reconnectAttempts++;
+    
     if (this.reconnectAttempts > this.maxReconnectAttempts) {
       console.log('[WebSocket] Max reconnect attempts reached, giving up');
+      this.isBackendAvailable = false; // Marquer le backend comme indisponible
       return;
     }
 
-    const delay = Math.min(30000, this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1));
-    console.log(`[WebSocket] Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    const delay = Math.min(10000, this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1));
+    console.log(`[WebSocket] Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
     this.reconnectTimer = window.setTimeout(() => {
       this.reconnectTimer = null;
@@ -153,4 +163,16 @@ class WebSocketService {
 }
 
 // Create a singleton instance
-export const websocketService = new WebSocketService(); 
+const websocketService = new WebSocketService();
+
+// Make it globally available
+(window as any).websocketService = websocketService;
+
+// Auto-connect if user is authenticated
+document.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    console.log('[WebSocket] Auto-connecting...');
+    websocketService.connect();
+  }
+}); 
