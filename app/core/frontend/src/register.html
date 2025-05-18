@@ -46,7 +46,7 @@
                                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                             </svg>
                         </div>
-                        <input class="input-field pl-10" id="username" type="text" placeholder="Votre nom d'utilisateur" required>
+                        <input class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 dark:bg-gray-700 dark:border-gray-600 dark:text-white" id="username" type="text" placeholder="Votre nom d'utilisateur" required autocomplete="username">
                     </div>
                 </div>
                 
@@ -61,7 +61,7 @@
                                 <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                             </svg>
                         </div>
-                        <input class="input-field pl-10" id="email" type="email" placeholder="exemple@email.com" required>
+                        <input class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 dark:bg-gray-700 dark:border-gray-600 dark:text-white" id="email" type="email" placeholder="exemple@email.com" required autocomplete="email">
                     </div>
                 </div>
                 
@@ -75,7 +75,7 @@
                                 <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
                             </svg>
                         </div>
-                        <input class="input-field pl-10" id="password" type="password" placeholder="Choisissez un mot de passe" required>
+                        <input class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 dark:bg-gray-700 dark:border-gray-600 dark:text-white" id="password" type="password" placeholder="Choisissez un mot de passe" required autocomplete="new-password">
                     </div>
                     <p class="text-xs text-gray-500 mt-1">Le mot de passe doit contenir au moins 6 caractères</p>
                 </div>
@@ -90,7 +90,7 @@
                                 <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
                             </svg>
                         </div>
-                        <input class="input-field pl-10" id="confirm-password" type="password" placeholder="Confirmez votre mot de passe" required>
+                        <input class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 dark:bg-gray-700 dark:border-gray-600 dark:text-white" id="confirm-password" type="password" placeholder="Confirmez votre mot de passe" required autocomplete="new-password">
                     </div>
                 </div>
                 
@@ -102,7 +102,7 @@
                 </div>
                 
                 <div>
-                    <button class="btn-primary w-full flex justify-center py-3" type="submit">
+                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out flex items-center justify-center" type="submit">
                         <span>S'inscrire</span>
                     </button>
                 </div>
@@ -139,6 +139,8 @@
             })
             .catch(error => console.error('Erreur lors du chargement du footer:', error));
     </script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/register.js"></script>
 </body>
 </html> 

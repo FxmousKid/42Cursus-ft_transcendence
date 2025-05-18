@@ -1,6 +1,10 @@
 // API URL configuration
 const API_URL = 'http://localhost:3000';
 
+// Import auth service (will be imported from module using this file)
+// This is done to avoid circular dependency
+let _authService: any = null;
+
 // Response and data interfaces
 interface ApiResponse<T> {
   success: boolean;
@@ -51,6 +55,11 @@ export interface Friend {
   avatar_url?: string;
 }
 
+// Set auth service reference
+export function setAuthService(authService: any) {
+  _authService = authService;
+}
+
 // Helper for API requests
 async function request<T>(
   endpoint: string,
@@ -60,8 +69,13 @@ async function request<T>(
     const url = `${API_URL}${endpoint}`;
     console.log(`[API] Making ${options.method || 'GET'} request to: ${url}`);
     
-    // Get token from localStorage
-    const token = localStorage.getItem('auth_token');
+    // Get token from auth service if available, otherwise fallback to localStorage
+    let token = null;
+    if (_authService && _authService.getToken) {
+      token = _authService.getToken();
+    } else {
+      token = localStorage.getItem('auth_token');
+    }
     
     // Prepare headers
     const headers = {
@@ -79,6 +93,24 @@ async function request<T>(
     });
     
     console.log(`[API] Response status: ${response.status}`);
+    
+    // Handle authentication errors
+    if (response.status === 401) {
+      // If auth service is available, clear session
+      if (_authService && _authService.clearSession) {
+        _authService.clearSession();
+      }
+      
+      // Redirect to login page if not already there
+      if (window.location.pathname !== '/login.html') {
+        window.location.href = '/login.html';
+      }
+      
+      return { 
+        success: false, 
+        message: 'Authentication required' 
+      };
+    }
     
     // Handle no content response
     if (response.status === 204) {
@@ -140,12 +172,27 @@ const auth = {
 // User services
 const user = {
   async getProfile(userId?: number): Promise<ApiResponse<UserProfile>> {
+    // Get userId from auth service if available
+    if (!userId && _authService && _authService.getUserId) {
+      const id = _authService.getUserId();
+      if (id) {
+        return request<UserProfile>(`/users/${id}`);
+      }
+    }
+    
     const id = userId || localStorage.getItem('user_id');
     return request<UserProfile>(`/users/${id}`);
   },
   
   async updateProfile(data: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> {
-    const userId = localStorage.getItem('user_id');
+    // Get userId from auth service if available
+    let userId = null;
+    if (_authService && _authService.getUserId) {
+      userId = _authService.getUserId();
+    } else {
+      userId = localStorage.getItem('user_id');
+    }
+    
     return request<UserProfile>(`/users/${userId}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
@@ -153,6 +200,14 @@ const user = {
   },
   
   async getMatches(userId?: number): Promise<ApiResponse<MatchData[]>> {
+    // Get userId from auth service if available
+    if (!userId && _authService && _authService.getUserId) {
+      const id = _authService.getUserId();
+      if (id) {
+        return request<MatchData[]>(`/users/${id}/matches`);
+      }
+    }
+    
     const id = userId || localStorage.getItem('user_id');
     return request<MatchData[]>(`/users/${id}/matches`);
   },
@@ -215,4 +270,7 @@ export const api = {
   user,
   friendship,
   game
-}; 
+};
+
+// Make API globally available
+(window as any).api = api; 
