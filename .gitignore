@@ -162,3 +162,4 @@ backend/.env
 
 app/core/frontend/package-lock.json
 app/core/backend/package-lock.json
+app/core/frontend/src/css/output.css
