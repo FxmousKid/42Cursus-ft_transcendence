@@ -1,5 +1,7 @@
 // API URL configuration
-const API_URL = 'http://localhost:3000';
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  ? 'http://localhost:3000'  
+  : window.location.origin;  // Use the same origin in production
 
 // Types for API responses
 export interface UserProfile {
@@ -44,12 +46,19 @@ async function request(
       ...options.headers,
     };
     
+    // Add a timeout to the fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(url, {
       ...options,
       headers,
       mode: 'cors',
-      credentials: 'include'
+      credentials: 'include',
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId); // Clear the timeout
     
     console.log(`[API] Response status: ${response.status}`);
     
@@ -109,10 +118,15 @@ async function request(
     return data;
   } catch (error) {
     console.error('API request failed:', error);
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      console.warn('[API] Failed to fetch. The backend server may be down or unreachable.');
+      // Show a user-friendly message in the console that could be displayed to the user
+      console.log('[API] Connection to server failed. Please check if the backend is running.');
+    }
     return { 
       success: false, 
       message: error instanceof Error ? error.message : 'Unknown error',
-      data: [] // Renvoyer un tableau vide par défaut
+      data: [] // Return an empty array by default
     };
   }
 }
