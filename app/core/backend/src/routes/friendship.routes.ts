@@ -36,7 +36,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
       try {
         const { User, Friendship } = fastify.db.models;
         const userId = request.user!.id;
-        
+
         // Find all friendships where the current user is involved
         const friendships = await Friendship.findAll({
           where: {
@@ -59,14 +59,14 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             }
           ]
         });
-        
+
         // Format the response
         const friends = friendships.map(friendship => {
           // Determine which user is the friend (not the current user)
-          const friend = friendship.user_id === userId 
-            ? friendship.friend 
+          const friend = friendship.user_id === userId
+            ? friendship.friend
             : friendship.user;
-            
+
           return {
             id: friend.id,
             username: friend.username,
@@ -75,7 +75,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             friendship_status: friendship.status
           };
         });
-        
+
         return { success: true, data: friends };
       } catch (error) {
         fastify.log.error(error);
@@ -118,14 +118,14 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
         const { Friendship } = fastify.db.models;
         const userId = request.user!.id;
         const { friend_id } = request.body;
-        
+
         if (userId === friend_id) {
-          return reply.status(400).send({ 
-            success: false, 
-            message: 'You cannot send a friend request to yourself' 
+          return reply.status(400).send({
+            success: false,
+            message: 'You cannot send a friend request to yourself'
           });
         }
-        
+
         // Check if friendship already exists
         const existingFriendship = await Friendship.findOne({
           where: {
@@ -135,21 +135,21 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             ]
           }
         });
-        
+
         if (existingFriendship) {
-          return reply.status(400).send({ 
-            success: false, 
-            message: 'Friendship request already exists' 
+          return reply.status(400).send({
+            success: false,
+            message: 'Friendship request already exists'
           });
         }
-        
+
         // Create new friendship request
         const newFriendship = await Friendship.create({
           user_id: userId,
           friend_id,
           status: 'pending'
         });
-        
+
         return { success: true, data: newFriendship };
       } catch (error) {
         fastify.log.error(error);
@@ -195,7 +195,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
       try {
         const { User, Friendship } = fastify.db.models;
         const userId = request.user!.id;
-        
+
         // Find pending friend requests
         const pendingRequests = await Friendship.findAll({
           where: {
@@ -210,7 +210,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             }
           ]
         });
-        
+
         return { success: true, data: pendingRequests };
       } catch (error) {
         fastify.log.error(error);
@@ -253,7 +253,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
         const { Friendship } = fastify.db.models;
         const userId = request.user!.id;
         const { friend_id } = request.body;
-        
+
         // Find the friendship request
         const friendship = await Friendship.findOne({
           where: {
@@ -262,18 +262,18 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             status: 'pending'
           }
         });
-        
+
         if (!friendship) {
-          return reply.status(404).send({ 
-            success: false, 
-            message: 'Friend request not found' 
+          return reply.status(404).send({
+            success: false,
+            message: 'Friend request not found'
           });
         }
-        
+
         // Update friendship status
         friendship.status = 'accepted';
         await friendship.save();
-        
+
         return { success: true, data: friendship };
       } catch (error) {
         fastify.log.error(error);
@@ -308,7 +308,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
         const { Friendship } = fastify.db.models;
         const userId = request.user!.id;
         const { friend_id } = request.body;
-        
+
         // Find the friendship request
         const friendship = await Friendship.findOne({
           where: {
@@ -317,20 +317,20 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             status: 'pending'
           }
         });
-        
+
         if (!friendship) {
-          return reply.status(404).send({ 
-            success: false, 
-            message: 'Friend request not found' 
+          return reply.status(404).send({
+            success: false,
+            message: 'Friend request not found'
           });
         }
-        
+
         // Delete the friendship
         await friendship.destroy();
-        
-        return { 
-          success: true, 
-          message: 'Friend request rejected successfully' 
+
+        return {
+          success: true,
+          message: 'Friend request rejected successfully'
         };
       } catch (error) {
         fastify.log.error(error);
@@ -365,7 +365,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
         const { Friendship } = fastify.db.models;
         const userId = request.user!.id;
         const { friend_id } = request.params;
-        
+
         // Find the friendship
         const friendship = await Friendship.findOne({
           where: {
@@ -376,20 +376,20 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             status: 'accepted'
           }
         });
-        
+
         if (!friendship) {
-          return reply.status(404).send({ 
-            success: false, 
-            message: 'Friendship not found' 
+          return reply.status(404).send({
+            success: false,
+            message: 'Friendship not found'
           });
         }
-        
+
         // Delete the friendship
         await friendship.destroy();
-        
-        return { 
-          success: true, 
-          message: 'Friend removed successfully' 
+
+        return {
+          success: true,
+          message: 'Friend removed successfully'
         };
       } catch (error) {
         fastify.log.error(error);

@@ -120,11 +120,11 @@ export function registerUserRoutes(fastify: FastifyInstance) {
         const user = await fastify.db.models.User.findByPk(request.user!.id, {
           attributes: ['id', 'username', 'email', 'status', 'avatar_url']
         });
-        
+
         if (!user) {
           return reply.status(404).send({ success: false, message: 'User not found' });
         }
-        
+
         return { success: true, data: user };
       } catch (error) {
         fastify.log.error(error);
@@ -165,21 +165,21 @@ export function registerUserRoutes(fastify: FastifyInstance) {
       try {
         const { status } = request.body;
         const user = await fastify.db.models.User.findByPk(request.user!.id);
-        
+
         if (!user) {
           return reply.status(404).send({ success: false, message: 'User not found' });
         }
-        
+
         user.status = status;
         await user.save();
-        
-        return { 
-          success: true, 
-          data: { 
+
+        return {
+          success: true,
+          data: {
             id: user.id,
             username: user.username,
             status: user.status
-          } 
+          }
         };
       } catch (error) {
         fastify.log.error(error);
@@ -223,18 +223,18 @@ export function registerUserRoutes(fastify: FastifyInstance) {
       try {
         const updateData = request.body;
         const user = await fastify.db.models.User.findByPk(request.user!.id);
-        
+
         if (!user) {
           return reply.status(404).send({ success: false, message: 'User not found' });
         }
-        
+
         // Update only provided fields
         if (updateData.username) user.username = updateData.username;
         if (updateData.email) user.email = updateData.email;
         if (updateData.avatar_url) user.avatar_url = updateData.avatar_url;
-        
+
         await user.save();
-        
+
         return { success: true, data: user };
       } catch (error) {
         fastify.log.error(error);
@@ -260,13 +260,13 @@ export function registerUserRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const user = await fastify.db.models.User.findByPk(request.user!.id);
-        
+
         if (!user) {
           return reply.status(404).send({ success: false, message: 'User not found' });
         }
-        
+
         await user.destroy();
-        
+
         return { success: true, message: 'Account deleted successfully' };
       } catch (error) {
         fastify.log.error(error);

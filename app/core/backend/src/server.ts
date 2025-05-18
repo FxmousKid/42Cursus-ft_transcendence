@@ -7,6 +7,7 @@ import { configureRoutes } from './routes';
 import { configureDatabasePlugin } from './plugins/database';
 import { configureAuthPlugin } from './plugins/auth';
 import { setupWebSocket } from './websocket';
+import { registerTournamentRoutes } from './routes/tournament.routes';
 
 // Environment variables
 const PORT = process.env.PORT || 3000;
@@ -55,6 +56,7 @@ async function setup() {
           { name: 'users', description: 'User management endpoints' },
           { name: 'friends', description: 'Friend relationship endpoints' },
           { name: 'matches', description: 'Game matches endpoints' },
+          { name: 'tournaments', description: 'Tournament in local endpoints'},
         ],
       },
     });
