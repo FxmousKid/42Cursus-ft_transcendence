@@ -203,6 +203,12 @@ export const api = {
         body: JSON.stringify(data)
       });
     },
+    
+    async deleteProfile() {
+      return request('/users/profile', {
+        method: 'DELETE'
+      });
+    },
 
     async getMatches(): Promise<{ success: boolean; data?: MatchData[]; message?: string }> {
       return request('/users/matches');
