@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .btn-primary {
+    @apply bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded;
+  }
+  
+  .input-field {
+    @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring focus:border-blue-500;
+  }
+}
+
+/* Styles d'accessibilité */
+.high-contrast {
+  @apply bg-black text-white;
+}
+
+.high-contrast button:not(.language-btn) {
+  @apply bg-yellow-500 text-black border-2 border-white;
+}
+
+.high-contrast a {
+  @apply text-yellow-400 underline;
+}
+
+.high-contrast input,
+.high-contrast textarea,
+.high-contrast select {
+  @apply bg-black text-white border-2 border-yellow-500;
+}
+
+.high-contrast header,
+.high-contrast footer {
+  @apply bg-black border-t-2 border-b-2 border-white;
+}
+
+/* Animation de transition pour les changements d'état */
+.transition-colors {
+  @apply transition-all duration-200;
+}
+
+/* Styles de conteneur pour les cartes et sections */
+.card {
+  @apply bg-white rounded-lg shadow-md p-6;
+} 

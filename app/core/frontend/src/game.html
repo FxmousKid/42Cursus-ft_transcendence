@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu Pong - ft_transcendence</title>
+    <link rel="stylesheet" href="css/output.css">
+    <meta name="description" content="Jouez au Pong en ligne avec ft_transcendence et affrontez d'autres joueurs.">
+    <style>
+        /* Additional styles for the game */
+        #game-canvas {
+            background-color: #111827;
+            display: block;
+            margin: 0 auto;
+            border-radius: 0.5rem;
+        }
+        .game-instructions {
+            background-color: #f3f4f6;
+            border-left: 4px solid #4f46e5;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.25rem;
+        }
+        .player-controls {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .player-label {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .key {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background-color: #e5e7eb;
+            border: 1px solid #9ca3af;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            margin: 0 0.25rem;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-gray-50">
+    <!-- En-tête -->
+    <div id="header-container"></div>
+    
+    <!-- Contenu principal -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6 text-center">Jeu de Pong</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <div class="game-instructions mb-4">
+                <h2 class="text-xl font-semibold mb-2">Instructions</h2>
+                <p class="mb-2">Deux joueurs s'affrontent sur le même clavier :</p>
+                <div class="player-controls">
+                    <div>
+                        <p class="player-label">Joueur 1 (Gauche)</p>
+                        <p><span class="key">Q</span> pour monter et <span class="key">W</span> pour descendre</p>
+                    </div>
+                    <div>
+                        <p class="player-label">Joueur 2 (Droite)</p>
+                        <p><span class="key">←</span> pour monter et <span class="key">→</span> pour descendre</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mb-4">
+                <span id="player-left-score" class="text-3xl font-bold mr-8">0</span>
+                <span class="text-xl">vs</span>
+                <span id="player-right-score" class="text-3xl font-bold ml-8">0</span>
+            </div>
+            
+            <!-- Game Canvas replaces the animated placeholder -->
+            <canvas id="game-canvas" width="800" height="500" class="shadow-2xl mb-6"></canvas>
+            
+            <div class="text-center mt-4 space-x-4">
+                <button id="start-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded">
+                    Démarrer la partie
+                </button>
+                <button id="reset-button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded">
+                    Réinitialiser
+                </button>
+                <a href="/" class="inline-block bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded">
+                    Retour à l'accueil
+                </a>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Pied de page -->
+    <div id="footer-container"></div>
+    
+    <!-- Scripts -->
+    <script>
+        // Charger le footer uniquement (le header est géré par header-loader.js)
+        fetch('components/footer.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('footer-container').innerHTML = data;
+            })
+            .catch(error => console.error('Erreur lors du chargement du footer:', error));
+    </script>
+    
+    <!-- Core scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/websocket.js"></script>
+    
+    <!-- App initialization and utilities (load these first) -->
+    <script src="js/app.js"></script>
+    <script src="js/header-loader.js"></script>
+    <script src="js/route-guard.js"></script>
+    
+    <!-- Page-specific script (load this last) -->
+    <script src="js/game.js"></script>
+</body>
+</html>

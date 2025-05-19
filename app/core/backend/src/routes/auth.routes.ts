@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import bcrypt from 'bcrypt';
+import { Op } from 'sequelize';
 
 interface LoginBody {
   email: string;
@@ -47,17 +48,22 @@ export function registerAuthRoutes(fastify: FastifyInstance) {
       try {
         const { username, email, password } = request.body;
 
-        // Check if user already exists
+        // Check if user already exists with same email or username
         const existingUser = await fastify.db.models.User.findOne({
           where: {
-            email
+            [Op.or]: [
+              { email },
+              { username }
+            ]
           }
         });
 
         if (existingUser) {
+          // Provide more specific error message
+          const field = existingUser.email === email ? 'email' : 'username';
           return reply.status(400).send({ 
             success: false, 
-            message: 'User with this email already exists' 
+            message: `User with this ${field} already exists` 
           });
         }
 

@@ -1,0 +1,316 @@
+import { api } from './api';
+
+// Interface pour les données de match
+interface MatchData {
+    id: number;
+    player1_id: number;
+    player2_id: number;
+    player1_username: string;
+    player2_username: string;
+    player1_score: number;
+    player2_score: number;
+    winner_id?: number;
+    status?: string;
+    created_at: string;
+    updated_at: string;
+  }
+
+/**
+ * Script pour gérer la page de profil
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Profile page loaded');
+    
+    // Obtenir l'instance du service d'authentification
+    const authService = (window as any).authService;
+    console.log('Auth service available:', !!authService);
+    
+    // Vérifier l'état d'authentification
+    const isAuthenticated = authService && authService.isAuthenticated && authService.isAuthenticated();
+    console.log('User is authenticated:', isAuthenticated);
+    
+    if (!isAuthenticated) {
+        console.log('User is not authenticated, should be redirected by route-guard.js');
+        return;
+    }
+    
+    // Si l'utilisateur est authentifié, charger les données du profil
+    console.log('Loading profile data for authenticated user');
+    
+    // Remplir les informations de base du profil
+    const profileUsername = authService.getUsername();
+    const userId = authService.getUserId();
+    
+    console.log('Profile data:', { username: profileUsername, userId });
+    
+    const usernameElement = document.getElementById('profile-username');
+    if (usernameElement) {
+        usernameElement.textContent = profileUsername || 'Utilisateur';
+    }
+    
+    // Obtenir l'instance de l'API
+    const api = (window as any).api;
+    if (!api || !api.user) {
+        console.error('API not available');
+        return;
+    }
+    
+    // Profile elements
+    const profileUsernameElement = document.getElementById('profile-username') as HTMLElement;
+    const profileEmail = document.getElementById('profile-email') as HTMLElement;
+    const profileStatus = document.getElementById('profile-status') as HTMLElement;
+    const profileAvatar = document.getElementById('profile-avatar') as HTMLElement;
+    
+    // Stats elements
+    const statsGamesPlayed = document.getElementById('stats-games-played') as HTMLElement;
+    const statsWins = document.getElementById('stats-wins') as HTMLElement;
+    const statsLosses = document.getElementById('stats-losses') as HTMLElement;
+    const statsRatio = document.getElementById('stats-ratio') as HTMLElement;
+    
+    // Matches elements
+    const matchesContainer = document.getElementById('matches-container') as HTMLElement;
+    const noMatches = document.getElementById('no-matches') as HTMLElement;
+    const matchTemplate = document.getElementById('match-template') as HTMLTemplateElement;
+    
+    // Edit profile elements
+    const editProfileButton = document.getElementById('edit-profile-button') as HTMLElement;
+    const editProfileModal = document.getElementById('edit-profile-modal') as HTMLElement;
+    const editProfileForm = document.getElementById('edit-profile-form') as HTMLFormElement;
+    const editUsername = document.getElementById('edit-username') as HTMLInputElement;
+    const editEmail = document.getElementById('edit-email') as HTMLInputElement;
+    const editAvatar = document.getElementById('edit-avatar') as HTMLInputElement;
+    const cancelEditButton = document.getElementById('cancel-edit') as HTMLElement;
+    const editErrorMessage = document.getElementById('edit-error-message') as HTMLElement;
+    const editErrorText = document.getElementById('edit-error-text') as HTMLElement;
+    
+    // Utiliser les données du localStorage pour afficher des informations de base
+    // même si le backend n'est pas disponible
+    const username = localStorage.getItem('username');
+    const email = localStorage.getItem('email') || '';
+    const avatarUrl = localStorage.getItem('avatar_url');
+    
+    // Afficher les informations de base depuis localStorage
+    if (username) {
+        profileUsernameElement.textContent = username;
+        profileStatus.textContent = 'Hors ligne';
+        profileStatus.classList.add('text-gray-600');
+        
+        // Pré-remplir les champs du formulaire
+        editUsername.value = username;
+        editEmail.value = email;
+        editAvatar.value = avatarUrl || '';
+        
+        // Afficher l'avatar si disponible
+        if (avatarUrl) {
+            profileAvatar.innerHTML = `<img src="${avatarUrl}" alt="${username}" class="w-full h-full object-cover">`;
+        }
+    }
+    
+    // Charger les données complètes du profil
+    loadProfileData();
+    
+    // Charger les matchs
+    loadMatches();
+    
+    // Gérer le bouton d'édition de profil
+    if (editProfileButton && editProfileModal) {
+        editProfileButton.addEventListener('click', () => {
+            editProfileModal.classList.remove('hidden');
+        });
+    }
+    
+    if (cancelEditButton && editProfileModal) {
+        cancelEditButton.addEventListener('click', () => {
+            editProfileModal.classList.add('hidden');
+            if (editErrorMessage) {
+                editErrorMessage.classList.add('hidden');
+            }
+        });
+    }
+    
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            submitProfileEdit();
+        });
+    }
+    
+    // Fonction asynchrone pour charger les données du profil
+    async function loadProfileData() {
+        try {
+            console.log('Loading full profile data from API');
+            const response = await api.user.getProfile();
+            console.log('Profile API response:', response);
+            
+            if (response.success && response.data) {
+                console.log('Successfully loaded profile data');
+                const profile = response.data;
+                
+                // Afficher les informations du profil
+                profileUsernameElement.textContent = profile.username;
+                if (profileEmail) {
+                    profileEmail.textContent = profile.email || '';
+                }
+                
+                if (profileStatus) {
+                    profileStatus.textContent = profile.status || 'Hors ligne';
+                    
+                    // Définir la couleur du statut
+                    profileStatus.classList.remove('text-green-600', 'text-blue-600', 'text-gray-600');
+                    if (profile.status === 'online') {
+                        profileStatus.classList.add('text-green-600');
+                    } else if (profile.status === 'in_game') {
+                        profileStatus.classList.add('text-blue-600');
+                    } else {
+                        profileStatus.classList.add('text-gray-600');
+                    }
+                }
+                
+                // Afficher l'avatar si disponible
+                if (profile.avatar_url && profileAvatar) {
+                    profileAvatar.innerHTML = `<img src="${profile.avatar_url}" alt="${profile.username}" class="w-full h-full object-cover">`;
+                    // Stocker l'URL de l'avatar dans localStorage
+                    localStorage.setItem('avatar_url', profile.avatar_url);
+                }
+                
+                // Définir les valeurs du formulaire pour l'édition
+                if (editUsername) editUsername.value = profile.username;
+                if (editEmail) editEmail.value = profile.email || '';
+                if (editAvatar) editAvatar.value = profile.avatar_url || '';
+                
+                // Stocker l'email dans localStorage pour une utilisation future
+                if (profile.email) {
+                    localStorage.setItem('email', profile.email);
+                }
+            } else {
+                console.error('Failed to load profile data:', response.message);
+            }
+        } catch (error) {
+            console.error('Error loading profile data:', error);
+        }
+    }
+
+    async function loadMatches() {
+        try {
+          const matchesResponse = await api.user.getMatches();
+          
+          if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
+            const matches = matchesResponse.data as MatchData[];
+            
+            // Hide "no matches" message
+            if (noMatches) {
+              noMatches.classList.add('hidden');
+            }
+            
+            // Calculate stats
+            let wins = 0;
+            let losses = 0;
+            const userId = authService.getUserId();
+            
+            // Clear existing matches
+            if (matchesContainer) {
+              matchesContainer.innerHTML = '';
+            }
+            
+            // Display matches
+            if (matchesContainer && matchTemplate) {
+              matches.forEach((match: MatchData) => {
+                // Determine if current user is player1 or player2
+                const isPlayer1 = match.player1_id.toString() === userId;
+                const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
+                const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
+                const opponentUsername = isPlayer1 ? match.player2_username : match.player1_username;
+                
+                // Determine if match was won or lost
+                const isWin = currentPlayerScore > opponentScore;
+                if (isWin) wins++;
+                else losses++;
+                
+                // Create match element from template
+                const matchElement = document.importNode(matchTemplate.content, true);
+                
+                // Set match details
+                const resultIndicator = matchElement.querySelector('.match-result-indicator');
+                const opponent = matchElement.querySelector('.match-opponent');
+                const date = matchElement.querySelector('.match-date');
+                const score = matchElement.querySelector('.match-score');
+                
+                if (resultIndicator) {
+                  resultIndicator.classList.add(isWin ? 'bg-green-500' : 'bg-red-500');
+                }
+                
+                if (opponent) opponent.textContent = opponentUsername || 'Unknown';
+                if (score) score.textContent = `${currentPlayerScore} - ${opponentScore}`;
+                
+                // Format date
+                if (date && match.created_at) {
+                  const matchDate = new Date(match.created_at);
+                  date.textContent = matchDate.toLocaleDateString();
+                }
+                
+                // Add match to container
+                matchesContainer.appendChild(matchElement);
+              });
+            }
+            
+            // Update stats
+            const total = wins + losses;
+            if (statsGamesPlayed) statsGamesPlayed.textContent = total.toString();
+            if (statsWins) statsWins.textContent = wins.toString();
+            if (statsLosses) statsLosses.textContent = losses.toString();
+            if (statsRatio) statsRatio.textContent = total > 0 ? (wins / total).toFixed(2) : '0.00';
+          } else {
+            // Show "no matches" message if no matches found
+            if (noMatches) {
+              noMatches.classList.remove('hidden');
+            }
+          }
+        } catch (error) {
+          console.error('Error loading matches:', error);
+          
+          // Show "no matches" message in case of error
+          if (noMatches) {
+            noMatches.classList.remove('hidden');
+          }
+        }
+      }
+    
+    // Fonction pour soumettre les modifications du profil
+    async function submitProfileEdit() {
+        if (!editUsername || !editEmail) return;
+        
+        const updateData = {
+            username: editUsername.value,
+            email: editEmail.value,
+            avatar_url: editAvatar ? editAvatar.value : undefined
+        };
+        
+        try {
+            const response = await api.user.updateProfile(updateData);
+            
+            if (response.success) {
+                // Fermer le modal
+                if (editProfileModal) {
+                    editProfileModal.classList.add('hidden');
+                }
+                
+                // Recharger les données du profil
+                loadProfileData();
+            } else {
+                // Afficher l'erreur
+                if (editErrorMessage && editErrorText) {
+                    editErrorText.textContent = response.message || 'Une erreur est survenue';
+                    editErrorMessage.classList.remove('hidden');
+                }
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            
+            if (editErrorMessage && editErrorText) {
+                editErrorText.textContent = 'Erreur de connexion au serveur';
+                editErrorMessage.classList.remove('hidden');
+            }
+        }
+    }
+}); 
