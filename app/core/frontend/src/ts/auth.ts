@@ -192,6 +192,25 @@ export class AuthService {
   }
 
   /**
+   * Update username in auth state
+   */
+  public updateUsername(username: string): void {
+    if (!username) return;
+    
+    // Update state
+    this.state.username = username;
+    
+    // Update in storage
+    if (this.state.rememberMe) {
+      localStorage.setItem(USERNAME_KEY, username);
+    } else {
+      sessionStorage.setItem(USERNAME_KEY, username);
+    }
+    
+    console.log('Auth: Username updated to:', username);
+  }
+
+  /**
    * Clear session data (exposed for API module)
    */
   public clearSession(): void {

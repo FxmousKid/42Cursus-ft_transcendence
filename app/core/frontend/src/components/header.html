@@ -24,7 +24,8 @@
             <div class="flex items-center space-x-4">
                 <div class="hidden md:block">
                     <a href="/profile.html" class="text-gray-700 hover:text-blue-600 transition-colors">
-                        <span id="username-display" class="font-medium">Utilisateur</span>
+                        <!-- Username -->
+                        <span id="username-display" class="font-medium">Salut, Utilisateur</span> 
                     </a>
                 </div>
                 
@@ -93,11 +94,11 @@
 
 <script>
     // Afficher le nom d'utilisateur
-    const username = localStorage.getItem('username');
-    if (username) {
+    const authService = window.authService;
+    if (authService && authService.getUsername) {
         const usernameDisplay = document.getElementById('username-display');
         if (usernameDisplay) {
-            usernameDisplay.textContent = username;
+            usernameDisplay.textContent = `Salut, ${authService.getUsername() || 'Utilisateur'}`;
         }
     }
     

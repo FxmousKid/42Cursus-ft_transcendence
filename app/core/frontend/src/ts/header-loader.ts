@@ -91,6 +91,15 @@ function initHeaderBehaviors(isAuthenticated: boolean) {
   // Ne configurer les comportements de déconnexion que si l'utilisateur est authentifié
   if (isAuthenticated) {
     setupLogoutHandlers();
+    
+    // Update username display with the actual username
+    const authService = (window as any).authService;
+    if (authService && authService.getUsername) {
+      const usernameDisplay = document.getElementById('username-display');
+      if (usernameDisplay) {
+        usernameDisplay.textContent = `Salut, ${authService.getUsername() || 'Utilisateur'}`;
+      }
+    }
   }
 }
 

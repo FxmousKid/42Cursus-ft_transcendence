@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Afficher les informations de base depuis localStorage
     if (username) {
         profileUsernameElement.textContent = username;
-        profileStatus.textContent = 'Hors ligne';
+        profileStatus.textContent = 'offline';
         profileStatus.classList.add('text-gray-600');
         
         // Pré-remplir les champs du formulaire
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 if (profileStatus) {
-                    profileStatus.textContent = profile.status || 'Hors ligne';
+                    profileStatus.textContent = profile.status || 'offline';
                     
                     // Définir la couleur du statut
                     profileStatus.classList.remove('text-green-600', 'text-blue-600', 'text-gray-600');
@@ -290,6 +290,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await api.user.updateProfile(updateData);
             
             if (response.success) {
+                // Mettre à jour le nom d'utilisateur dans localStorage
+                if (updateData.username) {
+                    localStorage.setItem('username', updateData.username);
+                    // Mettre à jour l'état dans authService
+                    if (authService && typeof authService.updateUsername === 'function') {
+                        authService.updateUsername(updateData.username);
+                    }
+                }
+                
+                // Mettre à jour l'avatar dans localStorage si nécessaire
+                if (updateData.avatar_url) {
+                    localStorage.setItem('avatar_url', updateData.avatar_url);
+                }
+                
                 // Fermer le modal
                 if (editProfileModal) {
                     editProfileModal.classList.add('hidden');
@@ -297,6 +311,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Recharger les données du profil
                 loadProfileData();
+                
+                // Recharger le header pour refléter les changements
+                window.location.reload();
             } else {
                 // Afficher l'erreur
                 if (editErrorMessage && editErrorText) {
