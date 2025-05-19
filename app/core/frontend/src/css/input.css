@@ -2,14 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-dark-800 text-gray-200 font-sans;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium text-white;
+  }
+  
+  a {
+    @apply text-primary-400 hover:text-primary-300 transition-colors;
+  }
+}
+
 @layer components {
   .btn-primary {
-    @apply bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded;
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg active:translate-y-0.5;
+  }
+  
+  .btn-secondary {
+    @apply bg-dark-500 hover:bg-dark-400 text-gray-100 font-medium py-2.5 px-5 rounded-lg border border-dark-400 transition-all duration-200;
+  }
+  
+  .btn-accent {
+    @apply bg-accent-500 hover:bg-accent-600 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200;
   }
   
   .input-field {
-    @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring focus:border-blue-500;
+    @apply bg-dark-700 border border-dark-500 text-gray-200 rounded-lg py-2.5 px-4 shadow-inner-light focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all duration-200;
   }
+
+  .card {
+    @apply bg-dark-600 rounded-xl shadow-card p-6 border border-dark-500 backdrop-blur-sm;
+  }
+  
+  .card-hover {
+    @apply hover:border-primary-700 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1;
+  }
+  
+  .nav-link {
+    @apply text-gray-300 hover:text-primary-400 font-medium transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-primary-500 after:transition-all hover:after:w-full;
+  }
+  
+  .active-nav-link {
+    @apply text-primary-400 after:w-full after:bg-primary-500 after:absolute after:bottom-0 after:left-0 after:h-0.5;
+  }
+  
+  .mobile-nav-link {
+    @apply text-gray-300 hover:text-primary-400 font-medium py-3 border-b border-dark-500 transition-colors;
+  }
+}
+
+/* Animation de transition pour les changements d'état */
+.transition-custom {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+/* Glassmorphism effect */
+.glass {
+  @apply bg-dark-700/70 backdrop-blur-md border border-dark-600/50;
 }
 
 /* Styles d'accessibilité */
@@ -34,14 +86,4 @@
 .high-contrast header,
 .high-contrast footer {
   @apply bg-black border-t-2 border-b-2 border-white;
-}
-
-/* Animation de transition pour les changements d'état */
-.transition-colors {
-  @apply transition-all duration-200;
-}
-
-/* Styles de conteneur pour les cartes et sections */
-.card {
-  @apply bg-white rounded-lg shadow-md p-6;
 } 
