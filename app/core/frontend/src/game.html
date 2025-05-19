@@ -104,15 +104,16 @@
     </script>
     
     <!-- Core scripts -->
-    <script src="js/websocket.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/websocket.js"></script>
     
-    <!-- Utility scripts -->
+    <!-- App initialization and utilities (load these first) -->
+    <script src="js/app.js"></script>
     <script src="js/header-loader.js"></script>
     <script src="js/route-guard.js"></script>
     
-    <!-- Page-specific script -->
+    <!-- Page-specific script (load this last) -->
     <script src="js/game.js"></script>
 </body>
 </html>

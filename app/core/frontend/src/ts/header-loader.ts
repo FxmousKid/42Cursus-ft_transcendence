@@ -24,6 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn('Auth service not available or missing init method');
   }
   
+  // Force refresh authentication state from storage
+  if (authService && authService.restoreSession) {
+    console.log('Forcing session restoration');
+    authService.restoreSession();
+  }
+  
   // Vérifier si l'utilisateur est authentifié de façon sécurisée
   const isAuthenticated = authService && 
                         authService.isAuthenticated && 
@@ -31,6 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         authService.isAuthenticated();
   
   console.log('User is authenticated:', isAuthenticated);
+  
+  // Log additional details to debug
+  if (isAuthenticated) {
+    console.log('Authenticated user details: ID:', authService.getUserId(), 'Username:', authService.getUsername());
+  }
   
   // Charger le header approprié
   const headerFile = isAuthenticated ? 'components/header.html' : 'components/header-guest.html';

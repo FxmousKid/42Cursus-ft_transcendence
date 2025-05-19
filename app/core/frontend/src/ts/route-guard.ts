@@ -48,6 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const routeName = extractRouteName(currentPath);
   console.log('Route guard: Current route is', routeName);
   
+  // Check local storage and session storage for token presence
+  const hasTokenInStorage = !!(localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token'));
+  console.log('Route guard: Token present in storage:', hasTokenInStorage);
+  
+  // Force authService to re-evaluate authentication status
+  authService.restoreSession();
+  
   // Vérifier si l'utilisateur est authentifié
   const isAuthenticated = authService.isAuthenticated();
   console.log('Route guard: User is authenticated:', isAuthenticated);
