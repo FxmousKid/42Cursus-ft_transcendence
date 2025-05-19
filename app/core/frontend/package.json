@@ -22,6 +22,7 @@
     "ws": "^8.18.2"
   },
   "devDependencies": {
+    "@fastify/type-provider-typebox": "^5.1.0",
     "autoprefixer": "^10.4.14",
     "concurrently": "^8.2.0",
     "playwright": "^1.52.0",

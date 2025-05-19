@@ -9,9 +9,11 @@ interface MatchData {
     player2_username: string;
     player1_score: number;
     player2_score: number;
+    winner_id?: number;
+    status?: string;
     created_at: string;
     updated_at: string;
-}
+  }
 
 /**
  * Script pour gérer la page de profil
@@ -188,80 +190,91 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error loading profile data:', error);
         }
     }
-    
-    // Fonction asynchrone pour charger les matchs
+
     async function loadMatches() {
         try {
-            const matchesResponse = await api.user.getMatches();
+          const matchesResponse = await api.user.getMatches();
+          
+          if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
+            const matches = matchesResponse.data as MatchData[];
             
-            if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
-                const matches = matchesResponse.data;
-                
-                // Masquer le message "pas de matchs"
-                if (noMatches) {
-                    noMatches.classList.add('hidden');
-                }
-                
-                // Calculer les statistiques
-                let wins = 0;
-                let losses = 0;
-                
-                // Afficher les matchs
-                if (matchesContainer && matchTemplate) {
-                    matches.forEach((match: MatchData) => {
-                        // Déterminer si l'utilisateur actuel est player1 ou player2
-                        const isPlayer1 = match.player1_id.toString() === userId;
-                        const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
-                        const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
-                        const opponentUsername = isPlayer1 ? match.player2_username : match.player1_username;
-                        
-                        // Déterminer si le match a été gagné ou perdu
-                        const isWin = currentPlayerScore > opponentScore;
-                        if (isWin) wins++;
-                        else losses++;
-                        
-                        // Créer un élément de match à partir du modèle
-                        const matchElement = document.importNode(matchTemplate.content, true);
-                        
-                        // Définir les détails du match
-                        const resultIndicator = matchElement.querySelector('.match-result-indicator') as HTMLElement;
-                        const opponent = matchElement.querySelector('.match-opponent') as HTMLElement;
-                        const date = matchElement.querySelector('.match-date') as HTMLElement;
-                        const score = matchElement.querySelector('.match-score') as HTMLElement;
-                        
-                        if (resultIndicator) {
-                            // Définir la couleur de l'indicateur de résultat
-                            resultIndicator.classList.add(isWin ? 'bg-green-500' : 'bg-red-500');
-                        }
-                        
-                        // Définir le contenu du texte
-                        if (opponent) opponent.textContent = opponentUsername || 'Adversaire inconnu';
-                        if (score) score.textContent = `${currentPlayerScore} - ${opponentScore}`;
-                        
-                        // Formater la date
-                        if (date && match.created_at) {
-                            const matchDate = new Date(match.created_at);
-                            date.textContent = matchDate.toLocaleDateString();
-                        }
-                        
-                        // Ajouter le match au conteneur
-                        matchesContainer.appendChild(matchElement);
-                    });
-                    
-                    // Mettre à jour les statistiques
-                    const total = wins + losses;
-                    if (statsGamesPlayed) statsGamesPlayed.textContent = total.toString();
-                    if (statsWins) statsWins.textContent = wins.toString();
-                    if (statsLosses) statsLosses.textContent = losses.toString();
-                    if (statsRatio) statsRatio.textContent = total > 0 ? (wins / total).toFixed(2) : '0.00';
-                }
-            } else {
-                console.log('No matches found or failed to load matches');
+            // Hide "no matches" message
+            if (noMatches) {
+              noMatches.classList.add('hidden');
             }
+            
+            // Calculate stats
+            let wins = 0;
+            let losses = 0;
+            const userId = authService.getUserId();
+            
+            // Clear existing matches
+            if (matchesContainer) {
+              matchesContainer.innerHTML = '';
+            }
+            
+            // Display matches
+            if (matchesContainer && matchTemplate) {
+              matches.forEach((match: MatchData) => {
+                // Determine if current user is player1 or player2
+                const isPlayer1 = match.player1_id.toString() === userId;
+                const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
+                const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
+                const opponentUsername = isPlayer1 ? match.player2_username : match.player1_username;
+                
+                // Determine if match was won or lost
+                const isWin = currentPlayerScore > opponentScore;
+                if (isWin) wins++;
+                else losses++;
+                
+                // Create match element from template
+                const matchElement = document.importNode(matchTemplate.content, true);
+                
+                // Set match details
+                const resultIndicator = matchElement.querySelector('.match-result-indicator');
+                const opponent = matchElement.querySelector('.match-opponent');
+                const date = matchElement.querySelector('.match-date');
+                const score = matchElement.querySelector('.match-score');
+                
+                if (resultIndicator) {
+                  resultIndicator.classList.add(isWin ? 'bg-green-500' : 'bg-red-500');
+                }
+                
+                if (opponent) opponent.textContent = opponentUsername || 'Unknown';
+                if (score) score.textContent = `${currentPlayerScore} - ${opponentScore}`;
+                
+                // Format date
+                if (date && match.created_at) {
+                  const matchDate = new Date(match.created_at);
+                  date.textContent = matchDate.toLocaleDateString();
+                }
+                
+                // Add match to container
+                matchesContainer.appendChild(matchElement);
+              });
+            }
+            
+            // Update stats
+            const total = wins + losses;
+            if (statsGamesPlayed) statsGamesPlayed.textContent = total.toString();
+            if (statsWins) statsWins.textContent = wins.toString();
+            if (statsLosses) statsLosses.textContent = losses.toString();
+            if (statsRatio) statsRatio.textContent = total > 0 ? (wins / total).toFixed(2) : '0.00';
+          } else {
+            // Show "no matches" message if no matches found
+            if (noMatches) {
+              noMatches.classList.remove('hidden');
+            }
+          }
         } catch (error) {
-            console.warn('Error loading matches:', error);
+          console.error('Error loading matches:', error);
+          
+          // Show "no matches" message in case of error
+          if (noMatches) {
+            noMatches.classList.remove('hidden');
+          }
         }
-    }
+      }
     
     // Fonction pour soumettre les modifications du profil
     async function submitProfileEdit() {
