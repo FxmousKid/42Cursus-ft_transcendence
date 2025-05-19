@@ -1,53 +1,46 @@
-<header class="bg-white shadow-md">
+<header class="bg-dark-700 border-b border-dark-600 shadow-md">
     <div class="container mx-auto px-4">
         <div class="flex justify-between items-center py-4">
             <!-- Logo and site name -->
             <div class="flex items-center">
                 <a href="/" class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-800 rounded-md flex items-center justify-center text-white font-bold text-xl mr-2">
+                    <div class="w-10 h-10 bg-gradient-to-r from-primary-500 to-primary-700 rounded-md flex items-center justify-center text-white font-bold text-xl mr-2 shadow-md">
                         FT
                     </div>
-                    <span class="text-xl font-bold text-gray-800">Transcendence</span>
+                    <span class="text-xl font-bold text-white">Transcendence</span>
                 </a>
             </div>
             
             <!-- Primary navigation -->
-            <nav class="hidden md:flex space-x-6">
+            <nav class="hidden md:flex space-x-8">
                 <a href="/" class="nav-link">Accueil</a>
                 <a href="/game.html" class="nav-link">Jouer</a>
                 <a href="/friends.html" class="nav-link">Amis</a>
                 <a href="/profile.html" class="nav-link">Profil</a>
-                <a href="#" id="nav-logout-button" class="nav-link text-red-600">Déconnexion</a>
             </nav>
             
             <!-- User menu -->
             <div class="flex items-center space-x-4">
                 <div class="hidden md:block">
-                    <a href="/profile.html" class="text-gray-700 hover:text-blue-600 transition-colors">
+                    <a href="/profile.html" class="text-gray-300 hover:text-primary-400 transition-colors">
                         <!-- Username -->
                         <span id="username-display" class="font-medium">Salut, Utilisateur</span> 
                     </a>
                 </div>
                 
-                <div class="relative">
-                    <button id="user-menu-button" class="flex items-center focus:outline-none">
-                        <div id="avatar-container" class="w-8 h-8 bg-gray-300 rounded-full overflow-hidden">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full text-gray-500 p-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </button>
-                    
-                    <!-- Dropdown menu -->
-                    <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
-                        <a href="/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mon profil</a>
-                        <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Déconnexion</a>
-                    </div>
-                </div>
+                <!-- Logout button with clean design -->
+                <button id="header-logout-button" class="hidden md:flex items-center text-gray-300 hover:text-red-400 transition-colors focus:outline-none ml-2 px-3 py-1 rounded-md hover:bg-dark-600" aria-label="Déconnexion">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </button>
                 
                 <!-- Mobile menu button -->
                 <div class="md:hidden">
-                    <button id="menu-toggle" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <button id="menu-toggle" class="text-gray-400 hover:text-white focus:outline-none">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
@@ -58,12 +51,19 @@
         
         <!-- Mobile menu -->
         <div id="mobile-menu" class="md:hidden hidden pb-4">
-            <div class="flex flex-col space-y-2">
+            <div class="flex flex-col space-y-1">
                 <a href="/" class="mobile-nav-link">Accueil</a>
                 <a href="/game.html" class="mobile-nav-link">Jouer</a>
                 <a href="/friends.html" class="mobile-nav-link">Amis</a>
                 <a href="/profile.html" class="mobile-nav-link">Mon profil</a>
-                <a href="#" id="mobile-logout-button" class="mobile-nav-link text-red-600">Déconnexion</a>
+                <button id="mobile-logout-button" class="mobile-nav-link text-red-400 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Logout
+                </button>
             </div>
         </div>
     </div>
@@ -102,32 +102,75 @@
         }
     }
     
-    // Afficher l'avatar si disponible
-    const avatarUrl = localStorage.getItem('avatar_url');
-    if (avatarUrl) {
-        const avatarContainer = document.getElementById('avatar-container');
-        if (avatarContainer) {
-            avatarContainer.innerHTML = `<img src="${avatarUrl}" alt="Avatar" class="w-full h-full object-cover">`;
+    // Mobile menu toggle
+    const menuToggle = document.getElementById('menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    if (menuToggle && mobileMenu) {
+        menuToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+    
+    // Handle header logout button
+    const headerLogoutButton = document.getElementById('header-logout-button');
+    const mobileLogoutButton = document.getElementById('mobile-logout-button');
+    
+    const handleLogout = async (e) => {
+        e.preventDefault();
+        try {
+            // Show loading state on the button used
+            const button = e.currentTarget;
+            const originalContent = button.innerHTML;
+            
+            button.innerHTML = `
+                <svg class="animate-spin h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Déconnexion...</span>`;
+            button.disabled = true;
+            
+            // Logout
+            await authService.logout();
+            
+            // Redirect to login page
+            window.location.href = '/login.html';
+        } catch (error) {
+            console.error('Erreur lors de la déconnexion:', error);
+            // Redirect anyway in case of error
+            window.location.href = '/login.html';
+        }
+    };
+    
+    if (authService && authService.logout) {
+        if (headerLogoutButton) {
+            headerLogoutButton.addEventListener('click', handleLogout);
+        }
+        
+        if (mobileLogoutButton) {
+            mobileLogoutButton.addEventListener('click', handleLogout);
         }
     }
     
-    // Toggle dropdown menu
-    const userMenuButton = document.getElementById('user-menu-button');
-    const userDropdown = document.getElementById('user-dropdown');
-    
-    if (userMenuButton && userDropdown) {
-        userMenuButton.addEventListener('click', () => {
-            userDropdown.classList.toggle('hidden');
-        });
+    // Set active nav link
+    document.addEventListener('DOMContentLoaded', () => {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link');
+        const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
         
-        // Fermer le dropdown en cliquant ailleurs
-        document.addEventListener('click', (event) => {
-            const target = event.target;
-            if (target && !userMenuButton.contains(target) && !userDropdown.contains(target)) {
-                userDropdown.classList.add('hidden');
-            }
-        });
-    }
-    
-    // Logout functionality is handled by header-loader.ts
+        function setActiveLink(links) {
+            links.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === currentPath || 
+                    (currentPath === '/' && href === '/') || 
+                    (href !== '/' && currentPath.includes(href))) {
+                    link.classList.add('active-nav-link');
+                }
+            });
+        }
+        
+        setActiveLink(navLinks);
+        setActiveLink(mobileNavLinks);
+    });
 </script> 
