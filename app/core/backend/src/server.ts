@@ -7,7 +7,6 @@ import { configureRoutes } from './routes';
 import { configureDatabasePlugin } from './plugins/database';
 import { configureAuthPlugin } from './plugins/auth';
 import { setupWebSocket } from './websocket';
-import { registerTournamentRoutes } from './routes/tournament.routes';
 
 // Environment variables
 const PORT = process.env.PORT || 3000;
@@ -56,7 +55,8 @@ async function setup() {
           { name: 'users', description: 'User management endpoints' },
           { name: 'friends', description: 'Friend relationship endpoints' },
           { name: 'matches', description: 'Game matches endpoints' },
-          { name: 'tournaments', description: 'Tournament in local endpoints'},
+          { name: 'tournaments', description: 'Tournament in local endpoints' },
+          { name: 'match_tournaments', description: 'Match in the Tournaments endpoints' }
         ],
       },
     });
@@ -91,7 +91,7 @@ async function setup() {
           'http://frontend:5173',
           'http://127.0.0.1:5173',
           // Add these new origins
-          'http://0.0.0.0:5173',    
+          'http://0.0.0.0:5173',
           true,                    // Allow all origins temporarily for debugging
         ],
         methods: ['GET', 'POST'],

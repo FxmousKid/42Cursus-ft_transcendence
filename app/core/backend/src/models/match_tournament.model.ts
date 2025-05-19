@@ -24,7 +24,7 @@ interface MatchTournamentAttributes {
 }
 
 @Table({
-  tableName: 'matches',
+  tableName: 'match_tournaments',
   timestamps: true,
 })
 export class MatchTournament extends Model<MatchTournamentAttributes> {
@@ -62,6 +62,4 @@ export class MatchTournament extends Model<MatchTournamentAttributes> {
 
   @BelongsTo(() => Tournament, 'tournament_id')
   declare tournament: Tournament;
-} 
-
-// push game refactor/frontend -> refactor/frontend create branch refactor/profile -> rendre la page profile editable pour user info en lien avec la db
+}

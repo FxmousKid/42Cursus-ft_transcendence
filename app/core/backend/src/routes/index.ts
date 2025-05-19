@@ -4,6 +4,7 @@ import { registerAuthRoutes } from './auth.routes';
 import { registerFriendshipRoutes } from './friendship.routes';
 import { registerMatchRoutes } from './match.routes';
 import { registerTournamentRoutes } from './tournament.routes';
+import { registerMatchTournamentRoutes } from './match_tournament.routes';
 
 export function configureRoutes(server: FastifyInstance) {
   // Health check route
@@ -17,4 +18,5 @@ export function configureRoutes(server: FastifyInstance) {
   registerFriendshipRoutes(server);
   registerMatchRoutes(server);
   registerTournamentRoutes(server);
+  registerMatchTournamentRoutes(server);
 } 
