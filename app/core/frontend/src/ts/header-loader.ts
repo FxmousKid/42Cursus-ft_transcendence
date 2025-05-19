@@ -111,6 +111,7 @@ function setupLogoutHandlers() {
   const logoutButton = document.getElementById('logout-button');
   const mobileLogoutButton = document.getElementById('mobile-logout-button');
   const navLogoutButton = document.getElementById('nav-logout-button');
+  const headerLogoutButton = document.getElementById('header-logout-button');
   const authService = (window as any).authService;
   
   const handleLogout = async (e: Event) => {
@@ -146,6 +147,11 @@ function setupLogoutHandlers() {
     // Bouton de déconnexion de la navigation desktop
     if (navLogoutButton) {
       navLogoutButton.addEventListener('click', handleLogout);
+    }
+    
+    // Bouton de déconnexion principal dans le header
+    if (headerLogoutButton) {
+      headerLogoutButton.addEventListener('click', handleLogout);
     }
     
     // Événement pour le bouton de déconnexion mobile
