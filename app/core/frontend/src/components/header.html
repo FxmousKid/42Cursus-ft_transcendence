@@ -1,0 +1,132 @@
+<header class="bg-white shadow-md">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center py-4">
+            <!-- Logo and site name -->
+            <div class="flex items-center">
+                <a href="/" class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-800 rounded-md flex items-center justify-center text-white font-bold text-xl mr-2">
+                        FT
+                    </div>
+                    <span class="text-xl font-bold text-gray-800">Transcendence</span>
+                </a>
+            </div>
+            
+            <!-- Primary navigation -->
+            <nav class="hidden md:flex space-x-6">
+                <a href="/" class="nav-link">Accueil</a>
+                <a href="/game.html" class="nav-link">Jouer</a>
+                <a href="/friends.html" class="nav-link">Amis</a>
+                <a href="/profile.html" class="nav-link">Profil</a>
+                <a href="#" id="nav-logout-button" class="nav-link text-red-600">Déconnexion</a>
+            </nav>
+            
+            <!-- User menu -->
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:block">
+                    <a href="/profile.html" class="text-gray-700 hover:text-blue-600 transition-colors">
+                        <span id="username-display" class="font-medium">Utilisateur</span>
+                    </a>
+                </div>
+                
+                <div class="relative">
+                    <button id="user-menu-button" class="flex items-center focus:outline-none">
+                        <div id="avatar-container" class="w-8 h-8 bg-gray-300 rounded-full overflow-hidden">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full text-gray-500 p-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </button>
+                    
+                    <!-- Dropdown menu -->
+                    <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
+                        <a href="/profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mon profil</a>
+                        <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Déconnexion</a>
+                    </div>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="menu-toggle" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="md:hidden hidden pb-4">
+            <div class="flex flex-col space-y-2">
+                <a href="/" class="mobile-nav-link">Accueil</a>
+                <a href="/game.html" class="mobile-nav-link">Jouer</a>
+                <a href="/friends.html" class="mobile-nav-link">Amis</a>
+                <a href="/profile.html" class="mobile-nav-link">Mon profil</a>
+                <a href="#" id="mobile-logout-button" class="mobile-nav-link text-red-600">Déconnexion</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<style>
+    .nav-link {
+        @apply text-gray-600 hover:text-blue-600 font-medium transition-colors;
+    }
+    
+    .mobile-nav-link {
+        @apply text-gray-600 hover:text-blue-600 font-medium py-2 border-b border-gray-100 transition-colors;
+    }
+    
+    /* Add dropdown support */
+    .group:hover .group-hover\:block {
+        display: block;
+    }
+    
+    .group:hover .group-hover\:opacity-100 {
+        opacity: 1;
+    }
+    
+    .group:hover .group-hover\:translate-y-0 {
+        transform: translateY(0);
+    }
+</style>
+
+<script>
+    // Afficher le nom d'utilisateur
+    const username = localStorage.getItem('username');
+    if (username) {
+        const usernameDisplay = document.getElementById('username-display');
+        if (usernameDisplay) {
+            usernameDisplay.textContent = username;
+        }
+    }
+    
+    // Afficher l'avatar si disponible
+    const avatarUrl = localStorage.getItem('avatar_url');
+    if (avatarUrl) {
+        const avatarContainer = document.getElementById('avatar-container');
+        if (avatarContainer) {
+            avatarContainer.innerHTML = `<img src="${avatarUrl}" alt="Avatar" class="w-full h-full object-cover">`;
+        }
+    }
+    
+    // Toggle dropdown menu
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userDropdown = document.getElementById('user-dropdown');
+    
+    if (userMenuButton && userDropdown) {
+        userMenuButton.addEventListener('click', () => {
+            userDropdown.classList.toggle('hidden');
+        });
+        
+        // Fermer le dropdown en cliquant ailleurs
+        document.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target && !userMenuButton.contains(target) && !userDropdown.contains(target)) {
+                userDropdown.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Logout functionality is handled by header-loader.ts
+</script> 
