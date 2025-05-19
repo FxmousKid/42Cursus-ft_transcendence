@@ -84,6 +84,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const editErrorMessage = document.getElementById('edit-error-message') as HTMLElement;
     const editErrorText = document.getElementById('edit-error-text') as HTMLElement;
     
+    // Delete account elements
+    const deleteAccountButton = document.getElementById('delete-account-button') as HTMLElement;
+    const deleteAccountModal = document.getElementById('delete-account-modal') as HTMLElement;
+    const confirmDeleteButton = document.getElementById('confirm-delete') as HTMLButtonElement;
+    const cancelDeleteButton = document.getElementById('cancel-delete') as HTMLElement;
+    const deleteErrorMessage = document.getElementById('delete-error-message') as HTMLElement;
+    const deleteErrorText = document.getElementById('delete-error-text') as HTMLElement;
+    
     // Utiliser les données du localStorage pour afficher des informations de base
     // même si le backend n'est pas disponible
     const username = localStorage.getItem('username');
@@ -93,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Afficher les informations de base depuis localStorage
     if (username) {
         profileUsernameElement.textContent = username;
-        profileStatus.textContent = 'Hors ligne';
+        profileStatus.textContent = 'offline';
         profileStatus.classList.add('text-gray-600');
         
         // Pré-remplir les champs du formulaire
@@ -136,6 +144,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // Gérer le bouton de suppression de compte
+    if (deleteAccountButton && deleteAccountModal) {
+        deleteAccountButton.addEventListener('click', () => {
+            deleteAccountModal.classList.remove('hidden');
+        });
+    }
+    
+    if (cancelDeleteButton && deleteAccountModal) {
+        cancelDeleteButton.addEventListener('click', () => {
+            deleteAccountModal.classList.add('hidden');
+            if (deleteErrorMessage) {
+                deleteErrorMessage.classList.add('hidden');
+            }
+        });
+    }
+    
+    if (confirmDeleteButton) {
+        confirmDeleteButton.addEventListener('click', () => {
+            deleteAccount();
+        });
+    }
+    
     // Fonction asynchrone pour charger les données du profil
     async function loadProfileData() {
         try {
@@ -154,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 if (profileStatus) {
-                    profileStatus.textContent = profile.status || 'Hors ligne';
+                    profileStatus.textContent = profile.status || 'offline';
                     
                     // Définir la couleur du statut
                     profileStatus.classList.remove('text-green-600', 'text-blue-600', 'text-gray-600');
@@ -290,6 +320,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await api.user.updateProfile(updateData);
             
             if (response.success) {
+                // Mettre à jour le nom d'utilisateur dans localStorage
+                if (updateData.username) {
+                    localStorage.setItem('username', updateData.username);
+                    // Mettre à jour l'état dans authService
+                    if (authService && typeof authService.updateUsername === 'function') {
+                        authService.updateUsername(updateData.username);
+                    }
+                }
+                
+                // Mettre à jour l'avatar dans localStorage si nécessaire
+                if (updateData.avatar_url) {
+                    localStorage.setItem('avatar_url', updateData.avatar_url);
+                }
+                
                 // Fermer le modal
                 if (editProfileModal) {
                     editProfileModal.classList.add('hidden');
@@ -297,6 +341,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Recharger les données du profil
                 loadProfileData();
+                
+                // Recharger le header pour refléter les changements
+                window.location.reload();
             } else {
                 // Afficher l'erreur
                 if (editErrorMessage && editErrorText) {
@@ -310,6 +357,49 @@ document.addEventListener('DOMContentLoaded', () => {
             if (editErrorMessage && editErrorText) {
                 editErrorText.textContent = 'Erreur de connexion au serveur';
                 editErrorMessage.classList.remove('hidden');
+            }
+        }
+    }
+    
+    // Fonction pour supprimer le compte utilisateur
+    async function deleteAccount() {
+        try {
+            // Montrer l'état de chargement sur le bouton
+            if (confirmDeleteButton) {
+                confirmDeleteButton.textContent = 'Suppression en cours...';
+                confirmDeleteButton.disabled = true;
+            }
+            
+            const response = await api.user.deleteProfile();
+            
+            if (response.success) {
+                // Déconnexion et redirection vers la page de login
+                await authService.logout();
+                window.location.href = '/login.html';
+            } else {
+                // Afficher l'erreur
+                if (deleteErrorMessage && deleteErrorText) {
+                    deleteErrorText.textContent = response.message || 'Une erreur est survenue lors de la suppression du compte';
+                    deleteErrorMessage.classList.remove('hidden');
+                }
+                
+                // Réinitialiser le bouton
+                if (confirmDeleteButton) {
+                    confirmDeleteButton.textContent = 'Confirmer la suppression';
+                    confirmDeleteButton.disabled = false;
+                }
+            }
+        } catch (error) {
+            console.error('Error deleting account:', error);
+            if (deleteErrorMessage && deleteErrorText) {
+                deleteErrorText.textContent = 'Erreur de connexion au serveur';
+                deleteErrorMessage.classList.remove('hidden');
+            }
+            
+            // Réinitialiser le bouton
+            if (confirmDeleteButton) {
+                confirmDeleteButton.textContent = 'Confirmer la suppression';
+                confirmDeleteButton.disabled = false;
             }
         }
     }
