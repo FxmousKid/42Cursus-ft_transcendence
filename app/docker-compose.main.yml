@@ -21,11 +21,3 @@ volumes:
   esdata01:
   filebeatdata01:
   kibanadata:
-
-
-# volumes:
-#   vault-env:
-#     driver_opts:
-#       type: none
-#       device: ./infra/vault/agent/env/
-#       o: bind
