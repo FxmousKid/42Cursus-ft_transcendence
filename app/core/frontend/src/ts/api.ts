@@ -242,13 +242,15 @@ export const api = {
     
     async acceptFriendRequest(requestId: number) {
       return request(`/friendships/accept/${requestId}`, {
-        method: 'POST'
+        method: 'POST',
+        body: JSON.stringify({})
       });
     },
     
     async rejectFriendRequest(requestId: number) {
       return request(`/friendships/reject/${requestId}`, {
-        method: 'POST'
+        method: 'POST',
+        body: JSON.stringify({})
       });
     },
     
@@ -263,6 +265,13 @@ export const api = {
   game: {
     async getAllMatches() {
       return request('/matches');
+    },
+    
+    async sendInvitation(friendId: number) {
+      return request('/games/invite', {
+        method: 'POST',
+        body: JSON.stringify({ friend_id: friendId })
+      });
     }
   }
 };
