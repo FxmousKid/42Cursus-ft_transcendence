@@ -174,6 +174,14 @@ export class AuthService {
    * Get current auth token
    */
   public getToken(): string | null {
+    if (this.state.token) {
+      return this.state.token;
+    }
+    
+    // Si pas de token dans l'état, essayons de restaurer la session d'abord
+    this.restoreSession();
+    
+    // Si le token a été restauré, retournons-le
     return this.state.token;
   }
 

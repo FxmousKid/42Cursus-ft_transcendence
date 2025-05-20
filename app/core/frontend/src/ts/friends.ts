@@ -1,16 +1,16 @@
 // This file will be compiled to JS and included in the HTML directly
 // Global services and types will be available
 
+import { api } from './api';
+import { websocketService } from './websocket';
+import { friendshipService, Friend, PendingRequest } from './friendship';
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Friends page loaded');
     
     // Get services from global scope
-    const api = (window as any).api;
-    const websocketService = (window as any).websocketService;
     const authService = (window as any).authService;
     
-    console.log('API available:', !!api);
-    console.log('WebSocket service available:', !!websocketService);
     console.log('Auth service available:', !!authService);
     
     // Check if services are available
@@ -40,10 +40,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
+    // Vérifier explicitement que le token est disponible
+    const token = authService.getToken();
+    console.log('Friends: Auth token available:', !!token);
+    
+    if (!token) {
+        console.log('Friends: No auth token available, redirecting to login');
+        authService.clearSession();
+        window.location.href = '/login.html';
+        return;
+    }
+    
     // Connect to WebSocket if available
     if (websocketService && websocketService.connect) {
-        console.log('Connecting to WebSocket');
+        console.log('Connecting to WebSocket with auth token');
         websocketService.connect();
+        
+        // Vérifier la connexion après un court délai
+        setTimeout(() => {
+            if (websocketService.isConnected && websocketService.isConnected()) {
+                console.log('WebSocket successfully connected!');
+            } else {
+                console.log('WebSocket connection failed, retrying once more...');
+                websocketService.connect();
+            }
+        }, 1000);
     }
     
     // DOM elements
@@ -71,10 +92,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Écouteur pour recevoir une demande d'ami
         websocketService.on('friend-request-received', (data: any) => {
             console.log('Received friend request via WebSocket:', data);
+            
+            // Correction du format des données - chercher le nom d'utilisateur au bon endroit
+            const username = data.from?.username || 'Quelqu\'un';
+            
             // Recharger les demandes d'amitié en attente
             loadFriendRequests();
+            
             // Afficher une notification
-            showNotification(`Nouvelle demande d'ami de ${data.username || 'Quelqu\'un'}`);
+            showNotification(`Nouvelle demande d'ami de ${username}`);
+            
+            // Forcer le rechargement après un court délai pour s'assurer que les données sont à jour
+            setTimeout(() => {
+                loadFriendRequests();
+            }, 500);
         });
         
         // Écouteur pour les demandes envoyées
@@ -117,23 +148,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         
         // Écouteur pour la suppression d'amitié
-        websocketService.on('friendship-removed', (data: any) => {
-            console.log('Friendship removed via WebSocket:', data);
+        websocketService.on('friend-removed', (data: any) => {
+            console.log('Friend removed via WebSocket:', data);
             
-            if (data.user_id) {
+            if (data.friend_id) {
                 // Si on est notifié qu'un ami nous a retiré
-                showNotification(`${data.username || 'Un utilisateur'} vous a retiré de sa liste d'amis`, 'info');
+                showNotification(`Un utilisateur vous a retiré de sa liste d'amis`, 'info');
                 loadFriends(); // Rafraîchir la liste d'amis
-            } else if (data.friend_id) {
+            } else {
                 // Confirmation de notre suppression
                 showNotification(`Ami supprimé avec succès`, 'success');
             }
         });
         
         // Écouteur pour les changements de statut d'amis
-        websocketService.on('friend-status-changed', (data: any) => {
+        websocketService.on('friend-status-change', (data: any) => {
             console.log('Friend status changed via WebSocket:', data);
-            updateFriendStatus(data.id, data.status);
+            updateFriendStatus(data.friend_id, data.status);
         });
         
         // Écoute des erreurs generales
@@ -149,30 +180,74 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Function to show notification
     function showNotification(message: string, type: 'info' | 'success' | 'error' = 'info') {
+        // Supprimer les notifications existantes
+        const existingNotifications = document.querySelectorAll('.toast-notification');
+        existingNotifications.forEach(notif => notif.remove());
+        
         // Créer un élément de notification
         const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg max-w-xs z-50 ${
-            type === 'error' ? 'bg-red-600 text-white' :
-            type === 'success' ? 'bg-green-600 text-white' :
-            'bg-blue-600 text-white'
-        }`;
-        notification.textContent = message;
+        notification.className = `toast-notification toast-${type} flex items-center text-white rounded-lg shadow-lg`;
+        
+        // Définir l'icône en fonction du type
+        let icon = '';
+        switch(type) {
+            case 'success':
+                icon = '<i class="fas fa-check-circle text-xl mr-3"></i>';
+                break;
+            case 'error':
+                icon = '<i class="fas fa-exclamation-circle text-xl mr-3"></i>';
+                break;
+            default:
+                icon = '<i class="fas fa-info-circle text-xl mr-3"></i>';
+        }
+        
+        // Ajouter le contenu HTML (icône + message)
+        notification.innerHTML = `
+            ${icon}
+            <div>
+                <p class="font-medium">${message}</p>
+            </div>
+            <button class="ml-auto pl-3 text-white/80 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
         
         // Ajouter au body
         document.body.appendChild(notification);
         
+        // Ajouter la classe show après un court délai (pour l'animation)
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+        
+        // Ajouter un gestionnaire d'événement pour le bouton de fermeture
+        const closeButton = notification.querySelector('button');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            });
+        }
+        
         // Supprimer après 5 secondes
         setTimeout(() => {
-            notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+            notification.classList.remove('show');
             setTimeout(() => {
                 notification.remove();
-            }, 500);
+            }, 300);
         }, 5000);
     }
     
     // Function to update friend status in UI
     function updateFriendStatus(userId: number, newStatus: string) {
         console.log(`Updating friend status for user ${userId} to ${newStatus}`);
+        if (!userId) {
+            console.warn('No user ID provided for status update');
+            return;
+        }
+        
         const friendItem = document.querySelector(`.friend-item[data-id="${userId}"]`);
         if (!friendItem) {
             console.warn(`Friend item with id ${userId} not found in the DOM`);
@@ -181,6 +256,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const statusIndicator = friendItem.querySelector('.friend-status-indicator') as HTMLElement;
         const status = friendItem.querySelector('.friend-status') as HTMLElement;
+        
+        if (!statusIndicator || !status) {
+            console.warn('Status elements not found in friend item');
+            return;
+        }
         
         // Remove existing status classes
         statusIndicator.classList.remove('bg-green-500', 'bg-blue-500', 'bg-gray-500');
@@ -237,8 +317,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const avatar = friendElement.querySelector('.friend-avatar') as HTMLElement;
         const statusIndicator = friendElement.querySelector('.friend-status-indicator') as HTMLElement;
         const status = friendElement.querySelector('.friend-status') as HTMLElement;
-        const inviteButton = friendElement.querySelector('.invite-game-button') as HTMLElement;
-        const removeButton = friendElement.querySelector('.remove-friend-button') as HTMLElement;
+        const inviteButton = friendElement.querySelector('.invite-game-button') as HTMLButtonElement;
+        const removeButton = friendElement.querySelector('.remove-friend-button') as HTMLButtonElement;
         
         // Set username
         username.textContent = friend.username;
@@ -264,58 +344,172 @@ document.addEventListener('DOMContentLoaded', async () => {
         const friendItem = friendElement.querySelector('.friend-item') as HTMLElement;
         friendItem.dataset.id = friend.id.toString();
         
+        // Ajouter un effet hover au bouton de suppression
+        removeButton.addEventListener('mouseenter', () => {
+            removeButton.innerHTML = '<i class="fas fa-user-times"></i>';
+        });
+        
+        removeButton.addEventListener('mouseleave', () => {
+            removeButton.innerHTML = '<i class="fas fa-times"></i>';
+        });
+        
         // Add event listener to remove button
         removeButton.addEventListener('click', async () => {
             try {
-                if (confirm(`Êtes-vous sûr de vouloir supprimer ${friend.username} de votre liste d'amis ?`)) {
-                    // Utiliser WebSocket si disponible
-                    const websocketService = (window as any).websocketService;
-                    if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
-                        console.log('Removing friend via WebSocket');
-                        websocketService.send('remove-friendship', { friendId: friend.id });
-                        
-                        // Remove friend from UI
-                        const friendElement = document.querySelector(`.friend-item[data-id="${friend.id}"]`);
-                        if (friendElement) {
-                            friendElement.remove();
-                        }
-                        
-                        // Check if friends list is empty
-                        if (friendsContainer.children.length === 0) {
-                            noFriends.classList.remove('hidden');
-                        }
-                    } else {
-                        // Fallback à l'API REST
-                        console.log('WebSocket not available, using REST API');
-                        const response = await api.friendship.removeFriend(friend.id);
-                        
-                        if (response.success) {
-                            // Remove friend from UI
-                            const friendElement = document.querySelector(`.friend-item[data-id="${friend.id}"]`);
-                            if (friendElement) {
-                                friendElement.remove();
+                // Afficher une confirmation avec un style moderne
+                const confirmDialog = document.createElement('div');
+                confirmDialog.className = 'fixed inset-0 flex items-center justify-center z-50';
+                confirmDialog.innerHTML = `
+                    <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"></div>
+                    <div class="bg-dark-800 rounded-xl shadow-2xl border border-dark-600 p-6 max-w-sm w-full mx-4 z-10 transform transition-all scale-95 opacity-0">
+                        <div class="flex items-center justify-center mb-4 text-yellow-400">
+                            <i class="fas fa-exclamation-triangle text-3xl"></i>
+                        </div>
+                        <h3 class="text-xl font-medium text-center text-white mb-4">Confirmer la suppression</h3>
+                        <p class="text-gray-300 mb-5 text-center">Êtes-vous sûr de vouloir supprimer <span class="font-medium text-white">${friend.username}</span> de votre liste d'amis ?</p>
+                        <div class="flex space-x-3 justify-center">
+                            <button class="confirm-cancel-btn px-4 py-2 rounded-lg bg-dark-700 hover:bg-dark-600 text-white transition-colors">
+                                Annuler
+                            </button>
+                            <button class="confirm-delete-btn px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-colors">
+                                Supprimer
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(confirmDialog);
+                
+                // Animer l'apparition
+                setTimeout(() => {
+                    const dialogContent = confirmDialog.querySelector('div:nth-child(2)');
+                    if (dialogContent) {
+                        dialogContent.classList.remove('scale-95', 'opacity-0');
+                        dialogContent.classList.add('scale-100', 'opacity-100');
+                    }
+                }, 10);
+                
+                // Configurer les événements
+                const cancelBtn = confirmDialog.querySelector('.confirm-cancel-btn');
+                const deleteBtn = confirmDialog.querySelector('.confirm-delete-btn');
+                
+                return new Promise<boolean>((resolve) => {
+                    if (cancelBtn) {
+                        cancelBtn.addEventListener('click', () => {
+                            // Animer la disparition
+                            const dialogContent = confirmDialog.querySelector('div:nth-child(2)');
+                            if (dialogContent) {
+                                dialogContent.classList.remove('scale-100', 'opacity-100');
+                                dialogContent.classList.add('scale-95', 'opacity-0');
                             }
                             
-                            // Check if friends list is empty
-                            if (friendsContainer.children.length === 0) {
-                                noFriends.classList.remove('hidden');
-                            }
-                        } else {
-                            console.error('Failed to remove friend:', response.message);
-                            alert(`Erreur: ${response.message}`);
-                        }
+                            setTimeout(() => {
+                                document.body.removeChild(confirmDialog);
+                                resolve(false);
+                            }, 200);
+                        });
                     }
-                }
+                    
+                    if (deleteBtn) {
+                        deleteBtn.addEventListener('click', async () => {
+                            // Animer la disparition
+                            const dialogContent = confirmDialog.querySelector('div:nth-child(2)');
+                            if (dialogContent) {
+                                dialogContent.classList.remove('scale-100', 'opacity-100');
+                                dialogContent.classList.add('scale-95', 'opacity-0');
+                            }
+                            
+                            setTimeout(() => {
+                                document.body.removeChild(confirmDialog);
+                                resolve(true);
+                            }, 200);
+                            
+                            // Désactiver le bouton pour éviter les clics multiples
+                            removeButton.disabled = true;
+                            removeButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                            removeButton.classList.add('opacity-75');
+                            
+                            // Utiliser WebSocket si disponible
+                            const websocketService = (window as any).websocketService;
+                            if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
+                                console.log('Removing friend via WebSocket');
+                                websocketService.send('friend-remove', { friendId: friend.id });
+                                
+                                // Animer la disparition de l'ami
+                                friendItem.style.transition = 'all 0.3s ease-out';
+                                friendItem.style.transform = 'translateX(10px)';
+                                friendItem.style.opacity = '0';
+                                
+                                setTimeout(() => {
+                                    // Remove friend from UI
+                                    friendItem.remove();
+                                    
+                                    // Check if friends list is empty
+                                    if (friendsContainer.children.length === 0) {
+                                        noFriends.classList.remove('hidden');
+                                    }
+                                }, 300);
+                                
+                                // Afficher une notification
+                                showNotification(`${friend.username} a été retiré de vos amis`, 'info');
+                            } else {
+                                // Fallback à l'API REST
+                                console.log('WebSocket not available, using REST API');
+                                const response = await api.friendship.removeFriend(friend.id);
+                                
+                                if (response.success) {
+                                    // Animer la disparition de l'ami
+                                    friendItem.style.transition = 'all 0.3s ease-out';
+                                    friendItem.style.transform = 'translateX(10px)';
+                                    friendItem.style.opacity = '0';
+                                    
+                                    setTimeout(() => {
+                                        // Remove friend from UI
+                                        friendItem.remove();
+                                        
+                                        // Check if friends list is empty
+                                        if (friendsContainer.children.length === 0) {
+                                            noFriends.classList.remove('hidden');
+                                        }
+                                    }, 300);
+                                    
+                                    // Afficher une notification
+                                    showNotification(`${friend.username} a été retiré de vos amis`, 'info');
+                                } else {
+                                    console.error('Failed to remove friend:', response.message);
+                                    showNotification(`Erreur: ${response.message}`, 'error');
+                                    
+                                    // Réactiver le bouton en cas d'erreur
+                                    removeButton.disabled = false;
+                                    removeButton.innerHTML = '<i class="fas fa-times"></i>';
+                                    removeButton.classList.remove('opacity-75');
+                                }
+                            }
+                        });
+                    }
+                });
             } catch (error) {
                 console.error('Error removing friend:', error);
-                alert('Une erreur est survenue');
+                showNotification('Une erreur est survenue', 'error');
             }
         });
         
         // Add event listener to invite button
         inviteButton.addEventListener('click', () => {
+            // Montrer animation sur le bouton pour indiquer que l'invitation est envoyée
+            inviteButton.disabled = true;
+            inviteButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Envoi...';
+            inviteButton.classList.add('opacity-75');
+            
             // Send game invitation via API
             sendGameInvitation(friend.id, friend.username);
+            
+            // Rétablir le bouton après un court délai
+            setTimeout(() => {
+                inviteButton.disabled = false;
+                inviteButton.innerHTML = '<i class="fas fa-gamepad mr-1.5"></i> Jouer';
+                inviteButton.classList.remove('opacity-75');
+            }, 1500);
         });
         
         // Add to container
@@ -334,20 +528,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 friendUsername: friendUsername 
             });
             
-            alert(`Invitation à jouer envoyée à ${friendUsername}`);
+            showNotification(`Invitation envoyée à ${friendUsername}`, 'success');
         } else {
             // Fallback to API
             api.game.sendInvitation(friendId)
                 .then((response: any) => {
                     if (response.success) {
-                        alert(`Invitation à jouer envoyée à ${friendUsername}`);
+                        showNotification(`Invitation envoyée à ${friendUsername}`, 'success');
                     } else {
-                        alert(`Erreur lors de l'envoi de l'invitation: ${response.message}`);
+                        showNotification(`Erreur: ${response.message}`, 'error');
                     }
                 })
                 .catch((error: any) => {
                     console.error('Error sending game invitation:', error);
-                    alert("Erreur lors de l'envoi de l'invitation");
+                    showNotification("Erreur lors de l'envoi de l'invitation", 'error');
                 });
         }
     }
@@ -355,7 +549,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Function to load friend requests
     async function loadFriendRequests() {
         try {
+            console.log('Loading friend requests...');
             const response = await api.friendship.getPendingRequests();
+            console.log('Friend requests API response:', response);
             
             if (response.success && response.data) {
                 const requests = response.data;
@@ -367,6 +563,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     // Add each request to the container
                     requests.forEach((request: any) => {
+                        console.log('Processing friend request:', request);
                         addFriendRequestToUI(request);
                     });
                 } else {
@@ -384,121 +581,182 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Function to add a friend request to the UI
     function addFriendRequestToUI(request: any) {
-        if (!request.user) return;
+        console.log('Adding request to UI:', request);
+        // Vérifier que l'objet user ou sender existe
+        if (!request.user && !request.sender) {
+            console.error('Friend request missing user data:', request);
+            return;
+        }
+        
+        // Utiliser sender si user n'existe pas
+        const userData = request.user || request.sender;
         
         const requestElement = document.importNode(friendRequestTemplate.content, true);
         
         // Set request details
         const username = requestElement.querySelector('.request-username') as HTMLElement;
         const avatar = requestElement.querySelector('.request-avatar') as HTMLElement;
-        const date = requestElement.querySelector('.request-date') as HTMLElement;
+        const dateContainer = requestElement.querySelector('.request-date') as HTMLElement;
+        const dateSpan = dateContainer.querySelector('span') as HTMLElement;
         const acceptButton = requestElement.querySelector('.accept-request-button') as HTMLButtonElement;
         const rejectButton = requestElement.querySelector('.reject-request-button') as HTMLButtonElement;
         
         // Set username and date
-        username.textContent = request.user.username;
+        username.textContent = userData.username;
         
-        // Format date
+        // Format date plus élégamment
         const requestDate = new Date(request.created_at || new Date());
-        date.textContent = `Demande reçue le ${requestDate.toLocaleDateString()}`;
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - requestDate.getTime());
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+        const diffMinutes = Math.floor(diffTime / (1000 * 60));
+        
+        // Afficher la date de manière plus humaine
+        if (diffMinutes < 1) {
+            dateSpan.textContent = `À l'instant`;
+        } else if (diffMinutes < 60) {
+            dateSpan.textContent = `Il y a ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
+        } else if (diffHours < 24) {
+            dateSpan.textContent = `Il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
+        } else if (diffDays < 7) {
+            dateSpan.textContent = `Il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+        } else {
+            dateSpan.textContent = `Le ${requestDate.toLocaleDateString()}`;
+        }
         
         // Set avatar if available
-        if (request.user.avatar_url) {
-            avatar.innerHTML = `<img src="${request.user.avatar_url}" alt="${request.user.username}" class="w-full h-full object-cover">`;
+        if (userData.avatar_url) {
+            avatar.innerHTML = `<img src="${userData.avatar_url}" alt="${userData.username}" class="w-full h-full object-cover">`;
         }
         
         // Add request ID as data attribute
         const requestItem = requestElement.querySelector('.friend-request-item') as HTMLElement;
         requestItem.dataset.id = request.id.toString();
         
+        // Store the user ID for accept/reject actions
+        const userId = userData.id;
+        requestItem.dataset.userId = userId.toString();
+        
         // Add event listener to accept button
         acceptButton.addEventListener('click', async () => {
             try {
-                // Désactiver le bouton pour éviter les clics multiples
+                // Désactiver les boutons pour éviter les clics multiples
                 acceptButton.disabled = true;
-                acceptButton.classList.add('opacity-50');
+                rejectButton.disabled = true;
+                
+                // Changer l'apparence du bouton pour indiquer le traitement
+                acceptButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Acceptation...';
+                acceptButton.classList.add('opacity-75');
+                rejectButton.classList.add('opacity-50');
                 
                 // Utiliser WebSocket si disponible
                 const websocketService = (window as any).websocketService;
                 if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
                     console.log('Accepting friend request via WebSocket');
                     websocketService.send('friend-request-response', { 
-                        friendId: request.user_id, 
+                        friendId: userId, 
                         accept: true 
                     });
                     
-                    // Remove request from UI
-                    requestItem.remove();
+                    // Animer la disparition de la demande
+                    requestItem.style.transition = 'all 0.3s ease-out';
+                    requestItem.style.transform = 'translateX(10px)';
+                    requestItem.style.opacity = '0';
                     
-                    // Check if requests list is empty
-                    if (friendRequestsContainer.children.length === 0) {
-                        noFriendRequests.classList.remove('hidden');
-                    }
+                    setTimeout(() => {
+                        // Remove request from UI
+                        requestItem.remove();
+                        
+                        // Check if requests list is empty
+                        if (friendRequestsContainer.children.length === 0) {
+                            noFriendRequests.classList.remove('hidden');
+                        }
+                    }, 300);
                     
                     // Reload friends list
                     loadFriends();
+                    
+                    // Afficher une notification
+                    showNotification(`Vous êtes maintenant ami avec ${userData.username}`, 'success');
                 } else {
                     // Fallback à l'API REST
                     console.log('WebSocket not available, using REST API');
                     const response = await api.friendship.acceptFriendRequest(request.id);
                     
                     if (response.success) {
-                        // Remove request from UI
-                        requestItem.remove();
+                        // Animer la disparition de la demande
+                        requestItem.style.transition = 'all 0.3s ease-out';
+                        requestItem.style.transform = 'translateX(10px)';
+                        requestItem.style.opacity = '0';
                         
-                        // Check if requests list is empty
-                        if (friendRequestsContainer.children.length === 0) {
-                            noFriendRequests.classList.remove('hidden');
-                        }
+                        setTimeout(() => {
+                            // Remove request from UI
+                            requestItem.remove();
+                            
+                            // Check if requests list is empty
+                            if (friendRequestsContainer.children.length === 0) {
+                                noFriendRequests.classList.remove('hidden');
+                            }
+                        }, 300);
                         
                         // Reload friends list
                         loadFriends();
+                        
+                        // Afficher une notification
+                        showNotification(`Vous êtes maintenant ami avec ${userData.username}`, 'success');
                     } else {
                         console.error('Failed to accept friend request:', response.message);
-                        alert(`Erreur: ${response.message}`);
-                        // Réactiver le bouton en cas d'erreur
+                        showNotification(`Erreur: ${response.message}`, 'error');
+                        
+                        // Réactiver les boutons en cas d'erreur
                         acceptButton.disabled = false;
-                        acceptButton.classList.remove('opacity-50');
+                        rejectButton.disabled = false;
+                        acceptButton.innerHTML = '<i class="fas fa-check mr-1.5"></i> Accepter';
+                        acceptButton.classList.remove('opacity-75');
+                        rejectButton.classList.remove('opacity-50');
                     }
                 }
             } catch (error) {
                 console.error('Error accepting friend request:', error);
-                alert('Une erreur est survenue');
-                // Réactiver le bouton en cas d'erreur
+                showNotification('Une erreur est survenue', 'error');
+                
+                // Réactiver les boutons en cas d'erreur
                 acceptButton.disabled = false;
-                acceptButton.classList.remove('opacity-50');
+                rejectButton.disabled = false;
+                acceptButton.innerHTML = '<i class="fas fa-check mr-1.5"></i> Accepter';
+                acceptButton.classList.remove('opacity-75');
+                rejectButton.classList.remove('opacity-50');
             }
         });
         
-        // Add event listener to reject button
+        // Add event listener to reject button with the same pattern
         rejectButton.addEventListener('click', async () => {
             try {
-                // Désactiver le bouton pour éviter les clics multiples
+                // Désactiver les boutons pour éviter les clics multiples
                 rejectButton.disabled = true;
-                rejectButton.classList.add('opacity-50');
+                acceptButton.disabled = true;
+                
+                // Changer l'apparence du bouton pour indiquer le traitement
+                rejectButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Refus...';
+                rejectButton.classList.add('opacity-75');
+                acceptButton.classList.add('opacity-50');
                 
                 // Utiliser WebSocket si disponible
                 const websocketService = (window as any).websocketService;
                 if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
                     console.log('Rejecting friend request via WebSocket');
                     websocketService.send('friend-request-response', { 
-                        friendId: request.user_id, 
+                        friendId: userId, 
                         accept: false 
                     });
                     
-                    // Remove request from UI
-                    requestItem.remove();
+                    // Animer la disparition de la demande
+                    requestItem.style.transition = 'all 0.3s ease-out';
+                    requestItem.style.transform = 'translateX(10px)';
+                    requestItem.style.opacity = '0';
                     
-                    // Check if requests list is empty
-                    if (friendRequestsContainer.children.length === 0) {
-                        noFriendRequests.classList.remove('hidden');
-                    }
-                } else {
-                    // Fallback à l'API REST
-                    console.log('WebSocket not available, using REST API');
-                    const response = await api.friendship.rejectFriendRequest(request.id);
-                    
-                    if (response.success) {
+                    setTimeout(() => {
                         // Remove request from UI
                         requestItem.remove();
                         
@@ -506,20 +764,49 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (friendRequestsContainer.children.length === 0) {
                             noFriendRequests.classList.remove('hidden');
                         }
+                    }, 300);
+                } else {
+                    // Fallback à l'API REST
+                    console.log('WebSocket not available, using REST API');
+                    const response = await api.friendship.rejectFriendRequest(request.id);
+                    
+                    if (response.success) {
+                        // Animer la disparition de la demande
+                        requestItem.style.transition = 'all 0.3s ease-out';
+                        requestItem.style.transform = 'translateX(10px)';
+                        requestItem.style.opacity = '0';
+                        
+                        setTimeout(() => {
+                            // Remove request from UI
+                            requestItem.remove();
+                            
+                            // Check if requests list is empty
+                            if (friendRequestsContainer.children.length === 0) {
+                                noFriendRequests.classList.remove('hidden');
+                            }
+                        }, 300);
                     } else {
                         console.error('Failed to reject friend request:', response.message);
-                        alert(`Erreur: ${response.message}`);
-                        // Réactiver le bouton en cas d'erreur
+                        showNotification(`Erreur: ${response.message}`, 'error');
+                        
+                        // Réactiver les boutons en cas d'erreur
                         rejectButton.disabled = false;
-                        rejectButton.classList.remove('opacity-50');
+                        acceptButton.disabled = false;
+                        rejectButton.innerHTML = '<i class="fas fa-times mr-1.5"></i> Refuser';
+                        rejectButton.classList.remove('opacity-75');
+                        acceptButton.classList.remove('opacity-50');
                     }
                 }
             } catch (error) {
                 console.error('Error rejecting friend request:', error);
-                alert('Une erreur est survenue');
-                // Réactiver le bouton en cas d'erreur
+                showNotification('Une erreur est survenue', 'error');
+                
+                // Réactiver les boutons en cas d'erreur
                 rejectButton.disabled = false;
-                rejectButton.classList.remove('opacity-50');
+                acceptButton.disabled = false;
+                rejectButton.innerHTML = '<i class="fas fa-times mr-1.5"></i> Refuser';
+                rejectButton.classList.remove('opacity-75');
+                acceptButton.classList.remove('opacity-50');
             }
         });
         
@@ -614,6 +901,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Désactiver le bouton pour éviter les clics multiples
                 sendButton.disabled = true;
                 sendButton.classList.add('opacity-50');
+                sendButton.innerHTML = '<span class="spinner inline-block w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></span> Envoi...';
                 
                 // Utiliser WebSocket si disponible
                 const websocketService = (window as any).websocketService;
@@ -621,26 +909,77 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.log('Sending friend request via WebSocket');
                     websocketService.send('friend-request', { friendId: user.id });
                     
-                    // Marquer le bouton comme "Demande envoyée"
-                    sendButton.innerHTML = '<i class="fas fa-check mr-2"></i> Demande envoyée';
-                    sendButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                    sendButton.classList.add('bg-green-600', 'cursor-not-allowed');
+                    // Remplacer le résultat de recherche par un message de confirmation
+                    resultItem.innerHTML = `
+                        <div class="flex items-center justify-between w-full">
+                            <div class="flex items-center">
+                                <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                                    ${avatar.innerHTML}
+                                </div>
+                                <div>
+                                    <p class="font-medium text-white">${user.username}</p>
+                                    <div class="flex items-center text-sm">
+                                        <span class="text-green-400">Demande d'ami envoyée</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="animate-pulse">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Après 3 secondes, cacher les résultats de recherche et réinitialiser le formulaire
+                    setTimeout(() => {
+                        searchResultsContainer.classList.add('hidden');
+                        searchUserForm.reset();
+                        // Réinitialisez le résultat après quelques secondes
+                        searchResults.innerHTML = '';
+                    }, 3000);
                 } else {
                     // Fallback à l'API REST
                     console.log('WebSocket not available, using REST API');
                     const response = await api.friendship.sendFriendRequest(user.id);
                     
                     if (response.success) {
-                        // Marquer le bouton comme "Demande envoyée"
-                        sendButton.innerHTML = '<i class="fas fa-check mr-2"></i> Demande envoyée';
-                        sendButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                        sendButton.classList.add('bg-green-600', 'cursor-not-allowed');
+                        // Remplacer le résultat de recherche par un message de confirmation
+                        resultItem.innerHTML = `
+                            <div class="flex items-center justify-between w-full">
+                                <div class="flex items-center">
+                                    <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                                        ${avatar.innerHTML}
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-white">${user.username}</p>
+                                        <div class="flex items-center text-sm">
+                                            <span class="text-green-400">Demande d'ami envoyée</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="animate-pulse">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Après 3 secondes, cacher les résultats de recherche et réinitialiser le formulaire
+                        setTimeout(() => {
+                            searchResultsContainer.classList.add('hidden');
+                            searchUserForm.reset();
+                            // Réinitialisez le résultat après quelques secondes
+                            searchResults.innerHTML = '';
+                        }, 3000);
                     } else {
                         console.error('Failed to send friend request:', response.message);
                         alert(`Erreur: ${response.message}`);
                         // Réactiver le bouton en cas d'erreur
                         sendButton.disabled = false;
                         sendButton.classList.remove('opacity-50');
+                        sendButton.innerHTML = 'Ajouter';
                     }
                 }
             } catch (error) {
@@ -649,6 +988,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Réactiver le bouton en cas d'erreur
                 sendButton.disabled = false;
                 sendButton.classList.remove('opacity-50');
+                sendButton.innerHTML = 'Ajouter';
             }
         });
         
@@ -717,18 +1057,65 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Initializing friends page');
         
         try {
-            // Vérifier l'état de la connexion WebSocket
-            const websocketService = (window as any).websocketService;
-            if (websocketService) {
-                console.log('WebSocket service status on page load:', 
-                    websocketService.isConnected ? 
-                    (websocketService.isConnected() ? 'Connected' : 'Disconnected') : 
-                    'Function not available');
+            // Vérifier si auth service est disponible et authentifié
+            if (authService && authService.isAuthenticated && authService.isAuthenticated()) {
+                console.log('User is authenticated, ensuring token is available for WebSocket');
                 
-                // Si pas connecté, essayer de se connecter
-                if (websocketService.isConnected && !websocketService.isConnected()) {
-                    console.log('Attempting to reconnect WebSocket on page load');
+                // S'assurer que le token est disponible
+                const token = authService.getToken();
+                console.log('Token availability for WebSocket:', !!token);
+                
+                if (!token) {
+                    console.error('No token available, auth service getToken returned null');
+                    // Essayer de forcer la restauration de session
+                    authService.restoreSession();
+                    const tokenAfterRestore = authService.getToken();
+                    console.log('Token after forced restore:', !!tokenAfterRestore);
+                    
+                    if (!tokenAfterRestore) {
+                        console.error('Still no token after restore, authentication may be invalid');
+                        showNotification('Problème d\'authentification, veuillez vous reconnecter', 'error');
+                        setTimeout(() => {
+                            window.location.href = '/login.html';
+                        }, 2000);
+                        return;
+                    }
+                }
+                
+                // Vérifier l'état de la connexion WebSocket
+                const websocketService = (window as any).websocketService;
+                if (websocketService) {
+                    console.log('WebSocket service status on page load:', 
+                        websocketService.isConnected ? 
+                        (websocketService.isConnected() ? 'Connected' : 'Disconnected') : 
+                        'Function not available');
+                    
+                    // Forcer la connexion WebSocket
+                    console.log('Forcing WebSocket connection on page load');
                     websocketService.connect();
+                    
+                    // Vérifier si la connexion a réussi après un court délai
+                    setTimeout(() => {
+                        console.log('WebSocket connection status after delay:', websocketService.isConnected());
+                        
+                        // Si toujours déconnecté après un délai, essayer à nouveau
+                        if (!websocketService.isConnected()) {
+                            console.log('Still disconnected, trying one more time...');
+                            websocketService.connect();
+                            
+                            // Vérifier à nouveau après un autre délai
+                            setTimeout(() => {
+                                const connected = websocketService.isConnected();
+                                console.log('WebSocket final connection status:', connected);
+                                
+                                if (!connected) {
+                                    console.warn('WebSocket connection failed after multiple attempts');
+                                    console.log('Switching to polling mode for friendship updates');
+                                    showNotification('Mode temps réel indisponible, passage en mode polling', 'info');
+                                }
+                            }, 1000);
+                        }
+                    }, 1000);
                 }
             }
             
@@ -737,6 +1124,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 loadFriends(),
                 loadFriendRequests()
             ]);
+            
+            // Configurer un intervalle pour rafraîchir régulièrement les demandes d'amitié
+            // Cela servira de fallback si WebSocket ne fonctionne pas
+            setInterval(() => {
+                console.log('Refreshing friend requests...');
+                loadFriendRequests();
+            }, 5000); // Rafraîchir toutes les 5 secondes pour une mise à jour plus rapide
             
             console.log('Friends page initialized successfully');
         } catch (error) {

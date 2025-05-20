@@ -3,8 +3,14 @@ const WS_URL = window.location.hostname === 'localhost' || window.location.hostn
   ? 'http://localhost:3000'  
   : window.location.origin;  // Use the same origin in production
 
+// Log the WebSocket URL for debugging
+console.log('[Socket.io] Using WebSocket URL:', WS_URL);
+
 // Définition du type pour io (Socket.io)
 declare const io: any;
+
+// Constantes partagées avec auth.ts
+const TOKEN_KEY = 'auth_token';
 
 class WebSocketService {
   public socket: any = null; // Socket.io socket instead of WebSocket
@@ -26,8 +32,22 @@ class WebSocketService {
       return;
     }
 
-    // Get token from storage
-    const token = localStorage.getItem('auth_token');
+    // Get token from auth service or storage
+    let token = null;
+    
+    // Try to get token from auth service first
+    const authService = (window as any).authService;
+    if (authService && authService.getToken && typeof authService.getToken === 'function') {
+      token = authService.getToken();
+      console.log('[Socket.io] Got token from authService:', !!token);
+    }
+    
+    // Fallback to localStorage if token not available from auth service
+    if (!token) {
+      token = localStorage.getItem(TOKEN_KEY);
+      console.log('[Socket.io] Got token from localStorage:', !!token);
+    }
+    
     if (!token) {
       console.log('[Socket.io] No token available for connection');
       return;
@@ -57,9 +77,21 @@ class WebSocketService {
   private initializeSocket(token: string) {
     console.log('[Socket.io] Initializing connection');
     try {
-      // Connect to Socket.io server with auth token
+      // Log the original token format for debugging
+      console.log('[Socket.io] Original token format:', token.startsWith('Bearer ') ? 'Has Bearer prefix' : 'No Bearer prefix');
+      
+      // Remove Bearer prefix if it exists, to ensure we're not double-prefixing
+      const cleanToken = token.startsWith('Bearer ') ? token.substring(7) : token;
+      
+      const tokenPreview = cleanToken.length > 20 
+        ? cleanToken.substring(0, 15) + '...' + cleanToken.substring(cleanToken.length - 5)
+        : cleanToken;
+      
+      console.log('[Socket.io] Token prepared for connection:', tokenPreview);
+      
+      // Connect to Socket.io server with clean token (no Bearer prefix)
       this.socket = io(WS_URL, {
-        auth: { token },
+        auth: { token: cleanToken },
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: this.reconnectDelay,
@@ -101,8 +133,8 @@ class WebSocketService {
 
       // Setup handlers for standard events we're interested in
       ['friend-request-received', 'friend-request-sent', 'friend-request-accepted', 
-       'friend-status-changed', 'game-invitation', 'game-started', 'friend-request-response-sent',
-       'friendship-removed'].forEach(event => {
+       'friend-request-rejected', 'friend-removed', 'friend-status-change', 
+       'game-invitation', 'game-started'].forEach(event => {
         this.socket.on(event, (data: any) => {
           console.log(`[Socket.io] Received ${event} event:`, data);
           // Add type field if not present
@@ -231,6 +263,9 @@ class WebSocketService {
 
 // Create a singleton instance
 const websocketService = new WebSocketService();
+
+// Export the websocket service
+export { websocketService };
 
 // Make it globally available
 (window as any).websocketService = websocketService;

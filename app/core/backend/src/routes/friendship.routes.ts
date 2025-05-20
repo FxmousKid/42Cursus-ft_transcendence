@@ -198,6 +198,8 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
         const { User, Friendship } = fastify.db.models;
         const userId = request.user!.id;
         
+        fastify.log.info(`Getting pending friend requests for user ${userId}`);
+        
         // Find pending friend requests
         const pendingRequests = await Friendship.findAll({
           where: {
@@ -212,6 +214,13 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             }
           ]
         });
+        
+        fastify.log.info(`Found ${pendingRequests.length} pending requests for user ${userId}`);
+        
+        // Log de debugging - visualiser la structure des données
+        if (pendingRequests.length > 0) {
+          fastify.log.info(`Sample request structure: ${JSON.stringify(pendingRequests[0].toJSON())}`);
+        }
         
         return { success: true, data: pendingRequests };
       } catch (error) {
