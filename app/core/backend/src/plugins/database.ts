@@ -40,8 +40,9 @@ export const configureDatabasePlugin = fp(async (fastify, options) => {
     
     // Sync models (in development only)
     if (process.env.NODE_ENV !== 'production') {
-      // Using sync without alter: true to prevent constant table recreation
-      await sequelize.sync();
+      // WARNING: This will drop and recreate tables in development mode
+      fastify.log.warn('Development mode: Dropping and recreating database tables...');
+      await sequelize.sync({ force: true });
       fastify.log.info('Database models synchronized.');
     }
 

@@ -1,21 +1,22 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Install pnpm
+RUN npm install -g pnpm
+
+# Remove existing lock files
+RUN rm -f package-lock.json bun.lockb
+
+# Copy package files
+COPY package.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy remaining files
+# Copy the rest of the application
 COPY . .
 
-# Build the project
-RUN npm run build
-
-# Expose the port
 EXPOSE 5173
 
-# Start the static server
-CMD ["npm", "run", "serve"] 
+CMD ["npm", "run", "dev", "--", "--host"] 
