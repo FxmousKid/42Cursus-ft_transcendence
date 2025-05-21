@@ -331,4 +331,64 @@ export function registerUserRoutes(fastify: FastifyInstance) {
       }
     }
   });
+
+  // Search users by username
+  fastify.get('/users/search', {
+    schema: {
+      querystring: {
+        type: 'object',
+        required: ['username'],
+        properties: {
+          username: { type: 'string', minLength: 1 }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  username: { type: 'string' },
+                  email: { type: 'string' },
+                  status: { type: 'string' },
+                  avatar_url: { type: ['string', 'null'] },
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    preHandler: fastify.authenticate,
+    handler: async (request: FastifyRequest<{ Querystring: { username: string } }>, reply: FastifyReply) => {
+      try {
+        const { username } = request.query;
+        const currentUserId = request.user!.id;
+        
+        // Search for users with username LIKE the query (case insensitive)
+        const users = await fastify.db.models.User.findAll({
+          where: {
+            username: {
+              [Op.like]: `%${username}%`
+            },
+            id: {
+              [Op.ne]: currentUserId // Exclude the current user
+            }
+          },
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url'],
+          limit: 10 // Limit results to prevent large response
+        });
+        
+        return { success: true, data: users };
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(400).send({ success: false, message: error.message });
+      }
+    }
+  });
 } 

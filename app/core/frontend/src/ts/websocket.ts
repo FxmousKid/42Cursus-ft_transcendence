@@ -3,31 +3,53 @@ const WS_URL = window.location.hostname === 'localhost' || window.location.hostn
   ? 'http://localhost:3000'  
   : window.location.origin;  // Use the same origin in production
 
+// Log the WebSocket URL for debugging
+console.log('[Socket.io] Using WebSocket URL:', WS_URL);
+
+// Définition du type pour io (Socket.io)
+declare const io: any;
+
+// Constantes partagées avec auth.ts
+const TOKEN_KEY = 'auth_token';
+
 class WebSocketService {
-  private socket: WebSocket | null = null;
+  public socket: any = null; // Socket.io socket instead of WebSocket
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
-  private reconnectTimer: number | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 3; // Réduit à 3 tentatives
-  private reconnectDelay = 3000; // 3 seconds initial delay
-  private isBackendAvailable = true; // Flag pour suivre la disponibilité du backend
+  private maxReconnectAttempts = 3;
+  private reconnectDelay = 3000;
+  private isBackendAvailable = true;
 
-  // Connect to the WebSocket server
+  // Connect to the Socket.io server
   connect() {
-    if (this.socket?.readyState === WebSocket.OPEN) {
-      console.log('[WebSocket] Already connected');
+    if (this.socket && this.socket.connected) {
+      console.log('[Socket.io] Already connected');
       return;
     }
 
-    // Si le backend a été marqué comme indisponible, ne pas tenter de se reconnecter
     if (!this.isBackendAvailable) {
-      console.log('[WebSocket] Backend previously marked as unavailable, skipping connection attempt');
+      console.log('[Socket.io] Backend previously marked as unavailable, skipping connection attempt');
       return;
     }
 
-    const token = localStorage.getItem('auth_token');
+    // Get token from auth service or storage
+    let token = null;
+    
+    // Try to get token from auth service first
+    const authService = (window as any).authService;
+    if (authService && authService.getToken && typeof authService.getToken === 'function') {
+      token = authService.getToken();
+      console.log('[Socket.io] Got token from authService:', !!token);
+    }
+    
+    // Fallback to localStorage if token not available from auth service
     if (!token) {
-      console.log('[WebSocket] No token available for connection');
+      token = localStorage.getItem(TOKEN_KEY);
+      console.log('[Socket.io] Got token from localStorage:', !!token);
+    }
+    
+    if (!token) {
+      console.log('[Socket.io] No token available for connection');
       return;
     }
 
@@ -35,130 +57,205 @@ class WebSocketService {
       // Close any existing connection
       this.disconnect();
 
-      // Create a new connection with the token
-      this.socket = new WebSocket(`${WS_URL.replace('http', 'ws')}/ws?token=${token}`);
-
-      // Connection opened
-      this.socket.addEventListener('open', () => {
-        console.log('[WebSocket] Connected successfully');
-        this.reconnectAttempts = 0;
-        this.isBackendAvailable = true; // Marquer le backend comme disponible
-        if (this.reconnectTimer) {
-          clearTimeout(this.reconnectTimer);
-          this.reconnectTimer = null;
-        }
-
-        // Register all existing event listeners
-        this.reattachListeners();
-      });
-
-      // Listen for messages
-      this.socket.addEventListener('message', (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          const eventType = data.type;
-          
-          if (eventType && this.listeners.has(eventType)) {
-            this.listeners.get(eventType)?.forEach(callback => {
-              callback(data);
-            });
-          }
-        } catch (error) {
-          console.error('[WebSocket] Error parsing message:', error);
-        }
-      });
-
-      // Connection closed (attempt reconnect)
-      this.socket.addEventListener('close', (event) => {
-        console.log(`[WebSocket] Connection closed: ${event.code} ${event.reason}`);
-        this.attemptReconnect();
-      });
-
-      // Connection error
-      this.socket.addEventListener('error', (error) => {
-        console.warn('[WebSocket] Connection error - Backend may not be running WebSocket server');
-        this.attemptReconnect();
-      });
+      // Import Socket.io client from CDN if not already available
+      if (typeof io === 'undefined') {
+        console.log('[Socket.io] io not defined, loading script from CDN');
+        const script = document.createElement('script');
+        script.src = 'https://cdn.socket.io/4.6.0/socket.io.min.js';
+        script.onload = () => this.initializeSocket(token);
+        document.head.appendChild(script);
+      } else {
+        this.initializeSocket(token);
+      }
     } catch (error) {
-      console.error('[WebSocket] Setup error:', error);
+      console.error('[Socket.io] Setup error:', error);
       this.attemptReconnect();
     }
   }
 
-  // Disconnect from the WebSocket server
+  // Initialize Socket.io connection
+  private initializeSocket(token: string) {
+    console.log('[Socket.io] Initializing connection');
+    try {
+      // Log the original token format for debugging
+      console.log('[Socket.io] Original token format:', token.startsWith('Bearer ') ? 'Has Bearer prefix' : 'No Bearer prefix');
+      
+      // Remove Bearer prefix if it exists, to ensure we're not double-prefixing
+      const cleanToken = token.startsWith('Bearer ') ? token.substring(7) : token;
+      
+      const tokenPreview = cleanToken.length > 20 
+        ? cleanToken.substring(0, 15) + '...' + cleanToken.substring(cleanToken.length - 5)
+        : cleanToken;
+      
+      console.log('[Socket.io] Token prepared for connection:', tokenPreview);
+      
+      // Connect to Socket.io server with clean token (no Bearer prefix)
+      this.socket = io(WS_URL, {
+        auth: { token: cleanToken },
+        reconnection: true,
+        reconnectionAttempts: this.maxReconnectAttempts,
+        reconnectionDelay: this.reconnectDelay,
+        timeout: 10000
+      });
+
+      // Connection success
+      this.socket.on('connect', () => {
+        console.log('[Socket.io] Connected successfully');
+        this.reconnectAttempts = 0;
+        this.isBackendAvailable = true;
+        this.reattachListeners();
+      });
+
+      // Connection error
+      this.socket.on('connect_error', (error: any) => {
+        console.error('[Socket.io] Connection error:', error);
+        this.reconnectAttempts++;
+        
+        if (this.reconnectAttempts > this.maxReconnectAttempts) {
+          console.log('[Socket.io] Max reconnect attempts reached, giving up');
+          this.isBackendAvailable = false;
+          this.socket.disconnect();
+        }
+      });
+
+      // Handle disconnect
+      this.socket.on('disconnect', (reason: string) => {
+        console.log(`[Socket.io] Disconnected: ${reason}`);
+      });
+
+      // Handle errors from server
+      this.socket.on('error', (data: any) => {
+        console.error('[Socket.io] Error from server:', data);
+        if (data && data.message) {
+          alert(`Erreur: ${data.message}`);
+        }
+      });
+
+      // Setup handlers for standard events we're interested in
+      ['friend-request-received', 'friend-request-sent', 'friend-request-accepted', 
+       'friend-request-rejected', 'friend-removed', 'friend-status-change', 
+       'game-invitation', 'game-started'].forEach(event => {
+        this.socket.on(event, (data: any) => {
+          console.log(`[Socket.io] Received ${event} event:`, data);
+          // Add type field if not present
+          if (!data.type) {
+            data.type = event;
+          }
+          // Forward to our listeners
+          if (this.listeners.has(event)) {
+            this.listeners.get(event)?.forEach(callback => callback(data));
+          }
+        });
+      });
+    } catch (error) {
+      console.error('[Socket.io] Initialization error:', error);
+      this.attemptReconnect();
+    }
+  }
+
+  // Disconnect from the Socket.io server
   disconnect() {
     if (this.socket) {
-      this.socket.close();
+      console.log('[Socket.io] Disconnecting');
+      this.socket.disconnect();
       this.socket = null;
     }
-
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-
     this.reconnectAttempts = 0;
   }
 
   // Subscribe to an event
   on(event: string, callback: (data: any) => void) {
+    console.log(`[Socket.io] Registering event handler for: ${event}`);
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
     this.listeners.get(event)?.add(callback);
 
-    // If socket is open, send a subscription message
-    if (this.socket?.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify({ action: 'subscribe', event }));
+    // If already connected, register with socket.io server
+    if (this.socket && this.socket.connected) {
+      console.log(`[Socket.io] Already connected, subscribing to ${event}`);
+      this.socket.on(event, (data: any) => {
+        console.log(`[Socket.io] Direct event ${event}:`, data);
+        // Add type if missing
+        if (!data.type) {
+          data.type = event;
+        }
+        callback(data);
+      });
     }
   }
 
   // Unsubscribe from an event
   off(event: string, callback: (data: any) => void) {
-    this.listeners.get(event)?.delete(callback);
-    
-    // If no more listeners for this event, send unsubscribe message
-    if (this.listeners.get(event)?.size === 0 && this.socket?.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify({ action: 'unsubscribe', event }));
+    const listeners = this.listeners.get(event);
+    if (listeners) {
+      listeners.delete(callback);
+      if (listeners.size === 0) {
+        this.listeners.delete(event);
+        // If connected, remove listener from socket.io
+        if (this.socket && this.socket.connected) {
+          this.socket.off(event);
+        }
+      }
     }
   }
 
   // Send a message to the server
   send(type: string, data: any) {
-    if (this.socket?.readyState !== WebSocket.OPEN) {
-      console.warn('[WebSocket] Cannot send message: connection not open');
-      return;
+    if (!this.socket || !this.socket.connected) {
+      console.warn('[Socket.io] Cannot send message: not connected');
+      return false;
     }
 
-    this.socket.send(JSON.stringify({ type, ...data }));
+    try {
+      console.log(`[Socket.io] Emitting ${type}:`, data);
+      this.socket.emit(type, data);
+      return true;
+    } catch (error) {
+      console.error('[Socket.io] Error sending message:', error);
+      return false;
+    }
+  }
+
+  // Check if connected
+  isConnected() {
+    console.log('[Socket.io] Checking connection status:', this.socket?.connected || false);
+    return this.socket && this.socket.connected;
   }
 
   // Reattach all event listeners after reconnect
   private reattachListeners() {
-    if (this.socket?.readyState !== WebSocket.OPEN) return;
+    if (!this.socket || !this.socket.connected) return;
 
-    this.listeners.forEach((_, event) => {
-      this.socket?.send(JSON.stringify({ action: 'subscribe', event }));
+    console.log('[Socket.io] Reattaching event listeners');
+    this.listeners.forEach((callbacks, event) => {
+      console.log(`[Socket.io] Resubscribing to event: ${event}`);
+      
+      this.socket.on(event, (data: any) => {
+        console.log(`[Socket.io] Received reattached ${event}:`, data);
+        // Add type if missing
+        if (!data.type) {
+          data.type = event;
+        }
+        callbacks.forEach(callback => callback(data));
+      });
     });
   }
 
-  // Attempt to reconnect with exponential backoff
+  // Attempt to reconnect
   private attemptReconnect() {
-    if (this.reconnectTimer) return;
-
     this.reconnectAttempts++;
     
     if (this.reconnectAttempts > this.maxReconnectAttempts) {
-      console.log('[WebSocket] Max reconnect attempts reached, giving up');
-      this.isBackendAvailable = false; // Marquer le backend comme indisponible
+      console.log('[Socket.io] Max reconnect attempts reached, giving up');
+      this.isBackendAvailable = false;
       return;
     }
 
     const delay = Math.min(10000, this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1));
-    console.log(`[WebSocket] Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+    console.log(`[Socket.io] Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
-    this.reconnectTimer = window.setTimeout(() => {
-      this.reconnectTimer = null;
+    setTimeout(() => {
       this.connect();
     }, delay);
   }
@@ -167,6 +264,9 @@ class WebSocketService {
 // Create a singleton instance
 const websocketService = new WebSocketService();
 
+// Export the websocket service
+export { websocketService };
+
 // Make it globally available
 (window as any).websocketService = websocketService;
 
@@ -174,7 +274,7 @@ const websocketService = new WebSocketService();
 document.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('auth_token');
   if (token) {
-    console.log('[WebSocket] Auto-connecting...');
+    console.log('[Socket.io] Auto-connecting...');
     websocketService.connect();
   }
 }); 
