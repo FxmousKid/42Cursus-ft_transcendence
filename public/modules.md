@@ -1,13 +1,13 @@
 # ft_transcendence - Modules
 
-## Web
-- [X] - Major module: Use a framework to build the backend - NestJS + Fastify
-- [ ] - Minor module: Use a framework or a toolkit to build the frontend - React Typescript / Tailwind
+## Web - 2 
+- [X] - Major module: Use a framework to build the backend - Fastify
+- [X] - Minor module: Use a framework or a toolkit to build the frontend - TailwindCSS
 - [X] - Minor module: Use a database for the backend - SQLite
 - [TODO] - Major module: Store the score of a tournament in the Blockchain - Avalanche / Solidity - @John
 
 ## User Management
-- [INCOMING] - Major module: Standard user management, authentication, users across tournaments - Online/Offline Status
+- [INCOMING] - Major module: Standard user management, authentication, users across tournaments - Online/Offline Status @Genaro add upload PP
 - [TODO] - Major module: Implementing a remote authentication - Google Sign-In - @Theo
 
 ## Gameplay and user experience
@@ -19,25 +19,25 @@
 
 ## AI-Algo
 - [ ] - Major module: Introduce an AI opponent
-- [X] - Minor module: User and game stats dashboards
+- [TO-CONFIRM] - Minor module: User and game stats dashboards @Genaro
 
-## Cybersecurity
-- [ ] - Major module: Implement WAF/ModSecurity with a hardened configuration and HashiCorp Vault for secrets management
-- [TODO] - Minor module: GDPR compliance options with user anonymization, local data management, and Account Deletion - @Joey/@Iyan
+## Cybersecurity 1.5
+- [X] - Major module: Implement WAF/ModSecurity with a hardened configuration and HashiCorp Vault for secrets management
+- [X] - Minor module: GDPR compliance options with user anonymization, local data management, and Account Deletion - @Joey/@Iyan
 - [2FA-TODO] - Major module: Implement Two-Factor Authentication (2FA) and JWT - Iyan/Joey - [JWT already done, normally...]
 
-## Devops
+## Devops 1.5
 - [X] - Major module: Infrastructure setup for log management
-- [INCOMING] - Minor module: Monitoring system - @Iyan
+- [X] - Minor module: Monitoring system - @Iyan
 - [ ] - Major module: Designing the backend as microservices
 
 ## Graphics
 - [ ] - Major module: Use advanced 3D techniques
 
-## Accessibility
+## Accessibility 1
 - [X] - Minor module: Support on all devices
 - [X] - Minor module: Expanding browser compatibility
-- [TODO] - Minor module: Supports multiple languages - @John
+- [TODO] - Minor module: Supports multiple languages - @John?
 - [ ] - Minor module: Add accessibility features for visually impaired users
 - [ ] - Minor module: Server-Side Rendering (SSR) integration
 
@@ -45,6 +45,6 @@
 - [ ] - Major module: Replace basic Pong with server-side Pong and implement an API
 - [ ] - Major module: Enabling Pong gameplay via CLI against web users with API integration
 
-# TOTAL POINTS = 4 | 4 MINORS + 2 MAJORS
+# TOTAL POINTS = 6 | 6 MINORS + 3 MAJORS
 # 100% --> 7 points
 # 125% --> 9.5 points
