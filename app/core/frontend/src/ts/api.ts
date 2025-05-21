@@ -22,6 +22,8 @@ export interface MatchData {
   player2_username: string;
   player1_score: number;
   player2_score: number;
+  winner_id?: number;
+  status?: string;
   created_at: string;
   updated_at: string;
 }
@@ -35,8 +37,19 @@ async function request(
     const url = `${API_URL}${endpoint}`;
     console.log(`[API] Making ${options.method || 'GET'} request to: ${url}`);
     
-    // Get token from localStorage
-    const token = localStorage.getItem('auth_token');
+    // Get the most up-to-date token
+    const authService = (window as any).authService;
+    let token;
+    
+    if (authService && authService.getToken) {
+      // Get the token directly from auth service if available
+      token = authService.getToken();
+      console.log(`[API] Got token from authService: ${!!token}`);
+    } else {
+      // Fallback to localStorage
+      token = localStorage.getItem('auth_token');
+      console.log(`[API] Got token from localStorage: ${!!token}`);
+    }
     
     // Prepare headers
     const headers = {
@@ -64,15 +77,35 @@ async function request(
     
     // Handle authentication errors
     if (response.status === 401) {
-      // Clear session data
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_id');
-      localStorage.removeItem('username');
-      localStorage.removeItem('avatar_url');
+      console.log('[API] Authentication error (401) received');
       
-      // Redirect to login page if not already there
-      if (window.location.pathname !== '/login.html') {
+      // Use the auth service to clear the session if available
+      if (authService && authService.clearSession) {
+        console.log('[API] Using authService to clear session');
+        authService.clearSession();
+      } else {
+        // Fallback manual cleanup
+        console.log('[API] Manually clearing auth data from storage');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('username');
+        localStorage.removeItem('avatar_url');
+        
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('user_id');
+        sessionStorage.removeItem('username');
+        sessionStorage.removeItem('avatar_url');
+      }
+      
+      // Get the current path and check if we need to redirect
+      const currentPath = window.location.pathname;
+      
+      // Don't redirect if already on login page to avoid redirect loop
+      if (!currentPath.includes('login') && !currentPath.includes('register')) {
+        console.log('[API] Redirecting to login page due to 401 error');
         window.location.href = '/login.html';
+      } else {
+        console.log('[API] Already on login/register page, not redirecting');
       }
       
       return { 
@@ -160,22 +193,25 @@ export const api = {
   
   // User services
   user: {
-    async getProfile(userId?: number) {
-      const id = userId || localStorage.getItem('user_id');
-      return request(`/users/${id}`);
+    async getProfile() {
+      return request('/users/profile');  // Use /users/profile instead of /users/${id}
     },
     
     async updateProfile(data: any) {
-      const userId = localStorage.getItem('user_id');
-      return request(`/users/${userId}`, {
-        method: 'PATCH',
+      return request('/users/profile', {  // Use /users/profile instead of /users/${userId}
+        method: 'PUT',  // Use PUT instead of PATCH to match backend
         body: JSON.stringify(data)
       });
     },
     
-    async getMatches(userId?: number) {
-      const id = userId || localStorage.getItem('user_id');
-      return request(`/users/${id}/matches`);
+    async deleteProfile() {
+      return request('/users/profile', {
+        method: 'DELETE'
+      });
+    },
+
+    async getMatches(): Promise<{ success: boolean; data?: MatchData[]; message?: string }> {
+      return request('/users/matches');
     },
     
     async getAll() {

@@ -7,12 +7,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Get services from global scope
     const api = (window as any).api;
     const websocketService = (window as any).websocketService;
+    const authService = (window as any).authService;
+    
     console.log('API available:', !!api);
     console.log('WebSocket service available:', !!websocketService);
+    console.log('Auth service available:', !!authService);
     
-    // Check if API is available
+    // Check if services are available
     if (!api || !api.friendship) {
         console.error('API or friendship module not available');
+        window.location.href = '/login.html';
+        return;
+    }
+    
+    // Force auth service to refresh token state from storage
+    if (authService && authService.restoreSession) {
+        console.log('Friends: Restoring auth session');
+        authService.restoreSession();
+    }
+    
+    // Check if user is authenticated properly using authService
+    const isAuthenticated = authService && 
+                          authService.isAuthenticated && 
+                          typeof authService.isAuthenticated === 'function' && 
+                          authService.isAuthenticated();
+    
+    console.log('Friends: User is authenticated:', isAuthenticated);
+    
+    if (!isAuthenticated) {
+        console.log('Friends: User not authenticated, redirecting to login');
         window.location.href = '/login.html';
         return;
     }
@@ -21,15 +44,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (websocketService && websocketService.connect) {
         console.log('Connecting to WebSocket');
         websocketService.connect();
-    }
-    
-    // Check if user is logged in
-    const token = localStorage.getItem('auth_token');
-    
-    if (!token) {
-        console.log('No auth token, redirecting to login');
-        window.location.href = '/login.html';
-        return;
     }
     
     // DOM elements

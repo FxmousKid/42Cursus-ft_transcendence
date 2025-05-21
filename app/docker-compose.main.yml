@@ -3,9 +3,10 @@
 # include the compsoe of every provided type of service
 
 include:
-  - ./core/docker-compose.core.yml              # Core services
-  - ./infra/vault/docker-compose.vault.yml      # Hashicorp Vault services
-  - ./infra/logging/docker-compose.logging.yml  # ELK stack services
+  - ./core/docker-compose.core.yml                    # Core services
+  - ./infra/vault/docker-compose.vault.yml            # Hashicorp Vault services
+  - ./infra/logging/docker-compose.logging.yml        # ELK stack services
+  - ./infra/monitoring/docker-compose.monitoring.yml  # Monitoring services
 
 
 # Global network
@@ -13,9 +14,10 @@ networks:
   transcendence-network:
     driver: bridge
 
-# volumes:
-#   vault-env:
-#     driver_opts:
-#       type: none
-#       device: ./infra/vault/agent/env/
-#       o: bind
+volumes:
+  prometheus_data:
+  grafana_data:
+  escerts:
+  esdata01:
+  filebeatdata01:
+  kibanadata:

@@ -7,71 +7,75 @@
     <link rel="stylesheet" href="css/output.css">
     <meta name="description" content="Gérez votre profil sur ft_transcendence, consultez vos statistiques et modifiez vos informations.">
 </head>
-<body class="flex flex-col min-h-screen bg-gray-50">
+<body class="flex flex-col min-h-screen bg-dark-800 text-gray-200">
     <!-- En-tête -->
     <div id="header-container"></div>
     
     <!-- Contenu principal -->
-    <main class="flex-grow container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-6 text-center">Mon Profil</h1>
+    <main class="flex-grow container mx-auto px-4 py-12">
+        <h1 class="text-3xl font-bold mb-8 text-center text-white">Mon Profil</h1>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Section profil -->
-            <div class="bg-white p-6 rounded-lg shadow-md col-span-1">
+            <div class="card col-span-1">
                 <div class="flex flex-col items-center mb-6">
-                    <div id="profile-avatar" class="w-32 h-32 bg-gray-300 rounded-full mb-4 flex items-center justify-center overflow-hidden">
+                    <div id="profile-avatar" class="w-32 h-32 bg-dark-700 rounded-full mb-4 flex items-center justify-center overflow-hidden border-2 border-primary-600 shadow-md">
                         <!-- L'avatar sera inséré ici via JavaScript -->
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                         </svg>
                     </div>
-                    <h2 id="profile-username" class="text-xl font-semibold"></h2>
-                    <p id="profile-email" class="text-gray-600"></p>
+                    <h2 id="profile-username" class="text-xl font-semibold text-white"></h2>
+                    <p id="profile-email" class="text-gray-400"></p>
                 </div>
                 
                 <div class="mb-6">
-                    <h3 class="text-lg font-semibold mb-2">Informations</h3>
-                    <div class="space-y-2">
+                    <h3 class="text-lg font-semibold mb-3 text-white">Informations</h3>
+                    <div class="space-y-3">
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Statut:</span>
-                            <span id="profile-status" class="font-medium"></span>
+                            <span class="text-gray-400">Statut:</span>
+                            <span id="profile-status" class="font-medium text-primary-400"></span>
                         </div>
                     </div>
                 </div>
                 
-                <button id="edit-profile-button" class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition duration-200">
+                <button id="edit-profile-button" class="btn-primary w-full py-2.5 px-4 mb-4">
                     Modifier le profil
+                </button>
+                
+                <button id="delete-account-button" class="bg-red-600 hover:bg-red-700 text-white font-medium rounded-md py-2.5 px-4 w-full transition-colors">
+                    Supprimer mon compte
                 </button>
             </div>
             
             <!-- Section statistiques et historique -->
             <div class="col-span-1 md:col-span-2">
                 <!-- Statistiques -->
-                <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-                    <h3 class="text-xl font-semibold mb-4">Statistiques</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-gray-100 p-4 rounded-lg text-center">
-                            <p class="text-gray-600 mb-1">Parties jouées</p>
-                            <p id="stats-games-played" class="text-2xl font-bold">0</p>
+                <div class="card mb-8">
+                    <h3 class="text-xl font-semibold mb-5 text-white">Statistiques</h3>
+                    <div class="grid grid-cols-2 gap-5">
+                        <div class="bg-dark-700 p-5 rounded-lg text-center border border-dark-600">
+                            <p class="text-gray-400 mb-2">Parties jouées</p>
+                            <p id="stats-games-played" class="text-2xl font-bold text-white">0</p>
                         </div>
-                        <div class="bg-gray-100 p-4 rounded-lg text-center">
-                            <p class="text-gray-600 mb-1">Victoires</p>
-                            <p id="stats-wins" class="text-2xl font-bold">0</p>
+                        <div class="bg-dark-700 p-5 rounded-lg text-center border border-dark-600">
+                            <p class="text-gray-400 mb-2">Victoires</p>
+                            <p id="stats-wins" class="text-2xl font-bold text-primary-400">0</p>
                         </div>
-                        <div class="bg-gray-100 p-4 rounded-lg text-center">
-                            <p class="text-gray-600 mb-1">Défaites</p>
-                            <p id="stats-losses" class="text-2xl font-bold">0</p>
+                        <div class="bg-dark-700 p-5 rounded-lg text-center border border-dark-600">
+                            <p class="text-gray-400 mb-2">Défaites</p>
+                            <p id="stats-losses" class="text-2xl font-bold text-red-400">0</p>
                         </div>
-                        <div class="bg-gray-100 p-4 rounded-lg text-center">
-                            <p class="text-gray-600 mb-1">Ratio V/D</p>
-                            <p id="stats-ratio" class="text-2xl font-bold">0.00</p>
+                        <div class="bg-dark-700 p-5 rounded-lg text-center border border-dark-600">
+                            <p class="text-gray-400 mb-2">Ratio V/D</p>
+                            <p id="stats-ratio" class="text-2xl font-bold text-accent-400">0.00</p>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Historique des matchs -->
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-xl font-semibold mb-4">Historique des matchs</h3>
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-5 text-white">Historique des matchs</h3>
                     <div id="matches-container" class="space-y-3">
                         <!-- Les matchs seront insérés ici via JavaScript -->
                     </div>
@@ -84,38 +88,60 @@
         </div>
         
         <!-- Modal d'édition de profil -->
-        <div id="edit-profile-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-                <h2 class="text-2xl font-bold mb-4">Modifier le profil</h2>
+        <div id="edit-profile-modal" class="fixed inset-0 bg-dark-900/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+            <div class="card max-w-md w-full">
+                <h2 class="text-2xl font-bold mb-5 text-white">Modifier le profil</h2>
                 
-                <form id="edit-profile-form" class="space-y-4">
+                <form id="edit-profile-form" class="space-y-5">
                     <div>
-                        <label for="edit-username" class="block text-gray-700 mb-1">Nom d'utilisateur</label>
-                        <input type="text" id="edit-username" name="username" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <label for="edit-username" class="block text-gray-300 mb-2">Nom d'utilisateur</label>
+                        <input type="text" id="edit-username" name="username" class="input-field w-full">
                     </div>
                     
                     <div>
-                        <label for="edit-email" class="block text-gray-700 mb-1">Email</label>
-                        <input type="email" id="edit-email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <label for="edit-email" class="block text-gray-300 mb-2">Email</label>
+                        <input type="email" id="edit-email" name="email" class="input-field w-full">
                     </div>
                     
                     <div>
-                        <label for="edit-avatar" class="block text-gray-700 mb-1">URL de l'avatar</label>
-                        <input type="url" id="edit-avatar" name="avatar_url" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <label for="edit-avatar" class="block text-gray-300 mb-2">URL de l'avatar</label>
+                        <input type="url" id="edit-avatar" name="avatar_url" class="input-field w-full">
                     </div>
                     
                     <div class="flex justify-end space-x-3 pt-4">
-                        <button type="button" id="cancel-edit" class="py-2 px-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold rounded-lg transition duration-200">
+                        <button type="button" id="cancel-edit" class="btn-secondary">
                             Annuler
                         </button>
-                        <button type="submit" class="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition duration-200">
+                        <button type="submit" class="btn-primary">
                             Enregistrer
                         </button>
                     </div>
                 </form>
                 
-                <div id="edit-error-message" class="mt-4 p-3 bg-red-100 text-red-700 rounded-lg hidden">
+                <div id="edit-error-message" class="mt-4 p-3 bg-red-900/30 border-l-4 border-red-500 text-red-300 rounded-lg hidden">
                     <span id="edit-error-text"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal de confirmation de suppression de compte -->
+        <div id="delete-account-modal" class="fixed inset-0 bg-dark-900/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+            <div class="card max-w-md w-full">
+                <h2 class="text-2xl font-bold mb-5 text-red-500">Supprimer mon compte</h2>
+                
+                <p class="text-gray-300 mb-6">Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et entraînera la suppression de toutes vos données.</p>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancel-delete" class="btn-secondary">
+                        Annuler
+                    </button>
+                    <button type="button" id="confirm-delete" class="bg-red-600 hover:bg-red-700 text-white font-medium rounded-md py-2 px-4 transition-colors">
+                        Confirmer la suppression
+                    </button>
+                </div>
+                
+                <div id="delete-error-message" class="mt-4 p-3 bg-red-900/30 border-l-4 border-red-500 text-red-300 rounded-lg hidden">
+                    <span id="delete-error-text"></span>
                 </div>
             </div>
         </div>
@@ -126,15 +152,15 @@
     
     <!-- Template pour un match -->
     <template id="match-template">
-        <div class="match-item border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+        <div class="match-item bg-dark-700 border border-dark-600 rounded-lg p-4 flex items-center justify-between hover:border-primary-700 transition-colors">
             <div class="flex items-center">
                 <div class="match-result-indicator w-4 h-full mr-3"></div>
                 <div>
-                    <p class="font-medium match-opponent"></p>
-                    <p class="text-sm text-gray-500 match-date"></p>
+                    <p class="font-medium match-opponent text-white"></p>
+                    <p class="text-sm text-gray-400 match-date"></p>
                 </div>
             </div>
-            <div class="text-xl font-bold match-score"></div>
+            <div class="text-xl font-bold match-score text-white"></div>
         </div>
     </template>
     
@@ -150,15 +176,16 @@
     </script>
     
     <!-- Core scripts -->
-    <script src="js/websocket.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/websocket.js"></script>
     
-    <!-- Utility scripts -->
+    <!-- App initialization and utilities (load these first) -->
+    <script src="js/app.js"></script>
     <script src="js/header-loader.js"></script>
     <script src="js/route-guard.js"></script>
     
-    <!-- Page-specific script -->
+    <!-- Page-specific script (load this last) -->
     <script src="js/profile.js"></script>
 </body>
 </html> 

@@ -133,37 +133,35 @@ export class AuthService {
   public isAuthenticated(): boolean {
     console.log('Auth: Checking authentication status');
     
-    // Vérifier si l'utilisateur est authentifié par l'état interne
+    // Check if internal state says we're authenticated
     if (this.state.isAuthenticated && this.state.token) {
       console.log('Auth: State has authenticated=true and token is present');
       
-      // Vérifier si le token est expiré
+      // Check if token is expired
       if (this.state.expiresAt && this.state.expiresAt > Date.now()) {
         console.log('Auth: Token is valid, user is authenticated');
         return true;
       } else {
         console.log('Auth: Token is expired, clearing session');
-        // Si le token est expiré, on nettoie la session
         this.clearSession();
         return false;
       }
     }
     
-    // Vérifier si le token est présent dans localStorage ou sessionStorage
+    // If internal state says we're not authenticated, check if we have a token in storage
     const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
     console.log('Auth: Token in storage:', !!token);
     
     if (token) {
-      // Vérifier si un ID utilisateur est associé
+      // Check for user ID in storage
       const userId = localStorage.getItem(USER_ID_KEY) || sessionStorage.getItem(USER_ID_KEY);
       console.log('Auth: User ID in storage:', !!userId);
       
       if (userId) {
         console.log('Auth: Found token and userID in storage, restoring session');
-        // Restaurer l'état si les informations existent mais ne sont pas chargées dans l'état
+        // If we found token and userID but they weren't loaded in state, restore session
         this.restoreSession();
-        // Revérifier l'état après restauration
-        console.log('Auth: After restoration, isAuthenticated =', this.state.isAuthenticated);
+        // Return the authentication state after restoration
         return this.state.isAuthenticated;
       }
     }
@@ -194,6 +192,25 @@ export class AuthService {
   }
 
   /**
+   * Update username in auth state
+   */
+  public updateUsername(username: string): void {
+    if (!username) return;
+    
+    // Update state
+    this.state.username = username;
+    
+    // Update in storage
+    if (this.state.rememberMe) {
+      localStorage.setItem(USERNAME_KEY, username);
+    } else {
+      sessionStorage.setItem(USERNAME_KEY, username);
+    }
+    
+    console.log('Auth: Username updated to:', username);
+  }
+
+  /**
    * Clear session data (exposed for API module)
    */
   public clearSession(): void {
@@ -203,27 +220,82 @@ export class AuthService {
       token: null,
       userId: null,
       username: null,
-      rememberMe: false,
+      rememberMe: this.state.rememberMe,
       expiresAt: null
     };
     
-    // Clear storages
+    // Clear localStorage and sessionStorage
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_ID_KEY);
     localStorage.removeItem(USERNAME_KEY);
     localStorage.removeItem(TOKEN_EXPIRY_KEY);
+    
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(USER_ID_KEY);
     sessionStorage.removeItem(USERNAME_KEY);
     sessionStorage.removeItem(TOKEN_EXPIRY_KEY);
     
-    // Keep remember me preference
-    localStorage.setItem(REMEMBER_ME_KEY, 'false');
-    
-    // Clear token refresh timeout
-    if (this.refreshTimeout) {
+    // Clear any pending token refresh
+    if (this.refreshTimeout !== null) {
       window.clearTimeout(this.refreshTimeout);
       this.refreshTimeout = null;
+    }
+    
+    console.log('Auth: Session cleared');
+  }
+  
+  /**
+   * Restore session from localStorage or sessionStorage
+   * Made public to allow external components to force a session restore
+   */
+  public restoreSession(): void {
+    console.log('Auth: Attempting to restore session');
+    
+    // Try to get token from localStorage first, then sessionStorage
+    const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+    
+    if (!token) {
+      console.log('Auth: No token found in storage');
+      return;
+    }
+    
+    // Get user ID and other data
+    const userId = localStorage.getItem(USER_ID_KEY) || sessionStorage.getItem(USER_ID_KEY);
+    const username = localStorage.getItem(USERNAME_KEY) || sessionStorage.getItem(USERNAME_KEY);
+    const rememberMe = localStorage.getItem(REMEMBER_ME_KEY) === 'true';
+    
+    // Get token expiry
+    const expiryStr = localStorage.getItem(TOKEN_EXPIRY_KEY) || sessionStorage.getItem(TOKEN_EXPIRY_KEY);
+    const expiresAt = expiryStr ? parseInt(expiryStr, 10) : null;
+    
+    console.log('Auth: Found token data in storage', { 
+      hasToken: !!token, 
+      hasUserId: !!userId, 
+      hasUsername: !!username, 
+      expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null 
+    });
+    
+    // Check if we have all required data and token is not expired
+    if (token && userId && (expiresAt === null || expiresAt > Date.now())) {
+      // Update state
+      this.state = {
+        isAuthenticated: true,
+        token,
+        userId,
+        username,
+        rememberMe,
+        expiresAt
+      };
+      
+      console.log('Auth: Session restored successfully. User is authenticated.');
+      
+      // Schedule token refresh if we have an expiry
+      if (expiresAt) {
+        this.scheduleTokenRefresh();
+      }
+    } else {
+      console.log('Auth: Session restoration failed - invalid or expired token');
+      this.clearSession(); // Clean up any invalid data
     }
   }
 
@@ -288,56 +360,6 @@ export class AuthService {
       userId: this.state.userId,
       username: this.state.username
     });
-  }
-
-  /**
-   * Restore session from storage
-   */
-  private restoreSession(): void {
-    console.log('Auth: Attempting to restore session from storage');
-    
-    // Try to get token from localStorage first (for remember me)
-    let token = localStorage.getItem(TOKEN_KEY);
-    let userId = localStorage.getItem(USER_ID_KEY);
-    let username = localStorage.getItem(USERNAME_KEY);
-    let expiresAtStr = localStorage.getItem(TOKEN_EXPIRY_KEY);
-    let rememberMe = localStorage.getItem(REMEMBER_ME_KEY) === 'true';
-    
-    console.log('Auth: LocalStorage has token:', !!token, 'userId:', !!userId, 'username:', !!username);
-    
-    // If not found in localStorage and not using remember me, try sessionStorage
-    if (!token && !rememberMe) {
-      token = sessionStorage.getItem(TOKEN_KEY);
-      userId = sessionStorage.getItem(USER_ID_KEY);
-      username = sessionStorage.getItem(USERNAME_KEY);
-      expiresAtStr = sessionStorage.getItem(TOKEN_EXPIRY_KEY);
-      console.log('Auth: SessionStorage has token:', !!token, 'userId:', !!userId, 'username:', !!username);
-    }
-    
-    // If token exists and is not expired
-    if (token && userId && username) {
-      const expiresAt = expiresAtStr ? parseInt(expiresAtStr, 10) : null;
-      console.log('Auth: Found auth data in storage, expiry:', expiresAt ? new Date(expiresAt).toLocaleString() : 'none');
-      
-      // Check if token is still valid
-      if (expiresAt && expiresAt > Date.now()) {
-        console.log('Auth: Token is still valid, restoring session');
-        this.state = {
-          isAuthenticated: true,
-          token,
-          userId,
-          username,
-          rememberMe,
-          expiresAt
-        };
-      } else {
-        console.log('Auth: Token is expired or missing expiry, clearing session');
-        // Token is expired, clear session
-        this.clearSession();
-      }
-    } else {
-      console.log('Auth: Missing required auth data (token, userId, or username)');
-    }
   }
 
   /**

@@ -26,6 +26,14 @@ app/infra/vault/agent/env/.env
 **/db.sqlite
 **/database.sqlite
 
+# Compiled files
+**/dist/
+**/src/js/**/*.js
+**/src/css/output.css
+# Quand on travaille avec Tailwind et TypeScript, on ne veut jamais commit les fichiers compilés
+**/src/css/*.css
+!**/src/css/input.css
+
 # Logs
 *.log
 npm-debug.log*

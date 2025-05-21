@@ -9,80 +9,97 @@
     <style>
         /* Additional styles for the game */
         #game-canvas {
-            background-color: #111827;
+            background-color: #0c111b;
             display: block;
             margin: 0 auto;
             border-radius: 0.5rem;
+            border: 1px solid #242631;
         }
         .game-instructions {
-            background-color: #f3f4f6;
-            border-left: 4px solid #4f46e5;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 0.25rem;
+            background-color: rgba(43, 47, 60, 0.5);
+            border-left: 4px solid #3b82f6;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0.375rem;
         }
         .player-controls {
             display: flex;
-            justify-content: space-around;
+            flex-direction: column;
+            gap: 1rem;
             margin-top: 1rem;
             text-align: center;
+        }
+        @media (min-width: 640px) {
+            .player-controls {
+                flex-direction: row;
+                justify-content: space-around;
+            }
         }
         .player-label {
             font-weight: bold;
             margin-bottom: 0.5rem;
+            color: #e5e7eb;
         }
         .key {
             display: inline-block;
-            padding: 0.25rem 0.5rem;
-            background-color: #e5e7eb;
-            border: 1px solid #9ca3af;
-            border-radius: 0.25rem;
+            padding: 0.35rem 0.65rem;
+            background-color: #242631;
+            border: 1px solid #3f4255;
+            color: #e5e7eb;
+            border-radius: 0.375rem;
             font-family: monospace;
             margin: 0 0.25rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
-<body class="flex flex-col min-h-screen bg-gray-50">
+<body class="flex flex-col min-h-screen bg-dark-800 text-gray-200">
     <!-- En-tête -->
     <div id="header-container"></div>
     
     <!-- Contenu principal -->
-    <main class="flex-grow container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-6 text-center">Jeu de Pong</h1>
+    <main class="flex-grow container mx-auto px-4 py-12">
+        <h1 class="text-3xl font-bold mb-8 text-center text-white">Jeu de Pong</h1>
         
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-            <div class="game-instructions mb-4">
-                <h2 class="text-xl font-semibold mb-2">Instructions</h2>
-                <p class="mb-2">Deux joueurs s'affrontent sur le même clavier :</p>
+        <div class="card relative overflow-hidden">
+            <!-- Décorations d'arrière-plan -->
+            <div class="absolute -top-10 -left-10 w-40 h-40 bg-primary-600/10 rounded-full blur-3xl -z-10"></div>
+            <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-accent-500/10 rounded-full blur-3xl -z-10"></div>
+            
+            <div class="game-instructions mb-6">
+                <h2 class="text-xl font-semibold mb-3 text-white">Instructions</h2>
+                <p class="mb-3 text-gray-300">Deux joueurs s'affrontent sur le même clavier :</p>
                 <div class="player-controls">
                     <div>
                         <p class="player-label">Joueur 1 (Gauche)</p>
-                        <p><span class="key">Q</span> pour monter et <span class="key">W</span> pour descendre</p>
+                        <p class="text-gray-300"><span class="key">Q</span> pour monter et <span class="key">W</span> pour descendre</p>
                     </div>
                     <div>
                         <p class="player-label">Joueur 2 (Droite)</p>
-                        <p><span class="key">←</span> pour monter et <span class="key">→</span> pour descendre</p>
+                        <p class="text-gray-300"><span class="key">←</span> pour monter et <span class="key">→</span> pour descendre</p>
                     </div>
                 </div>
             </div>
             
-            <div class="text-center mb-4">
-                <span id="player-left-score" class="text-3xl font-bold mr-8">0</span>
-                <span class="text-xl">vs</span>
-                <span id="player-right-score" class="text-3xl font-bold ml-8">0</span>
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center bg-dark-700 px-8 py-4 rounded-xl border border-dark-600">
+                    <span id="player-left-score" class="text-4xl font-bold text-primary-400 mr-6">0</span>
+                    <span class="text-xl text-gray-400">vs</span>
+                    <span id="player-right-score" class="text-4xl font-bold text-accent-400 ml-6">0</span>
+                </div>
             </div>
             
             <!-- Game Canvas replaces the animated placeholder -->
-            <canvas id="game-canvas" width="800" height="500" class="shadow-2xl mb-6"></canvas>
+            <canvas id="game-canvas" width="800" height="500" class="shadow-xl mb-6"></canvas>
             
-            <div class="text-center mt-4 space-x-4">
-                <button id="start-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded">
+            <div class="text-center mt-6 space-y-3 sm:space-y-0 sm:space-x-4 flex flex-col sm:flex-row justify-center">
+                <button id="start-button" class="btn-primary py-2.5 px-6">
                     Démarrer la partie
                 </button>
-                <button id="reset-button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded">
+                <button id="reset-button" class="btn-secondary py-2.5 px-6">
                     Réinitialiser
                 </button>
-                <a href="/" class="inline-block bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded">
+                <a href="/" class="btn-secondary py-2.5 px-6 text-center">
                     Retour à l'accueil
                 </a>
             </div>
@@ -104,15 +121,16 @@
     </script>
     
     <!-- Core scripts -->
-    <script src="js/websocket.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/websocket.js"></script>
     
-    <!-- Utility scripts -->
+    <!-- App initialization and utilities (load these first) -->
+    <script src="js/app.js"></script>
     <script src="js/header-loader.js"></script>
     <script src="js/route-guard.js"></script>
     
-    <!-- Page-specific script -->
+    <!-- Page-specific script (load this last) -->
     <script src="js/game.js"></script>
 </body>
 </html>
