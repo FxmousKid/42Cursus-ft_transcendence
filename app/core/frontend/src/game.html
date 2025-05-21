@@ -15,30 +15,40 @@
             border-radius: 0.5rem;
             border: 1px solid #242631;
         }
-        .game-instructions {
-            background-color: rgba(43, 47, 60, 0.5);
-            border-left: 4px solid #3b82f6;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border-radius: 0.375rem;
+        .player-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #242631;
+            background-color: #1e293b;
         }
-        .player-controls {
+        .player-card {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
-            margin-top: 1rem;
-            text-align: center;
+            align-items: center;
+            padding: 1rem;
+            transition: all 0.3s ease;
         }
-        @media (min-width: 640px) {
-            .player-controls {
-                flex-direction: row;
-                justify-content: space-around;
-            }
+        .player-card.active {
+            transform: scale(1.05);
         }
-        .player-label {
+        .player-name {
+            margin-top: 0.5rem;
             font-weight: bold;
-            margin-bottom: 0.5rem;
             color: #e5e7eb;
+        }
+        .vs-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background-color: #2d3748;
+            border-radius: 50%;
+            color: #a0aec0;
+            font-weight: bold;
+            margin: 0 1rem;
         }
         .key {
             display: inline-block;
@@ -58,38 +68,40 @@
     <div id="header-container"></div>
     
     <!-- Contenu principal -->
-    <main class="flex-grow container mx-auto px-4 py-12">
-        <h1 class="text-3xl font-bold mb-8 text-center text-white">Jeu de Pong</h1>
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6 text-center text-white">Jeu de Pong</h1>
         
         <div class="card relative overflow-hidden">
             <!-- Décorations d'arrière-plan -->
             <div class="absolute -top-10 -left-10 w-40 h-40 bg-primary-600/10 rounded-full blur-3xl -z-10"></div>
             <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-accent-500/10 rounded-full blur-3xl -z-10"></div>
             
-            <div class="game-instructions mb-6">
-                <h2 class="text-xl font-semibold mb-3 text-white">Instructions</h2>
-                <p class="mb-3 text-gray-300">Deux joueurs s'affrontent sur le même clavier :</p>
-                <div class="player-controls">
-                    <div>
-                        <p class="player-label">Joueur 1 (Gauche)</p>
-                        <p class="text-gray-300"><span class="key">Q</span> pour monter et <span class="key">W</span> pour descendre</p>
+            <!-- Player Avatars and Scores (place holder change to image of user id in database)-->
+            <div class="flex justify-center items-center mb-4">
+                <div class="player-card" id="player-left-card">
+                    <img src="/api/placeholder/64/64" alt="Joueur 1" class="player-avatar">
+                    <div class="player-name">Joueur 1</div>
+                    <div class="flex items-center mt-2">
+                        <span class="key">Q</span>
+                        <span class="key">W</span>
                     </div>
-                    <div>
-                        <p class="player-label">Joueur 2 (Droite)</p>
-                        <p class="text-gray-300"><span class="key">←</span> pour monter et <span class="key">→</span> pour descendre</p>
+                    <div class="mt-2 text-xl font-bold text-primary-400" id="player-left-score">0</div>
+                </div>
+                
+                <div class="vs-badge">VS</div>
+                
+                <div class="player-card" id="player-right-card">
+                    <img src="/api/placeholder/64/64" alt="Joueur 2" class="player-avatar">
+                    <div class="player-name">Joueur 2</div>
+                    <div class="flex items-center mt-2">
+                        <span class="key">←</span>
+                        <span class="key">→</span>
                     </div>
+                    <div class="mt-2 text-xl font-bold text-accent-400" id="player-right-score">0</div>
                 </div>
             </div>
             
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center bg-dark-700 px-8 py-4 rounded-xl border border-dark-600">
-                    <span id="player-left-score" class="text-4xl font-bold text-primary-400 mr-6">0</span>
-                    <span class="text-xl text-gray-400">vs</span>
-                    <span id="player-right-score" class="text-4xl font-bold text-accent-400 ml-6">0</span>
-                </div>
-            </div>
-            
-            <!-- Game Canvas replaces the animated placeholder -->
+            <!-- Game Canvas -->
             <canvas id="game-canvas" width="800" height="500" class="shadow-xl mb-6"></canvas>
             
             <div class="text-center mt-6 space-y-3 sm:space-y-0 sm:space-x-4 flex flex-col sm:flex-row justify-center">

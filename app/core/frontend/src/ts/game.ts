@@ -1,4 +1,4 @@
-// ts/game.ts - Simplified Pong Game Implementation with TypeScript
+// ts/game.ts - Enhanced Pong Game Implementation with TypeScript
 
 // Initialize the game when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -31,8 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Game constants
     const WINNING_SCORE: number = 10;
-    const BALL_SPEED: number = 8; // Increased ball speed for better responsiveness
-    const PADDLE_SPEED: number = 12; // Increased paddle speed
+    const BALL_SPEED: number = 8;
+    const PADDLE_SPEED: number = 12;
     
     // Performance tracking
     let lastTime: number = 0;
@@ -89,6 +89,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const resetButton = document.getElementById('reset-button') as HTMLButtonElement;
     const leftScoreDisplay = document.getElementById('player-left-score') as HTMLElement;
     const rightScoreDisplay = document.getElementById('player-right-score') as HTMLElement;
+    //card = picture
+    const leftPlayerCard = document.getElementById('player-left-card') as HTMLElement;
+    const rightPlayerCard = document.getElementById('player-right-card') as HTMLElement;
+    
+    // Function to highlight player when they score
+    function highlightPlayer(playerCard: HTMLElement): void {
+        // Add an active class to highlight the player
+        playerCard.classList.add('active');
+        
+        // Add a glowing border
+        playerCard.style.boxShadow = '0 0 15px rgba(59, 130, 246, 0.8)';
+        
+        // Remove the highlight after a short delay
+        setTimeout(() => {
+            playerCard.classList.remove('active');
+            playerCard.style.boxShadow = '';
+        }, 1000);
+    }
     
     // Event listeners for paddles
     document.addEventListener('keydown', function(event: KeyboardEvent) {
@@ -278,6 +296,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Right player scores
             rightPaddle.score++;
             
+            // Highlight the player who scored
+            highlightPlayer(rightPlayerCard);
+            
             // Check for win
             if (rightPaddle.score >= WINNING_SCORE) {
                 gameOver = true;
@@ -289,6 +310,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (ball.x + ball.radius > canvas.width) {
             // Left player scores
             leftPaddle.score++;
+            
+            // Highlight the player who scored
+            highlightPlayer(leftPlayerCard);
             
             // Check for win
             if (leftPaddle.score >= WINNING_SCORE) {
@@ -305,20 +329,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function resetBall(): void {
-      ball.x = canvas.width / 2;
-      ball.y = canvas.height / 2;
-      
-      // Set a random angle, but avoid too vertical trajectories
-      let angle = (Math.random() * 0.5 + 0.25) * Math.PI; // angle between PI/4 and 3PI/4
-      
-      // 50% chance of going left or right
-      if (Math.random() < 0.5) {
-          angle = Math.PI - angle; // Reflect angle to go left
-      }
-      
-      // Calculate velocity components based on speed and angle
-      ball.velocityX = ball.speed * Math.cos(angle);
-      ball.velocityY = ball.speed * Math.sin(angle) * (Math.random() < 0.5 ? 1 : -1); // Random up/down
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height / 2;
+        
+        // Add a small delay before the ball starts moving again
+        setTimeout(() => {
+            // Set a random angle, but avoid too vertical trajectories
+            let angle = (Math.random() * 0.5 + 0.25) * Math.PI; // angle between PI/4 and 3PI/4
+            
+            // 50% chance of going left or right
+            if (Math.random() < 0.5) {
+                angle = Math.PI - angle; // Reflect angle to go left
+            }
+            
+            // Calculate velocity components based on speed and angle
+            ball.velocityX = ball.speed * Math.cos(angle);
+            ball.velocityY = ball.speed * Math.sin(angle) * (Math.random() < 0.5 ? 1 : -1); // Random up/down
+        }, 1000);
+        
+        // Stop the ball momentarily
+        ball.velocityX = 0;
+        ball.velocityY = 0;
     }
     
     function resetGame(): void {
@@ -423,4 +454,4 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize the game
     resetGame();
-  });
+});
