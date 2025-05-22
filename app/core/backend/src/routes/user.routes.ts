@@ -370,21 +370,97 @@ export function registerUserRoutes(fastify: FastifyInstance) {
         const { username } = request.query;
         const currentUserId = request.user!.id;
         
-        // Search for users with username LIKE the query (case insensitive)
-        const users = await fastify.db.models.User.findAll({
+        if (!username || username.trim() === '') {
+          return { success: true, data: [] };
+        }
+        
+        // Exact match first
+        const exactMatch = await fastify.db.models.User.findOne({
+          where: {
+            username: username,
+            id: {
+              [Op.ne]: currentUserId // Exclude the current user
+            }
+          },
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url']
+        });
+        
+        // Then similar usernames
+        const similarUsers = await fastify.db.models.User.findAll({
           where: {
             username: {
-              [Op.like]: `%${username}%`
+              [Op.like]: `%${username}%`,
+              [Op.ne]: username // Exclude exact match to avoid duplication
             },
             id: {
               [Op.ne]: currentUserId // Exclude the current user
             }
           },
           attributes: ['id', 'username', 'email', 'status', 'avatar_url'],
-          limit: 10 // Limit results to prevent large response
+          limit: 9 // Limit to 9 similar users (total 10 with exact match)
         });
         
+        // Combine exact match with similar users, exact match first
+        const users = exactMatch ? [exactMatch, ...similarUsers] : similarUsers;
+        
         return { success: true, data: users };
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(400).send({ success: false, message: error.message });
+      }
+    }
+  });
+
+  // Check if username exists
+  fastify.get('/users/check-username', {
+    schema: {
+      querystring: {
+        type: 'object',
+        required: ['username'],
+        properties: {
+          username: { type: 'string', minLength: 1 }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            exists: { type: 'boolean' }
+          }
+        }
+      }
+    },
+    preHandler: fastify.authenticate,
+    handler: async (request: FastifyRequest<{ Querystring: { username: string } }>, reply: FastifyReply) => {
+      try {
+        const { username } = request.query;
+        const currentUserId = request.user!.id;
+        
+        if (!username || username.trim() === '') {
+          return { success: true, exists: false };
+        }
+        
+        // Check if user exists
+        const user = await fastify.db.models.User.findOne({
+          where: {
+            username: username,
+            id: {
+              [Op.ne]: currentUserId // Exclude the current user
+            }
+          }
+        });
+        
+        return { 
+          success: true, 
+          exists: !!user,
+          user: user ? {
+            id: user.id,
+            username: user.username,
+            status: user.status,
+            avatar_url: user.avatar_url
+          } : null
+        };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });

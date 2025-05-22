@@ -29,6 +29,11 @@ const sequelize = new Sequelize({
   storage: DATABASE_PATH,
   logging: process.env.NODE_ENV !== 'production' ? console.log : false,
   models: [User, Friendship, Match], // Add your models here
+  define: {
+    // Ensure foreign keys are respected
+    // This helps with SQLite's limited ALTER TABLE support
+    freezeTableName: true,
+  }
 });
 
 // Plugin to add the database connection to the Fastify instance
@@ -44,6 +49,10 @@ export const configureDatabasePlugin = fp(async (fastify, options) => {
       // Using simple sync (not force or alter) to prevent table recreation
       await sequelize.sync();
       fastify.log.info('Database tables synchronized.');
+      
+      // Ensure foreign keys are enforced
+      await sequelize.query('PRAGMA foreign_keys = ON;');
+      fastify.log.info('Foreign key constraints enabled.');
     }
 
     // Add DB to Fastify instance

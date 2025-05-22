@@ -3,7 +3,6 @@ import oauth2 from '@fastify/oauth2';
 import cookie from '@fastify/cookie';
 import session from '@fastify/session';
 import * as dotenv from 'dotenv';
-import { FastifyRequest } from 'fastify';
 import crypto from 'crypto';
 
 // Explicitly load environment variables
@@ -13,12 +12,6 @@ dotenv.config();
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback';
-
-// Debug logging
-console.log('Google OAuth Environment Variables:');
-console.log('GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 10)}...` : 'NOT SET');
-console.log('GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'SET (hidden)' : 'NOT SET');
-console.log('GOOGLE_CALLBACK_URL:', GOOGLE_CALLBACK_URL);
 
 // Ensure session secret is at least 32 characters
 const SESSION_SECRET = process.env.SESSION_SECRET || 'this_is_a_default_secret_that_is_at_least_32_chars_long_for_session_security';
@@ -63,7 +56,6 @@ export const configureGoogleOAuthPlugin = fp(async (fastify, options) => {
     generateStateFunction: (request) => {
       const state = crypto.randomBytes(20).toString('hex');
       stateStore.set(state, { createdAt: Date.now() });
-      console.log('Generated OAuth state:', state);
       
       // Clean up old states (older than 10 minutes)
       const now = Date.now();
@@ -78,10 +70,8 @@ export const configureGoogleOAuthPlugin = fp(async (fastify, options) => {
     checkStateFunction: (request, callback) => {
       // @ts-ignore - We know it's there
       const state = request.query.state;
-      console.log('Checking state:', { provided: state, exists: stateStore.has(state) });
       
       if (!state || !stateStore.has(state)) {
-        console.warn('Invalid or expired state:', state);
         return callback(new Error('Invalid state'), false);
       }
       
