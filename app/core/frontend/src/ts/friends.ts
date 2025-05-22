@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (sendButton) {
                     sendButton.innerHTML = '<i class="fas fa-check mr-2"></i> Demande envoyée';
                     sendButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                    sendButton.classList.add('bg-green-600', 'cursor-not-allowed');
+                    sendButton.classList.add('bg-blue-600', 'cursor-not-allowed');
                     sendButton.disabled = true;
                 }
             }
@@ -178,66 +178,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.warn('WebSocket service not available for event handling');
     }
     
-    // Function to show notification
+    // Function to show notification - supprimé
+    // Cette fonction a été supprimée pour simplifier l'interface
     function showNotification(message: string, type: 'info' | 'success' | 'error' = 'info') {
-        // Supprimer les notifications existantes
-        const existingNotifications = document.querySelectorAll('.toast-notification');
-        existingNotifications.forEach(notif => notif.remove());
-        
-        // Créer un élément de notification
-        const notification = document.createElement('div');
-        notification.className = `toast-notification toast-${type} flex items-center text-white rounded-lg shadow-lg`;
-        
-        // Définir l'icône en fonction du type
-        let icon = '';
-        switch(type) {
-            case 'success':
-                icon = '<i class="fas fa-check-circle text-xl mr-3"></i>';
-                break;
-            case 'error':
-                icon = '<i class="fas fa-exclamation-circle text-xl mr-3"></i>';
-                break;
-            default:
-                icon = '<i class="fas fa-info-circle text-xl mr-3"></i>';
-        }
-        
-        // Ajouter le contenu HTML (icône + message)
-        notification.innerHTML = `
-            ${icon}
-            <div>
-                <p class="font-medium">${message}</p>
-            </div>
-            <button class="ml-auto pl-3 text-white/80 hover:text-white">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-        
-        // Ajouter au body
-        document.body.appendChild(notification);
-        
-        // Ajouter la classe show après un court délai (pour l'animation)
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 10);
-        
-        // Ajouter un gestionnaire d'événement pour le bouton de fermeture
-        const closeButton = notification.querySelector('button');
-        if (closeButton) {
-            closeButton.addEventListener('click', () => {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
-            });
-        }
-        
-        // Supprimer après 5 secondes
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        }, 5000);
+        // Fonction désactivée - ne fait plus rien
+        console.log(`[Notification désactivée] ${type}: ${message}`);
     }
     
     // Function to update friend status in UI
@@ -263,11 +208,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         // Remove existing status classes
-        statusIndicator.classList.remove('bg-green-500', 'bg-blue-500', 'bg-gray-500');
+        statusIndicator.classList.remove('bg-blue-500', 'bg-gray-500');
         
         // Set new status
         if (newStatus === 'online') {
-            statusIndicator.classList.add('bg-green-500');
+            statusIndicator.classList.add('bg-blue-500');
             status.textContent = 'En ligne';
         } else if (newStatus === 'in_game') {
             statusIndicator.classList.add('bg-blue-500');
@@ -330,7 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Set status indicator color and text
         if (friend.status === 'online') {
-            statusIndicator.classList.add('bg-green-500');
+            statusIndicator.classList.add('bg-blue-500');
             status.textContent = 'En ligne';
         } else if (friend.status === 'in_game') {
             statusIndicator.classList.add('bg-blue-500');
@@ -596,34 +541,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Set request details
         const username = requestElement.querySelector('.request-username') as HTMLElement;
         const avatar = requestElement.querySelector('.request-avatar') as HTMLElement;
-        const dateContainer = requestElement.querySelector('.request-date') as HTMLElement;
-        const dateSpan = dateContainer.querySelector('span') as HTMLElement;
         const acceptButton = requestElement.querySelector('.accept-request-button') as HTMLButtonElement;
         const rejectButton = requestElement.querySelector('.reject-request-button') as HTMLButtonElement;
         
-        // Set username and date
+        // Set username
         username.textContent = userData.username;
-        
-        // Format date plus élégamment
-        const requestDate = new Date(request.created_at || new Date());
-        const now = new Date();
-        const diffTime = Math.abs(now.getTime() - requestDate.getTime());
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-        const diffMinutes = Math.floor(diffTime / (1000 * 60));
-        
-        // Afficher la date de manière plus humaine
-        if (diffMinutes < 1) {
-            dateSpan.textContent = `À l'instant`;
-        } else if (diffMinutes < 60) {
-            dateSpan.textContent = `Il y a ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
-        } else if (diffHours < 24) {
-            dateSpan.textContent = `Il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
-        } else if (diffDays < 7) {
-            dateSpan.textContent = `Il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
-        } else {
-            dateSpan.textContent = `Le ${requestDate.toLocaleDateString()}`;
-        }
         
         // Set avatar if available
         if (userData.avatar_url) {
@@ -831,33 +753,142 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
+                    <p class="mt-2 text-gray-400">Recherche en cours...</p>
                 </div>
             `;
             searchResultsContainer.classList.remove('hidden');
             
-            // Search users via API
-            const response = await api.user.searchUsers(username);
+            // First check if the exact username exists
+            const checkResponse = await api.user.checkUsername(username);
             
-            if (response.success) {
-                const data = response.data;
+            // If exact username exists, highlight it
+            if (checkResponse.success && checkResponse.exists && checkResponse.user) {
+                const exactUser = checkResponse.user;
                 searchResults.innerHTML = '';
                 
-                if (data.length > 0) {
-                    data.forEach((user: any) => {
+                // Add the exact match with special highlighting
+                const resultElement = document.createElement('div');
+                resultElement.className = 'search-result-item exact-match p-3 mb-3 bg-blue-900/20 border border-blue-600/30 rounded-lg flex items-center justify-between cursor-pointer transition duration-200 hover:bg-dark-600';
+                resultElement.dataset.id = exactUser.id.toString();
+                
+                resultElement.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                            ${exactUser.avatar_url ? `<img src="${exactUser.avatar_url}" alt="${exactUser.username}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-gray-500 text-xl"></i>'}
+                        </div>
+                        <div>
+                            <p class="font-medium text-white">${exactUser.username} <i class="fas fa-check-circle text-purple-400 ml-1"></i></p>
+                            <div class="flex items-center text-sm">
+                                <span class="status-indicator ${exactUser.status === 'online' ? 'bg-blue-400' : 'bg-gray-500'} w-2 h-2 rounded-full mr-2"></span>
+                                <span class="text-gray-400">${exactUser.status === 'online' ? 'En ligne' : 'Hors ligne'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="add-friend-button px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition duration-150 ease-in-out flex items-center">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Ajouter
+                    </button>
+                `;
+                
+                // Add event listener for the add button
+                const addButton = resultElement.querySelector('.add-friend-button') as HTMLButtonElement;
+                addButton.addEventListener('click', async () => {
+                    try {
+                        // Disable button to prevent multiple clicks
+                        addButton.disabled = true;
+                        addButton.classList.add('opacity-50');
+                        addButton.innerHTML = '<span class="spinner inline-block w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></span> Envoi...';
+                        
+                        // Send friend request via WebSocket or API
+                        if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
+                            websocketService.send('friend-request', { friendId: exactUser.id });
+                        } else {
+                            await api.friendship.sendFriendRequest(exactUser.id);
+                        }
+                        
+                        // Update UI to show success
+                        resultElement.innerHTML = `
+                            <div class="flex items-center justify-between w-full">
+                                <div class="flex items-center">
+                                    <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                                        ${exactUser.avatar_url ? `<img src="${exactUser.avatar_url}" alt="${exactUser.username}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-gray-500 text-xl"></i>'}
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-white">${exactUser.username}</p>
+                                        <div class="flex items-center text-sm">
+                                            <span class="text-purple-400">Demande d'ami envoyée</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="animate-pulse">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Afficher une notification
+                        showNotification(`Demande d'ami envoyée à ${exactUser.username}`, 'success');
+                        
+                        // Hide search results after a delay
+                        setTimeout(() => {
+                            searchResultsContainer.classList.add('hidden');
+                            searchUserForm.reset();
+                        }, 2000);
+                    } catch (error) {
+                        console.error('Error sending friend request:', error);
+                        addButton.disabled = false;
+                        addButton.classList.remove('opacity-50');
+                        addButton.innerHTML = '<i class="fas fa-user-plus mr-2"></i> Ajouter';
+                        showNotification('Erreur lors de l\'envoi de la demande d\'ami', 'error');
+                    }
+                });
+                
+                searchResults.appendChild(resultElement);
+                
+                // Also search for similar users for convenience
+                const response = await api.user.searchUsers(username);
+                
+                if (response.success && response.data && response.data.length > 1) {
+                    // Add a separator
+                    const separator = document.createElement('div');
+                    separator.className = 'my-3 text-gray-500 text-sm font-medium px-2 border-t border-dark-600 pt-3';
+                    separator.textContent = 'Autres utilisateurs similaires';
+                    searchResults.appendChild(separator);
+                    
+                    // Add other similar users
+                    response.data.slice(1).forEach((user: any) => {
                         addSearchResultToUI(user);
                     });
-                } else {
-                    searchResults.innerHTML = `
-                        <div class="text-center py-4 text-gray-500">
-                            Aucun utilisateur trouvé pour "${username}"
-                        </div>
-                    `;
                 }
             } else {
-                throw new Error(response.message || 'Failed to search users');
+                // Standard search
+                const response = await api.user.searchUsers(username);
+                
+                if (response.success) {
+                    const data = response.data;
+                    searchResults.innerHTML = '';
+                    
+                    if (data.length > 0) {
+                        data.forEach((user: any) => {
+                            addSearchResultToUI(user);
+                        });
+                    } else {
+                        searchResults.innerHTML = `
+                            <div class="text-center py-6 bg-dark-700/40 rounded-lg">
+                                <i class="fas fa-search text-gray-500 text-3xl mb-2"></i>
+                                <p class="text-gray-400 mt-2">Aucun utilisateur trouvé pour "${username}"</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    throw new Error(response.message || 'Failed to search users');
+                }
             }
         } catch (error) {
             console.error('Error searching users:', error);
+            searchResults.innerHTML = '';
             searchError.classList.remove('hidden');
             searchErrorText.textContent = 'Erreur lors de la recherche. Veuillez réessayer.';
             
@@ -875,10 +906,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Set user details
         const username = resultElement.querySelector('.result-username') as HTMLElement;
         const avatar = resultElement.querySelector('.result-avatar') as HTMLElement;
+        const statusDiv = resultElement.querySelector('.result-status') as HTMLElement;
         const sendButton = resultElement.querySelector('.add-friend-button') as HTMLButtonElement;
         
         // Set username
         username.textContent = user.username;
+        
+        // Set status
+        if (user.status) {
+            const isOnline = user.status === 'online';
+            statusDiv.innerHTML = `
+                <span class="status-indicator ${isOnline ? 'bg-blue-400' : 'bg-gray-500'} w-2 h-2 rounded-full mr-2"></span>
+                <span>${isOnline ? 'En ligne' : 'Hors ligne'}</span>
+            `;
+        }
         
         // Set avatar if available
         if (user.avatar_url) {
@@ -919,17 +960,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <div>
                                     <p class="font-medium text-white">${user.username}</p>
                                     <div class="flex items-center text-sm">
-                                        <span class="text-green-400">Demande d'ami envoyée</span>
+                                        <span class="text-purple-400">Demande d'ami envoyée</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="animate-pulse">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
                     `;
+                    
+                    // Afficher une notification
+                    showNotification(`Demande d'ami envoyée à ${user.username}`, 'success');
                     
                     // Après 3 secondes, cacher les résultats de recherche et réinitialiser le formulaire
                     setTimeout(() => {
@@ -937,7 +981,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         searchUserForm.reset();
                         // Réinitialisez le résultat après quelques secondes
                         searchResults.innerHTML = '';
-                    }, 3000);
+                    }, 2000);
                 } else {
                     // Fallback à l'API REST
                     console.log('WebSocket not available, using REST API');
@@ -954,17 +998,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     <div>
                                         <p class="font-medium text-white">${user.username}</p>
                                         <div class="flex items-center text-sm">
-                                            <span class="text-green-400">Demande d'ami envoyée</span>
+                                            <span class="text-purple-400">Demande d'ami envoyée</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="animate-pulse">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
                             </div>
                         `;
+                        
+                        // Afficher une notification
+                        showNotification(`Demande d'ami envoyée à ${user.username}`, 'success');
                         
                         // Après 3 secondes, cacher les résultats de recherche et réinitialiser le formulaire
                         setTimeout(() => {
@@ -972,27 +1019,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                             searchUserForm.reset();
                             // Réinitialisez le résultat après quelques secondes
                             searchResults.innerHTML = '';
-                        }, 3000);
+                        }, 2000);
                     } else {
                         console.error('Failed to send friend request:', response.message);
-                        alert(`Erreur: ${response.message}`);
+                        showNotification(`Erreur: ${response.message}`, 'error');
                         // Réactiver le bouton en cas d'erreur
                         sendButton.disabled = false;
                         sendButton.classList.remove('opacity-50');
-                        sendButton.innerHTML = 'Ajouter';
+                        sendButton.innerHTML = '<i class="fas fa-user-plus mr-1.5"></i> Ajouter';
                     }
                 }
             } catch (error) {
                 console.error('Error sending friend request:', error);
-                alert('Une erreur est survenue');
+                showNotification('Une erreur est survenue', 'error');
                 // Réactiver le bouton en cas d'erreur
                 sendButton.disabled = false;
                 sendButton.classList.remove('opacity-50');
-                sendButton.innerHTML = 'Ajouter';
+                sendButton.innerHTML = '<i class="fas fa-user-plus mr-1.5"></i> Ajouter';
             }
         });
         
-        // Add to container
         searchResults.appendChild(resultElement);
     }
     
@@ -1000,8 +1046,78 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (searchUserForm) {
         searchUserForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            searchUsers(searchUsername.value);
+            const usernameValue = searchUsername.value.trim();
+            
+            if (usernameValue) {
+                // First check if exact username exists
+                api.user.checkUsername(usernameValue)
+                    .then(response => {
+                        if (response.success && response.exists && response.user) {
+                            // If exact username exists, send friend request directly
+                            if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
+                                websocketService.send('friend-request', { friendId: response.user.id });
+                                showNotification(`Demande d'ami envoyée à ${response.user.username}`, 'success');
+                                searchUserForm.reset();
+                                searchResultsContainer.classList.add('hidden');
+                            } else {
+                                api.friendship.sendFriendRequest(response.user.id)
+                                    .then(res => {
+                                        if (res.success) {
+                                            showNotification(`Demande d'ami envoyée à ${response.user.username}`, 'success');
+                                            searchUserForm.reset();
+                                            searchResultsContainer.classList.add('hidden');
+                                        } else {
+                                            showNotification(res.message || 'Erreur lors de l\'envoi de la demande', 'error');
+                                        }
+                                    })
+                                    .catch(err => {
+                                        console.error('Error sending friend request:', err);
+                                        showNotification('Erreur lors de l\'envoi de la demande', 'error');
+                                    });
+                            }
+                        } else {
+                            // If no exact match, show search results
+                            searchUsers(usernameValue);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error checking username:', err);
+                        // Fall back to regular search
+                        searchUsers(usernameValue);
+                    });
+            }
         });
+        
+        // Add keyup listener for real-time search
+        if (searchUsername) {
+            let debounceTimeout: NodeJS.Timeout;
+            searchUsername.addEventListener('input', (e) => {
+                // Clear previous timeout
+                clearTimeout(debounceTimeout);
+                
+                const inputValue = (e.target as HTMLInputElement).value;
+                
+                // If input is empty, hide results
+                if (!inputValue.trim()) {
+                    searchResultsContainer.classList.add('hidden');
+                    return;
+                }
+                
+                // Set a debounce to avoid too many API calls
+                debounceTimeout = setTimeout(() => {
+                    searchUsers(inputValue);
+                }, 300); // Debounce for 300ms
+            });
+        }
+        
+        // Ajouter un gestionnaire de clic pour le bouton de fermeture des résultats
+        const closeButton = document.getElementById('close-search-results');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                searchResultsContainer.classList.add('hidden');
+                searchUserForm.reset();
+            });
+        }
     }
     
     // Event listener for friends search input

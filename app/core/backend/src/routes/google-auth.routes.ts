@@ -16,6 +16,12 @@ interface QueryWithCode {
   code: string;
 }
 
+// Helper function to redirect to frontend with error
+const redirectWithError = (reply: FastifyReply, reason: string) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  return reply.redirect(`${frontendUrl}/login?error=google_auth_failed&reason=${reason}`);
+};
+
 export function registerGoogleAuthRoutes(fastify: FastifyInstance) {
   // Simple test route to verify Google auth is accessible
   fastify.get('/auth/google/test', async (request, reply) => {
@@ -43,32 +49,27 @@ export function registerGoogleAuthRoutes(fastify: FastifyInstance) {
       
       // Exchange authorization code for tokens
       try {
-        console.log('Starting OAuth token exchange with code:', code.substring(0, 10) + '...');
-        
         const tokenResult = await fastify.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request);
         
         // Make sure we have an access token
-        if (!tokenResult || !tokenResult.token || !tokenResult.token.access_token) {
-          fastify.log.error('Missing access token in OAuth response', tokenResult);
-          return reply.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_auth_failed&reason=missing_token`);
+        if (!tokenResult?.token?.access_token) {
+          fastify.log.error('Missing access token in OAuth response');
+          return redirectWithError(reply, 'missing_token');
         }
         
-        console.log('Successfully obtained access token');
         const accessToken = tokenResult.token.access_token;
         
-        // Fetch user info from Google using axios instead of node-fetch
-        console.log('Fetching user info from Google API');
+        // Fetch user info from Google using axios
         const userInfoResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: { Authorization: `Bearer ${accessToken}` },
-          timeout: 5000 // Add timeout
+          timeout: 5000
         });
         
         const googleUser = userInfoResponse.data as GoogleUserInfo;
-        console.log('Google user info retrieved:', JSON.stringify(googleUser, null, 2));
         
-        if (!googleUser || !googleUser.email) {
-          fastify.log.error('Missing email in Google user info', googleUser);
-          return reply.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_auth_failed&reason=missing_email`);
+        if (!googleUser?.email) {
+          fastify.log.error('Missing email in Google user info');
+          return redirectWithError(reply, 'missing_email');
         }
         
         // Check if user already exists in our database
@@ -98,18 +99,16 @@ export function registerGoogleAuthRoutes(fastify: FastifyInstance) {
             
             // Update user status
             user.status = 'online';
-            
             await user.save();
             fastify.log.info(`Linked existing user with Google: ${user.username}`);
           } else {
             // Set user as online
             user.status = 'online';
             await user.save();
-            fastify.log.info(`Google user logged in: ${user.username}`);
           }
         } catch (dbError) {
-          console.error('Database error during user creation/update:', dbError);
-          return reply.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_auth_failed&reason=database_error`);
+          fastify.log.error('Database error:', dbError);
+          return redirectWithError(reply, 'database_error');
         }
         
         try {
@@ -120,21 +119,19 @@ export function registerGoogleAuthRoutes(fastify: FastifyInstance) {
           });
           
           // Redirect to frontend with token
-          const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/google/success?token=${token}`;
-          console.log('Redirecting to:', redirectUrl);
-          return reply.redirect(redirectUrl);
+          const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+          return reply.redirect(`${frontendUrl}/auth/google/success?token=${token}`);
         } catch (tokenError) {
-          console.error('Token generation error:', tokenError);
-          return reply.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_auth_failed&reason=token_error`);
+          fastify.log.error('Token generation error:', tokenError);
+          return redirectWithError(reply, 'token_error');
         }
       } catch (oauthError) {
-        console.error('OAuth token exchange detailed error:', oauthError);
-        fastify.log.error('OAuth token exchange error details:', oauthError);
-        return reply.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_auth_failed&reason=oauth_error`);
+        fastify.log.error('OAuth token exchange error:', oauthError);
+        return redirectWithError(reply, 'oauth_error');
       }
     } catch (error) {
       fastify.log.error('Google auth error:', error);
-      return reply.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_auth_failed&reason=general_error`);
+      return redirectWithError(reply, 'general_error');
     }
   });
 } 

@@ -239,6 +239,85 @@ export function setupWebSocket(io: Server, db: DB) {
       }
     });
     
+    // Also add support for searching by username
+    socket.on('friend-request-by-username', async (data: { username: string }) => {
+      try {
+        console.log('[WebSocket] Friend request by username received:', data);
+        const { username } = data;
+        
+        if (!userId) {
+          socket.emit('error', { type: 'error', message: 'You are not authenticated' });
+          return;
+        }
+        
+        // Find the user by username
+        const friend = await db.models.User.findOne({
+          where: { username: username }
+        });
+        
+        if (!friend) {
+          socket.emit('error', { type: 'error', message: 'Username not found' });
+          return;
+        }
+        
+        const friendId = friend.id;
+        
+        if (userId === friendId) {
+          socket.emit('error', { type: 'error', message: 'Cannot send friend request to yourself' });
+          return;
+        }
+        
+        // Check if friendship already exists
+        const existingFriendship = await db.models.Friendship.findOne({
+          where: {
+            [Op.or]: [
+              { user_id: userId, friend_id: friendId },
+              { user_id: friendId, friend_id: userId }
+            ]
+          }
+        });
+        
+        if (existingFriendship) {
+          socket.emit('error', { type: 'error', message: 'Friendship already exists' });
+          return;
+        }
+        
+        // Create friendship request
+        if (userId !== undefined) {
+          const user = await db.models.User.findByPk(userId);
+          if (!user) {
+            throw new Error('User not found');
+          }
+          
+          const friendship = await db.models.Friendship.create({
+            user_id: userId,
+            friend_id: friendId,
+            status: 'pending'
+          });
+          
+          // Notify the friend if they're online
+          notifyFriendRequest(friendId, {
+            id: userId,
+            username: user.username
+          });
+          
+          console.log(`[WebSocket] Emitting friend-request-sent to ${userId}`);
+          socket.emit('friend-request-sent', {
+            type: 'friend-request-sent',
+            id: friendship.id,
+            friend_id: friendId,
+            friend_username: friend.username,
+            status: 'pending'
+          });
+        } else {
+          socket.emit('error', { type: 'error', message: 'User ID is undefined' });
+        }
+      } catch (error) {
+        console.error('[WebSocket] Error sending friend request by username:', error);
+        socket.emit('error', { type: 'error', message: 'Failed to send friend request: ' + error.message });
+      }
+    });
+    
     // Handle friend request response
     socket.on('friend-request-response', async (data: { friendId: number, accept: boolean }) => {
       try {

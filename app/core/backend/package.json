@@ -9,7 +9,9 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
-    "migrate": "ts-node src/migrations.ts"
+    "migrate": "ts-node src/migrations.ts",
+    "cleanup-db": "ts-node src/cleanup-backup-tables.ts",
+    "fix-foreign-keys": "ts-node src/fix-foreign-keys.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^8.3.0",

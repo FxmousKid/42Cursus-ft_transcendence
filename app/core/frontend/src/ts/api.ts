@@ -220,6 +220,10 @@ export const api = {
     
     async searchUsers(username: string) {
       return request(`/users/search?username=${encodeURIComponent(username)}`);
+    },
+    
+    async checkUsername(username: string) {
+      return request(`/users/check-username?username=${encodeURIComponent(username)}`);
     }
   },
   
