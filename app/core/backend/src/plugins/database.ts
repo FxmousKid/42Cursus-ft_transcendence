@@ -40,8 +40,10 @@ export const configureDatabasePlugin = fp(async (fastify, options) => {
     
     // Sync models (in development only)
     if (process.env.NODE_ENV !== 'production') {
-      // Using sync without alter: true to prevent constant table recreation
-      fastify.log.info('Automatic database synchronization is disabled.');
+      // Sync models without creating backup tables
+      // Using simple sync (not force or alter) to prevent table recreation
+      await sequelize.sync();
+      fastify.log.info('Database tables synchronized.');
     }
 
     // Add DB to Fastify instance
