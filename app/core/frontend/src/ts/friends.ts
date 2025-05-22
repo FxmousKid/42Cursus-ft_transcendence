@@ -178,66 +178,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.warn('WebSocket service not available for event handling');
     }
     
-    // Function to show notification
+    // Function to show notification - supprimé
+    // Cette fonction a été supprimée pour simplifier l'interface
     function showNotification(message: string, type: 'info' | 'success' | 'error' = 'info') {
-        // Supprimer les notifications existantes
-        const existingNotifications = document.querySelectorAll('.toast-notification');
-        existingNotifications.forEach(notif => notif.remove());
-        
-        // Créer un élément de notification
-        const notification = document.createElement('div');
-        notification.className = `toast-notification toast-${type} flex items-center text-white rounded-lg shadow-lg`;
-        
-        // Définir l'icône en fonction du type
-        let icon = '';
-        switch(type) {
-            case 'success':
-                icon = '<i class="fas fa-check-circle text-xl mr-3"></i>';
-                break;
-            case 'error':
-                icon = '<i class="fas fa-exclamation-circle text-xl mr-3"></i>';
-                break;
-            default:
-                icon = '<i class="fas fa-info-circle text-xl mr-3"></i>';
-        }
-        
-        // Ajouter le contenu HTML (icône + message)
-        notification.innerHTML = `
-            ${icon}
-            <div>
-                <p class="font-medium">${message}</p>
-            </div>
-            <button class="ml-auto pl-3 text-white/80 hover:text-white">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-        
-        // Ajouter au body
-        document.body.appendChild(notification);
-        
-        // Ajouter la classe show après un court délai (pour l'animation)
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 10);
-        
-        // Ajouter un gestionnaire d'événement pour le bouton de fermeture
-        const closeButton = notification.querySelector('button');
-        if (closeButton) {
-            closeButton.addEventListener('click', () => {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
-            });
-        }
-        
-        // Supprimer après 5 secondes
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        }, 5000);
+        // Fonction désactivée - ne fait plus rien
+        console.log(`[Notification désactivée] ${type}: ${message}`);
     }
     
     // Function to update friend status in UI

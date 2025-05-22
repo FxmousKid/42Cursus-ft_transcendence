@@ -951,6 +951,10 @@ a:hover {
   margin-left: -0.25rem;
 }
 
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+
 .mb-10 {
   margin-bottom: 2.5rem;
 }
@@ -1041,10 +1045,6 @@ a:hover {
 
 .mt-8 {
   margin-top: 2rem;
-}
-
-.mb-1 {
-  margin-bottom: 0.25rem;
 }
 
 .block {
@@ -1569,6 +1569,14 @@ a:hover {
   background-color: rgb(27 29 37 / var(--tw-bg-opacity, 1));
 }
 
+.bg-dark-700\/30 {
+  background-color: rgb(27 29 37 / 0.3);
+}
+
+.bg-dark-700\/40 {
+  background-color: rgb(27 29 37 / 0.4);
+}
+
 .bg-dark-700\/50 {
   background-color: rgb(27 29 37 / 0.5);
 }
@@ -1649,14 +1657,6 @@ a:hover {
 .bg-yellow-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(234 179 8 / var(--tw-bg-opacity, 1));
-}
-
-.bg-dark-700\/30 {
-  background-color: rgb(27 29 37 / 0.3);
-}
-
-.bg-dark-700\/40 {
-  background-color: rgb(27 29 37 / 0.4);
 }
 
 .bg-opacity-50 {
@@ -1755,6 +1755,10 @@ a:hover {
   --tw-gradient-to: #7c3aed var(--tw-gradient-to-position);
 }
 
+.to-red-700 {
+  --tw-gradient-to: #b91c1c var(--tw-gradient-to-position);
+}
+
 .bg-clip-text {
   -webkit-background-clip: text;
           background-clip: text;
@@ -1816,11 +1820,6 @@ a:hover {
   padding-bottom: 0.375rem;
 }
 
-.py-10 {
-  padding-top: 2.5rem;
-  padding-bottom: 2.5rem;
-}
-
 .py-12 {
   padding-top: 3rem;
   padding-bottom: 3rem;
@@ -1851,14 +1850,14 @@ a:hover {
   padding-bottom: 1rem;
 }
 
-.py-8 {
-  padding-top: 2rem;
-  padding-bottom: 2rem;
-}
-
 .py-6 {
   padding-top: 1.5rem;
   padding-bottom: 1.5rem;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
 .pb-4 {
@@ -1873,16 +1872,16 @@ a:hover {
   padding-left: 0.75rem;
 }
 
-.pt-4 {
-  padding-top: 1rem;
-}
-
 .pr-2 {
   padding-right: 0.5rem;
 }
 
 .pt-3 {
   padding-top: 0.75rem;
+}
+
+.pt-4 {
+  padding-top: 1rem;
 }
 
 .text-center {
@@ -2262,8 +2261,8 @@ a:hover {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
-.hover\:border-blue-500\/50:hover {
-  border-color: rgb(59 130 246 / 0.5);
+.hover\:border-blue-500\/30:hover {
+  border-color: rgb(59 130 246 / 0.3);
 }
 
 .hover\:border-primary-700:hover {
@@ -2273,10 +2272,6 @@ a:hover {
 
 .hover\:border-purple-500\/40:hover {
   border-color: rgb(168 85 247 / 0.4);
-}
-
-.hover\:border-blue-500\/30:hover {
-  border-color: rgb(59 130 246 / 0.3);
 }
 
 .hover\:bg-blue-600:hover {
@@ -2327,6 +2322,11 @@ a:hover {
   background-color: rgb(202 138 4 / var(--tw-bg-opacity, 1));
 }
 
+.hover\:bg-dark-500:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(45 48 61 / var(--tw-bg-opacity, 1));
+}
+
 .hover\:from-blue-600:hover {
   --tw-gradient-from: #2563eb var(--tw-gradient-from-position);
   --tw-gradient-to: rgb(37 99 235 / 0) var(--tw-gradient-to-position);
@@ -2355,6 +2355,10 @@ a:hover {
 
 .hover\:to-violet-700:hover {
   --tw-gradient-to: #6d28d9 var(--tw-gradient-to-position);
+}
+
+.hover\:to-red-800:hover {
+  --tw-gradient-to: #991b1b var(--tw-gradient-to-position);
 }
 
 .hover\:text-blue-600:hover {
@@ -2394,11 +2398,6 @@ a:hover {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
-.hover\:shadow-blue-500\/10:hover {
-  --tw-shadow-color: rgb(59 130 246 / 0.1);
-  --tw-shadow: var(--tw-shadow-colored);
-}
-
 .hover\:shadow-blue-500\/25:hover {
   --tw-shadow-color: rgb(59 130 246 / 0.25);
   --tw-shadow: var(--tw-shadow-colored);
@@ -2406,6 +2405,11 @@ a:hover {
 
 .hover\:shadow-blue-500\/30:hover {
   --tw-shadow-color: rgb(59 130 246 / 0.3);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+.hover\:shadow-blue-500\/5:hover {
+  --tw-shadow-color: rgb(59 130 246 / 0.05);
   --tw-shadow: var(--tw-shadow-colored);
 }
 
@@ -2419,8 +2423,8 @@ a:hover {
   --tw-shadow: var(--tw-shadow-colored);
 }
 
-.hover\:shadow-blue-500\/5:hover {
-  --tw-shadow-color: rgb(59 130 246 / 0.05);
+.hover\:shadow-red-500\/25:hover {
+  --tw-shadow-color: rgb(239 68 68 / 0.25);
   --tw-shadow: var(--tw-shadow-colored);
 }
 

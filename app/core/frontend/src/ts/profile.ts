@@ -59,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Profile elements
     const profileUsernameElement = document.getElementById('profile-username') as HTMLElement;
     const profileEmail = document.getElementById('profile-email') as HTMLElement;
-    const profileStatus = document.getElementById('profile-status') as HTMLElement;
     const profileAvatar = document.getElementById('profile-avatar') as HTMLElement;
     
     // Stats elements
@@ -101,8 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Afficher les informations de base depuis localStorage
     if (username) {
         profileUsernameElement.textContent = username;
-        profileStatus.textContent = 'offline';
-        profileStatus.classList.add('text-gray-600');
         
         // Pré-remplir les champs du formulaire
         editUsername.value = username;
@@ -181,20 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileUsernameElement.textContent = profile.username;
                 if (profileEmail) {
                     profileEmail.textContent = profile.email || '';
-                }
-                
-                if (profileStatus) {
-                    profileStatus.textContent = profile.status || 'offline';
-                    
-                    // Définir la couleur du statut
-                    profileStatus.classList.remove('text-green-600', 'text-blue-600', 'text-gray-600');
-                    if (profile.status === 'online') {
-                        profileStatus.classList.add('text-green-600');
-                    } else if (profile.status === 'in_game') {
-                        profileStatus.classList.add('text-blue-600');
-                    } else {
-                        profileStatus.classList.add('text-gray-600');
-                    }
                 }
                 
                 // Afficher l'avatar si disponible
