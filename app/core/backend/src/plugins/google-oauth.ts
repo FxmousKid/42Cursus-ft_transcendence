@@ -4,6 +4,7 @@ import cookie from '@fastify/cookie';
 import session from '@fastify/session';
 import * as dotenv from 'dotenv';
 import crypto from 'crypto';
+import { FastifyRequest } from 'fastify';
 
 // Explicitly load environment variables
 dotenv.config();
@@ -53,7 +54,7 @@ export const configureGoogleOAuthPlugin = fp(async (fastify, options) => {
     startRedirectPath: '/auth/google',
     callbackUri: GOOGLE_CALLBACK_URL,
     // Using simple in-memory state store instead of session
-    generateStateFunction: (request) => {
+    generateStateFunction: (request: FastifyRequest) => {
       const state = crypto.randomBytes(20).toString('hex');
       stateStore.set(state, { createdAt: Date.now() });
       
@@ -67,7 +68,7 @@ export const configureGoogleOAuthPlugin = fp(async (fastify, options) => {
       
       return state;
     },
-    checkStateFunction: (request, callback) => {
+    checkStateFunction: (request: FastifyRequest, callback: (error: Error | null, result: boolean) => void) => {
       // @ts-ignore - We know it's there
       const state = request.query.state;
       
