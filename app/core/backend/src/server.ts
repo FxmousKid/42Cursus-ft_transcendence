@@ -6,7 +6,12 @@ import { Server } from 'socket.io';
 import { configureRoutes } from './routes';
 import { configureDatabasePlugin } from './plugins/database';
 import { configureAuthPlugin } from './plugins/auth';
+import { configureGoogleOAuthPlugin } from './plugins/google-oauth';
 import { setupWebSocket } from './websocket';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 // Environment variables
 const PORT = process.env.PORT || 3000;
@@ -21,7 +26,7 @@ const server: FastifyInstance = Fastify({
 // Setup function
 async function setup() {
   try {
-    // Register plugins
+    // Register CORS first
     await server.register(cors, {
       origin: [
         'http://localhost:5173',  // Frontend port
@@ -42,7 +47,16 @@ async function setup() {
       exposedHeaders: ['Access-Control-Allow-Origin'],
     });
 
-    // Swagger documentation
+    // Register database plugin first (needed by auth and others)
+    await server.register(configureDatabasePlugin);
+
+    // Register JWT auth plugin
+    await server.register(configureAuthPlugin);
+    
+    // Register Google OAuth plugin after JWT auth
+    await server.register(configureGoogleOAuthPlugin);
+
+    // Register Swagger documentation
     await server.register(swagger, {
       swagger: {
         info: {
@@ -66,12 +80,6 @@ async function setup() {
         deepLinking: true,
       }
     });
-
-    // Register database plugin
-    await server.register(configureDatabasePlugin);
-
-    // Register auth plugin
-    await server.register(configureAuthPlugin);
 
     // Configure routes
     configureRoutes(server);

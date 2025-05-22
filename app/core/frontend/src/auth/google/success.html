@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion Google - ft_transcendence</title>
+    <link rel="stylesheet" href="../../css/output.css">
+    <meta name="description" content="Traitement de la connexion Google pour ft_transcendence">
+    <style>
+        .loading-spinner {
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-dark-800 text-gray-200">
+    <main class="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
+        <div class="text-center">
+            <div class="flex justify-center mb-6">
+                <div class="loading-spinner"></div>
+            </div>
+            <h1 class="text-2xl font-bold mb-4">Authentification en cours...</h1>
+            <p class="text-gray-400">Vous allez être redirigé vers la page d'accueil.</p>
+        </div>
+    </main>
+
+    <!-- Core scripts -->
+    <script src="../../js/api.js"></script>
+    <script src="../../js/auth.js"></script>
+    <script src="../../js/google-auth-handler.js"></script>
+</body>
+</html> 

@@ -15,9 +15,10 @@ interface UserAttributes {
   id?: number;
   username: string;
   email: string;
-  password: string;
+  password?: string;
   status?: string;
   avatar_url?: string;
+  google_id?: string;
 }
 
 @Table({
@@ -34,7 +35,7 @@ export class User extends Model<UserAttributes> {
   @Column(DataType.STRING(255))
   declare email: string;
 
-  @AllowNull(false)
+  @AllowNull(true)
   @Column(DataType.STRING(255))
   declare password: string;
   
@@ -46,6 +47,11 @@ export class User extends Model<UserAttributes> {
   @AllowNull(true)
   @Column(DataType.STRING(255))
   declare avatar_url: string;
+  
+  @AllowNull(true)
+  @Unique
+  @Column(DataType.STRING(255))
+  declare google_id: string;
 
   // Relationships will be defined once we create the other models
   @HasMany(() => Friendship, 'user_id')
