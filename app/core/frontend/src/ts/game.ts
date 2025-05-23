@@ -100,11 +100,13 @@ class PongGame {
     private setupEventListeners(): void {
         // Keyboard controls
         const keyMap: { [key: string]: () => void } = {
-            'KeyQ': () => this.paddles.left.up = true,
-            'KeyW': () => this.paddles.left.down = true,
-            'ArrowLeft': () => this.paddles.right.up = true,
-            'ArrowRight': () => this.paddles.right.down = true,
-            'KeyP': () => this.togglePause()
+            'KeyA': () => this.paddles.left.up = true,
+            'KeyD': () => this.paddles.left.down = true,
+            'ArrowRight': () => this.paddles.right.up = true,
+            'ArrowLeft': () => this.paddles.right.down = true,
+            'KeyP': () => this.togglePause(),
+            'Escape': () => this.togglePause(),
+            'Space': () => this.togglePause()
         };
         
         document.addEventListener('keydown', (e) => {
@@ -116,10 +118,10 @@ class PongGame {
         
         document.addEventListener('keyup', (e) => {
             switch(e.code) {
-                case 'KeyQ': this.paddles.left.up = false; break;
-                case 'KeyW': this.paddles.left.down = false; break;
-                case 'ArrowLeft': this.paddles.right.up = false; break;
-                case 'ArrowRight': this.paddles.right.down = false; break;
+                case 'KeyA': this.paddles.left.up = false; break;
+                case 'KeyD': this.paddles.left.down = false; break;
+                case 'ArrowRight': this.paddles.right.up = false; break;
+                case 'ArrowLeft': this.paddles.right.down = false; break;
             }
         });
         
