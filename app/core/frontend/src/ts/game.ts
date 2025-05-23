@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Game constants
-    const WINNING_SCORE: number = 10;
+    const WINNING_SCORE: number = 2;
     const BALL_SPEED: number = 8;
     const PADDLE_SPEED: number = 12;
     
@@ -274,21 +274,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // If the ball hits a paddle
         if (collision(ball, player)) {
-            // Where the ball hit the paddle
+            // Simple approach: just reverse X direction and add slight angle variation
+            ball.velocityX = -ball.velocityX;
+            
+            // Add slight variation based on where the ball hit the paddle
             let collidePoint: number = ball.y - (player.y + player.height / 2);
+            let normalizedCollidePoint = collidePoint / (player.height / 2); // -1 to 1
             
-            // Normalize the value of collidePoint
-            collidePoint = collidePoint / (player.height / 2);
+            // Add a small Y velocity component based on collision point (max 30% of total speed)
+            let maxAngleEffect = ball.speed * 0.3;
+            ball.velocityY += normalizedCollidePoint * maxAngleEffect;
             
-            // Calculate angle in radians (simplified)
-            let angleRad: number = collidePoint * (Math.PI / 4);
+            // CRITICAL: Normalize the velocity to maintain exact speed
+            let currentSpeed = Math.sqrt(ball.velocityX * ball.velocityX + ball.velocityY * ball.velocityY);
+            ball.velocityX = (ball.velocityX / currentSpeed) * ball.speed;
+            ball.velocityY = (ball.velocityY / currentSpeed) * ball.speed;
             
-            // X direction of the ball
-            let direction: number = (ball.x < canvas.width / 2) ? 1 : -1;
-            
-            // Set velocity based on direction and angle
-            ball.velocityX = direction * ball.speed * Math.cos(angleRad);
-            ball.velocityY = ball.speed * Math.sin(angleRad);
+            // Move ball slightly away from paddle to prevent multiple collisions
+            if (ball.x < canvas.width / 2) {
+                // Left paddle - move ball right
+                ball.x = player.x + player.width + ball.radius + 1;
+            } else {
+                // Right paddle - move ball left
+                ball.x = player.x - ball.radius - 1;
+            }
         }
         
         // Scoring - ball goes beyond paddles
@@ -332,24 +341,41 @@ document.addEventListener('DOMContentLoaded', function() {
         ball.x = canvas.width / 2;
         ball.y = canvas.height / 2;
         
-        // Add a small delay before the ball starts moving again
-        setTimeout(() => {
-            // Set a random angle, but avoid too vertical trajectories
-            let angle = (Math.random() * 0.5 + 0.25) * Math.PI; // angle between PI/4 and 3PI/4
-            
-            // 50% chance of going left or right
-            if (Math.random() < 0.5) {
-                angle = Math.PI - angle; // Reflect angle to go left
-            }
-            
-            // Calculate velocity components based on speed and angle
-            ball.velocityX = ball.speed * Math.cos(angle);
-            ball.velocityY = ball.speed * Math.sin(angle) * (Math.random() < 0.5 ? 1 : -1); // Random up/down
-        }, 1000);
-        
         // Stop the ball momentarily
         ball.velocityX = 0;
         ball.velocityY = 0;
+        
+        // Add a small delay before the ball starts moving again
+        setTimeout(() => {
+            // Set a random angle, but avoid too vertical trajectories
+            let angle;
+            if (Math.random() < 0.5) {
+                // Lower range: 30° to 60° (π/6 to π/3)
+                angle = Math.random() * (Math.PI/3 - Math.PI/6) + Math.PI/6;
+            } else {
+                // Upper range: 120° to 150° (2π/3 to 5π/6)
+                angle = Math.random() * (5*Math.PI/6 - 2*Math.PI/3) + 2*Math.PI/3;
+            }
+            
+            // Calculate velocity components
+            ball.velocityX = ball.speed * Math.cos(angle);
+            ball.velocityY = ball.speed * Math.sin(angle);
+            
+            // 50% chance of going left instead of right
+            if (Math.random() < 0.5) {
+                ball.velocityX = -ball.velocityX;
+            }
+            
+            // 50% chance of going up instead of down
+            if (Math.random() < 0.5) {
+                ball.velocityY = -ball.velocityY;
+            }
+            
+            // ENSURE exact speed (safety check)
+            let currentSpeed = Math.sqrt(ball.velocityX * ball.velocityX + ball.velocityY * ball.velocityY);
+            ball.velocityX = (ball.velocityX / currentSpeed) * ball.speed;
+            ball.velocityY = (ball.velocityY / currentSpeed) * ball.speed;
+        }, 1000);
     }
     
     function resetGame(): void {
@@ -422,6 +448,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    let gameLoopRunning = false;
+
     function gameLoop(timestamp: number = 0): void {
         // Calculate delta time for smooth animation
         const deltaTime = timestamp - lastTime;
@@ -449,9 +477,12 @@ document.addEventListener('DOMContentLoaded', function() {
         winner = '';
         startButton.textContent = "Pause";
         lastTime = performance.now();
-        requestAnimationFrame(gameLoop);
     }
     
     // Initialize the game
     resetGame();
+    if (!gameLoopRunning) {
+        gameLoopRunning = true;
+        requestAnimationFrame(gameLoop);
+    }
 });
