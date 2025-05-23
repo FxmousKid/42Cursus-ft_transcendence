@@ -6,20 +6,20 @@
 - [X] - Minor module: Use a database for the backend - SQLite
 - [TODO] - Major module: Store the score of a tournament in the Blockchain - Avalanche / Solidity - @John
 
-## User Management
+## User Management 1
 - [INCOMING] - Major module: Standard user management, authentication, users across tournaments - Online/Offline Status @Genaro add upload PP
-- [TODO] - Major module: Implementing a remote authentication - Google Sign-In - @Theo
+- [X] - Major module: Implementing a remote authentication - Google Sign-In - @Theo
 
 ## Gameplay and user experience
 - [ ] - Major module: Remote players
 - [ ] - Major module: Multiplayer (more than 2 players in the same game)
 - [ ] - Major module: Add another game with user history and matchmaking
-- [ ] - Minor module: Game customization options
+- [TODO] - Minor module: Game customization options @Genaro?
 - [TODO] - Major module: Live chat - @Joey
 
 ## AI-Algo
 - [ ] - Major module: Introduce an AI opponent
-- [TO-CONFIRM] - Minor module: User and game stats dashboards @Genaro
+- [ ] - Minor module: User and game stats dashboards @Genaro
 
 ## Cybersecurity 1.5
 - [X] - Major module: Implement WAF/ModSecurity with a hardened configuration and HashiCorp Vault for secrets management
@@ -45,6 +45,6 @@
 - [ ] - Major module: Replace basic Pong with server-side Pong and implement an API
 - [ ] - Major module: Enabling Pong gameplay via CLI against web users with API integration
 
-# TOTAL POINTS = 6 | 6 MINORS + 3 MAJORS
+# TOTAL POINTS = 7 | 6 MINORS + 4 MAJORS
 # 100% --> 7 points
 # 125% --> 9.5 points
