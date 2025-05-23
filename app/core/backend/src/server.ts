@@ -69,6 +69,8 @@ async function setup() {
           { name: 'users', description: 'User management endpoints' },
           { name: 'friends', description: 'Friend relationship endpoints' },
           { name: 'matches', description: 'Game matches endpoints' },
+          { name: 'tournaments', description: 'Tournament in local endpoints' },
+          { name: 'match_tournaments', description: 'Match in the Tournaments endpoints' }
         ],
       },
     });

@@ -4,6 +4,8 @@ import path from 'path';
 import { User } from '../models/user.model';
 import { Friendship } from '../models/friendship.model';
 import { Match } from '../models/match.model';
+import { Tournament } from '../models/tournament.model';
+import { MatchTournament } from '../models/match_tournament.model';
 
 // Database configuration
 const DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, '../../database.sqlite');
@@ -17,6 +19,8 @@ declare module 'fastify' {
         User: typeof User;
         Friendship: typeof Friendship;
         Match: typeof Match;
+        Tournament: typeof Tournament;
+        MatchTournament: typeof MatchTournament;
       };
       Sequelize?: typeof Sequelize;
     };
@@ -28,7 +32,7 @@ const sequelize = new Sequelize({
   dialect: 'sqlite',
   storage: DATABASE_PATH,
   logging: process.env.NODE_ENV !== 'production' ? console.log : false,
-  models: [User, Friendship, Match], // Add your models here
+  models: [User, Friendship, Match, Tournament, MatchTournament], // Add your models here
   define: {
     // Ensure foreign keys are respected
     // This helps with SQLite's limited ALTER TABLE support
@@ -42,7 +46,7 @@ export const configureDatabasePlugin = fp(async (fastify, options) => {
     // Initialize database connection
     await sequelize.authenticate();
     fastify.log.info('Database connection has been established successfully.');
-    
+
     // Sync models (in development only)
     if (process.env.NODE_ENV !== 'production') {
       // Sync models without creating backup tables
@@ -62,6 +66,8 @@ export const configureDatabasePlugin = fp(async (fastify, options) => {
         User,
         Friendship,
         Match,
+        Tournament,
+        MatchTournament,
       },
     });
 

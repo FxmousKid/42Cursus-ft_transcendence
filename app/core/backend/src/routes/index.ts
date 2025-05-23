@@ -3,6 +3,8 @@ import { registerUserRoutes } from './user.routes';
 import { registerAuthRoutes } from './auth.routes';
 import { registerFriendshipRoutes } from './friendship.routes';
 import { registerMatchRoutes } from './match.routes';
+import { registerTournamentRoutes } from './tournament.routes';
+import { registerMatchTournamentRoutes } from './match_tournament.routes';
 import { registerGoogleAuthRoutes } from './google-auth.routes';
 import { registerTestRoutes } from './test-routes';
 
@@ -17,6 +19,8 @@ export function configureRoutes(server: FastifyInstance) {
   registerAuthRoutes(server);
   registerFriendshipRoutes(server);
   registerMatchRoutes(server);
+  registerTournamentRoutes(server);
+  registerMatchTournamentRoutes(server);
   registerGoogleAuthRoutes(server);
   registerTestRoutes(server);
 } 
