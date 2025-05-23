@@ -1,488 +1,452 @@
-// ts/game.ts - Enhanced Pong Game Implementation with TypeScript
+// Improved Pong Game - Cleaner, Simpler, More Efficient
+// Key improvements: Better separation of concerns, simpler physics, more efficient rendering
 
-// Initialize the game when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Game canvas and context
-    const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+class PongGame {
+    private canvas: HTMLCanvasElement;
+    private ctx: CanvasRenderingContext2D;
+    private animationId: number = 0;
     
-    // Game elements
-    interface Ball {
-        x: number;
-        y: number;
-        radius: number;
-        velocityX: number;
-        velocityY: number;
-        speed: number;
-        color: string;
-    }
+    // Game dimensions
+    private readonly ASPECT_RATIO = 16 / 10;
+    private readonly MIN_WIDTH = 320;
     
-    interface Paddle {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-        score: number;
-        color: string;
-        moveUp: boolean;
-        moveDown: boolean;
-        speed: number;
-    }
-    
-    // Game constants
-    const WINNING_SCORE: number = 2;
-    const BALL_SPEED: number = 8;
-    const PADDLE_SPEED: number = 12;
-    
-    // Performance tracking
-    let lastTime: number = 0;
-    let fpsCounter: number = 0;
-    let fpsTimer: number = 0;
-    let currentFps: number = 0;
-    
-    const ball: Ball = {
-        x: canvas.width / 2,
-        y: canvas.height / 2,
-        radius: 10,
-        velocityX: 0,      // Will be set in resetBall()
-        velocityY: 0,      // Will be set in resetBall()
-        speed: BALL_SPEED,
-        color: 'white'
-    };
-    
-    const paddleWidth: number = 10;
-    const paddleHeight: number = 100;
-    const paddleOffset: number = 20;
-    
-    const leftPaddle: Paddle = {
-        x: paddleOffset,
-        y: (canvas.height - paddleHeight) / 2,
-        width: paddleWidth,
-        height: paddleHeight,
-        score: 0,
-        color: 'white',
-        moveUp: false,
-        moveDown: false,
-        speed: PADDLE_SPEED
-    };
-    
-    const rightPaddle: Paddle = {
-        x: canvas.width - paddleOffset - paddleWidth,
-        y: (canvas.height - paddleHeight) / 2,
-        width: paddleWidth,
-        height: paddleHeight,
-        score: 0,
-        color: 'white',
-        moveUp: false,
-        moveDown: false,
-        speed: PADDLE_SPEED
-    };
+    // Game settings
+    private readonly WINNING_SCORE = 2;
+    private readonly BALL_SPEED = 0.5; // Percentage of canvas width per second
+    private readonly PADDLE_SPEED = 0.6; // Percentage of canvas height per second
+    private readonly PADDLE_HEIGHT = 0.2; // 20% of canvas height
+    private readonly PADDLE_WIDTH = 0.02; // 2% of canvas width
+    private readonly BALL_SIZE = 0.02; // 2% of canvas width
     
     // Game state
-    let gameRunning: boolean = false;
-    let gamePaused: boolean = false;
-    let gameOver: boolean = false;
-    let winner: string = '';
+    private gameState: 'menu' | 'playing' | 'paused' | 'gameover' | 'scoring' = 'menu';
+    private winner: string = '';
+    private lastTime: number = 0;
+    private deltaTime: number = 0;
+    
+    // Game objects (normalized coordinates 0-1)
+    private ball = {
+        x: 0.5,
+        y: 0.5,
+        vx: 0,
+        vy: 0,
+        speed: this.BALL_SPEED
+    };
+    
+    private paddles = {
+        left: {
+            y: 0.5,
+            score: 0,
+            up: false,
+            down: false
+        },
+        right: {
+            y: 0.5,
+            score: 0,
+            up: false,
+            down: false
+        }
+    };
     
     // DOM elements
-    const startButton = document.getElementById('start-button') as HTMLButtonElement;
-    const resetButton = document.getElementById('reset-button') as HTMLButtonElement;
-    const leftScoreDisplay = document.getElementById('player-left-score') as HTMLElement;
-    const rightScoreDisplay = document.getElementById('player-right-score') as HTMLElement;
-    //card = picture
-    const leftPlayerCard = document.getElementById('player-left-card') as HTMLElement;
-    const rightPlayerCard = document.getElementById('player-right-card') as HTMLElement;
+    private elements: {
+        startBtn: HTMLButtonElement;
+        resetBtn: HTMLButtonElement;
+        leftScore: HTMLElement;
+        rightScore: HTMLElement;
+        leftCard: HTMLElement;
+        rightCard: HTMLElement;
+    };
     
-    // Function to highlight player when they score
-    function highlightPlayer(playerCard: HTMLElement): void {
-        // Add an active class to highlight the player
-        playerCard.classList.add('active');
+    constructor(canvasId: string) {
+        this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+        this.ctx = this.canvas.getContext('2d')!;
         
-        // Add a glowing border
-        playerCard.style.boxShadow = '0 0 15px rgba(59, 130, 246, 0.8)';
+        // Cache DOM elements
+        this.elements = {
+            startBtn: document.getElementById('start-button') as HTMLButtonElement,
+            resetBtn: document.getElementById('reset-button') as HTMLButtonElement,
+            leftScore: document.getElementById('player-left-score') as HTMLElement,
+            rightScore: document.getElementById('player-right-score') as HTMLElement,
+            leftCard: document.getElementById('player-left-card') as HTMLElement,
+            rightCard: document.getElementById('player-right-card') as HTMLElement
+        };
         
-        // Remove the highlight after a short delay
-        setTimeout(() => {
-            playerCard.classList.remove('active');
-            playerCard.style.boxShadow = '';
-        }, 1000);
+        this.init();
     }
     
-    // Event listeners for paddles
-    document.addEventListener('keydown', function(event: KeyboardEvent) {
-        if (gameOver) return; // Don't allow controls if game is over
-        
-        // Left paddle (Q - up, W - down)
-        if (event.code === 'KeyQ') {
-            leftPaddle.moveUp = true;
-        } else if (event.code === 'KeyW') {
-            leftPaddle.moveDown = true;
-        }
-        
-        // Right paddle (Left arrow - up, Right arrow - down)
-        if (event.code === 'ArrowLeft') {
-            rightPaddle.moveUp = true;
-        } else if (event.code === 'ArrowRight') {
-            rightPaddle.moveDown = true;
-        }
-        
-        // Add pause toggle on 'P' key press
-        if (event.code === 'KeyP' && gameRunning) {
-            gamePaused = !gamePaused;
-            
-            if (gamePaused) {
-                startButton.textContent = "Reprendre";
-            } else {
-                startButton.textContent = "Pause";
-            }
-        }
-    });
-    
-    document.addEventListener('keyup', function(event: KeyboardEvent) {
-        // Left paddle
-        if (event.code === 'KeyQ') {
-            leftPaddle.moveUp = false;
-        } else if (event.code === 'KeyW') {
-            leftPaddle.moveDown = false;
-        }
-        
-        // Right paddle
-        if (event.code === 'ArrowLeft') {
-            rightPaddle.moveUp = false;
-        } else if (event.code === 'ArrowRight') {
-            rightPaddle.moveDown = false;
-        }
-    });
-    
-    // Button controls
-    startButton.addEventListener('click', function() {
-        if (gameOver) {
-            // If game is over, reset everything and start a new game
-            gameOver = false;
-            winner = '';
-            resetGame();
-            startGame();
-        } else if (!gameRunning) {
-            // Start the game if it's not running
-            gameRunning = true;
-            gamePaused = false;
-            startButton.textContent = "Pause";
-            startGame();
-        } else {
-            // Toggle pause if the game is already running
-            gamePaused = !gamePaused;
-            
-            if (gamePaused) {
-                // Game is now paused
-                startButton.textContent = "Reprendre";
-            } else {
-                // Game is now resumed
-                startButton.textContent = "Pause";
-            }
-        }
-    });
-    
-    resetButton.addEventListener('click', function() {
-        // Reset the game
-        resetGame();
-        
-        // Reset game state
-        gameOver = false;
-        winner = '';
-        
-        // Reset the pause state and button appearance if game is running
-        if (gameRunning) {
-            gamePaused = false;
-            startButton.textContent = "Pause";
-        }
-    });
-    
-    // Drawing functions
-    function drawRect(x: number, y: number, width: number, height: number, color: string): void {
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y, width, height);
+    private init(): void {
+        this.setupCanvas();
+        this.setupEventListeners();
+        this.resetGame();
+        this.gameLoop();
     }
     
-    function drawCircle(x: number, y: number, radius: number, color: string): void {
-        ctx.fillStyle = color;
+    private setupCanvas(): void {
+        const resize = () => {
+            const container = this.canvas.parentElement!;
+            const maxWidth = container.clientWidth - 32;
+            const width = Math.max(this.MIN_WIDTH, Math.min(800, maxWidth));
+            const height = width / this.ASPECT_RATIO;
+            
+            this.canvas.width = width;
+            this.canvas.height = height;
+        };
+        
+        resize();
+        window.addEventListener('resize', resize);
+    }
+    
+    private setupEventListeners(): void {
+        // Keyboard controls
+        const keyMap: { [key: string]: () => void } = {
+            'KeyQ': () => this.paddles.left.up = true,
+            'KeyW': () => this.paddles.left.down = true,
+            'ArrowLeft': () => this.paddles.right.up = true,
+            'ArrowRight': () => this.paddles.right.down = true,
+            'KeyP': () => this.togglePause()
+        };
+        
+        document.addEventListener('keydown', (e) => {
+            if (keyMap[e.code]) {
+                e.preventDefault();
+                keyMap[e.code]();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            switch(e.code) {
+                case 'KeyQ': this.paddles.left.up = false; break;
+                case 'KeyW': this.paddles.left.down = false; break;
+                case 'ArrowLeft': this.paddles.right.up = false; break;
+                case 'ArrowRight': this.paddles.right.down = false; break;
+            }
+        });
+        
+        // Button controls
+        this.elements.startBtn.addEventListener('click', () => this.handleStartButton());
+        this.elements.resetBtn.addEventListener('click', () => this.resetGame());
+    }
+    
+    private handleStartButton(): void {
+        switch(this.gameState) {
+            case 'menu':
+            case 'gameover':
+                this.startGame();
+                break;
+            case 'playing':
+                this.pauseGame();
+                break;
+            case 'paused':
+                this.resumeGame();
+                break;
+        }
+    }
+    
+    private startGame(): void {
+        this.resetGame();
+        this.gameState = 'playing';
+        this.elements.startBtn.textContent = 'Pause';
+        this.serveBall();
+    }
+    
+    private pauseGame(): void {
+        this.gameState = 'paused';
+        this.elements.startBtn.textContent = 'Reprendre';
+    }
+    
+    private resumeGame(): void {
+        this.gameState = 'playing';
+        this.elements.startBtn.textContent = 'Pause';
+    }
+    
+    private togglePause(): void {
+        if (this.gameState === 'playing') {
+            this.pauseGame();
+        } else if (this.gameState === 'paused') {
+            this.resumeGame();
+        }
+    }
+    
+    private resetGame(): void {
+        this.paddles.left.score = 0;
+        this.paddles.right.score = 0;
+        this.paddles.left.y = 0.5;
+        this.paddles.right.y = 0.5;
+        this.ball.x = 0.5;
+        this.ball.y = 0.5;
+        this.ball.vx = 0;
+        this.ball.vy = 0;
+        this.updateScore();
+        
+        if (this.gameState === 'gameover') {
+            this.gameState = 'menu';
+            this.elements.startBtn.textContent = 'Commencer';
+        }
+    }
+    
+    private serveBall(): void {
+        this.ball.x = 0.5;
+        this.ball.y = 0.5;
+        
+        // Random angle between -45 and 45 degrees
+        const angle = (Math.random() - 0.5) * Math.PI / 2;
+        const direction = Math.random() < 0.5 ? -1 : 1;
+        
+        this.ball.vx = Math.cos(angle) * this.ball.speed * direction;
+        this.ball.vy = Math.sin(angle) * this.ball.speed;
+    }
+    
+    private update(): void {
+        if (this.gameState !== 'playing') return;
+        
+        const dt = this.deltaTime;
+        
+        // Update paddles
+        const paddleSpeed = this.PADDLE_SPEED * dt;
+        
+        if (this.paddles.left.up && this.paddles.left.y > this.PADDLE_HEIGHT / 2) {
+            this.paddles.left.y -= paddleSpeed;
+        }
+        if (this.paddles.left.down && this.paddles.left.y < 1 - this.PADDLE_HEIGHT / 2) {
+            this.paddles.left.y += paddleSpeed;
+        }
+        if (this.paddles.right.up && this.paddles.right.y > this.PADDLE_HEIGHT / 2) {
+            this.paddles.right.y -= paddleSpeed;
+        }
+        if (this.paddles.right.down && this.paddles.right.y < 1 - this.PADDLE_HEIGHT / 2) {
+            this.paddles.right.y += paddleSpeed;
+        }
+        
+        // Update ball
+        this.ball.x += this.ball.vx * dt;
+        this.ball.y += this.ball.vy * dt;
+        
+        // Ball collision with top/bottom
+        if (this.ball.y <= this.BALL_SIZE || this.ball.y >= 1 - this.BALL_SIZE) {
+            this.ball.vy *= -1;
+            this.ball.y = Math.max(this.BALL_SIZE, Math.min(1 - this.BALL_SIZE, this.ball.y));
+        }
+        
+        // Paddle collision
+        const paddleLeft = 0.02;
+        const paddleRight = 0.98;
+        
+        // Left paddle collision
+        if (this.ball.x - this.BALL_SIZE <= paddleLeft + this.PADDLE_WIDTH &&
+            this.ball.x - this.BALL_SIZE > paddleLeft &&
+            this.ball.vx < 0) {
+            
+            const paddleTop = this.paddles.left.y - this.PADDLE_HEIGHT / 2;
+            const paddleBottom = this.paddles.left.y + this.PADDLE_HEIGHT / 2;
+            
+            if (this.ball.y >= paddleTop && this.ball.y <= paddleBottom) {
+                this.ball.vx *= -1;
+                
+                // Add spin based on hit position
+                const relativeY = (this.ball.y - this.paddles.left.y) / (this.PADDLE_HEIGHT / 2);
+                this.ball.vy = relativeY * this.ball.speed * 0.5;
+                
+                // Normalize velocity
+                const speed = Math.sqrt(this.ball.vx ** 2 + this.ball.vy ** 2);
+                this.ball.vx = (this.ball.vx / speed) * this.ball.speed;
+                this.ball.vy = (this.ball.vy / speed) * this.ball.speed;
+                
+                this.ball.x = paddleLeft + this.PADDLE_WIDTH + this.BALL_SIZE;
+            }
+        }
+        
+        // Right paddle collision
+        if (this.ball.x + this.BALL_SIZE >= paddleRight - this.PADDLE_WIDTH &&
+            this.ball.x + this.BALL_SIZE < paddleRight &&
+            this.ball.vx > 0) {
+            
+            const paddleTop = this.paddles.right.y - this.PADDLE_HEIGHT / 2;
+            const paddleBottom = this.paddles.right.y + this.PADDLE_HEIGHT / 2;
+            
+            if (this.ball.y >= paddleTop && this.ball.y <= paddleBottom) {
+                this.ball.vx *= -1;
+                
+                // Add spin
+                const relativeY = (this.ball.y - this.paddles.right.y) / (this.PADDLE_HEIGHT / 2);
+                this.ball.vy = relativeY * this.ball.speed * 0.5;
+                
+                // Normalize velocity
+                const speed = Math.sqrt(this.ball.vx ** 2 + this.ball.vy ** 2);
+                this.ball.vx = (this.ball.vx / speed) * this.ball.speed;
+                this.ball.vy = (this.ball.vy / speed) * this.ball.speed;
+                
+                this.ball.x = paddleRight - this.PADDLE_WIDTH - this.BALL_SIZE;
+            }
+        }
+        
+        // Scoring
+        if (this.ball.x < 0) {
+            this.scorePoint('right');
+        } else if (this.ball.x > 1) {
+            this.scorePoint('left');
+        }
+    }
+    
+    private render(): void {
+        const { width, height } = this.canvas;
+        const ctx = this.ctx;
+        
+        // Clear canvas
+        ctx.fillStyle = '#111827';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw middle line
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.setLineDash([5, 15]);
         ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2, false);
-        ctx.closePath();
-        ctx.fill();
-    }
-    
-    function drawNet(): void {
-        const netWidth: number = 2;
-        const netHeight: number = 10;
-        const netGap: number = 15;
-        
-        for (let y: number = 0; y <= canvas.height; y += netHeight + netGap) {
-            drawRect(canvas.width / 2 - netWidth / 2, y, netWidth, netHeight, 'rgba(255, 255, 255, 0.5)');
-        }
-    }
-    
-    function drawPaddle(paddle: Paddle): void {
-        drawRect(paddle.x, paddle.y, paddle.width, paddle.height, paddle.color);
-    }
-    
-    function drawScore(): void {
-        leftScoreDisplay.textContent = leftPaddle.score.toString();
-        rightScoreDisplay.textContent = rightPaddle.score.toString();
-    }
-    
-    // Collision detection
-    function collision(ball: Ball, paddle: Paddle): boolean {
-        // Check if ball coordinates are within paddle boundaries
-        return (
-            ball.x + ball.radius > paddle.x &&
-            ball.x - ball.radius < paddle.x + paddle.width &&
-            ball.y + ball.radius > paddle.y &&
-            ball.y - ball.radius < paddle.y + paddle.height
-        );
-    }
-    
-    // Game logic
-    function update(): void {
-        // Don't update the game if it's not running, paused, or over
-        if (!gameRunning || gamePaused || gameOver) return;
-        
-        // Move left paddle
-        if (leftPaddle.moveUp && leftPaddle.y > 0) {
-            leftPaddle.y -= leftPaddle.speed;
-        } else if (leftPaddle.moveDown && leftPaddle.y + leftPaddle.height < canvas.height) {
-            leftPaddle.y += leftPaddle.speed;
-        }
-        
-        // Move right paddle
-        if (rightPaddle.moveUp && rightPaddle.y > 0) {
-            rightPaddle.y -= rightPaddle.speed;
-        } else if (rightPaddle.moveDown && rightPaddle.y + rightPaddle.height < canvas.height) {
-            rightPaddle.y += rightPaddle.speed;
-        }
-        
-        // Update ball position
-        ball.x += ball.velocityX;
-        ball.y += ball.velocityY;
-        
-        // Wall collision (top and bottom)
-        if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
-            ball.velocityY = -ball.velocityY;
-        }
-        
-        // Determine which paddle is being hit by the ball
-        let player: Paddle = (ball.x < canvas.width / 2) ? leftPaddle : rightPaddle;
-        
-        // If the ball hits a paddle
-        if (collision(ball, player)) {
-            // Simple approach: just reverse X direction and add slight angle variation
-            ball.velocityX = -ball.velocityX;
-            
-            // Add slight variation based on where the ball hit the paddle
-            let collidePoint: number = ball.y - (player.y + player.height / 2);
-            let normalizedCollidePoint = collidePoint / (player.height / 2); // -1 to 1
-            
-            // Add a small Y velocity component based on collision point (max 30% of total speed)
-            let maxAngleEffect = ball.speed * 0.3;
-            ball.velocityY += normalizedCollidePoint * maxAngleEffect;
-            
-            // CRITICAL: Normalize the velocity to maintain exact speed
-            let currentSpeed = Math.sqrt(ball.velocityX * ball.velocityX + ball.velocityY * ball.velocityY);
-            ball.velocityX = (ball.velocityX / currentSpeed) * ball.speed;
-            ball.velocityY = (ball.velocityY / currentSpeed) * ball.speed;
-            
-            // Move ball slightly away from paddle to prevent multiple collisions
-            if (ball.x < canvas.width / 2) {
-                // Left paddle - move ball right
-                ball.x = player.x + player.width + ball.radius + 1;
-            } else {
-                // Right paddle - move ball left
-                ball.x = player.x - ball.radius - 1;
-            }
-        }
-        
-        // Scoring - ball goes beyond paddles
-        if (ball.x - ball.radius < 0) {
-            // Right player scores
-            rightPaddle.score++;
-            
-            // Highlight the player who scored
-            highlightPlayer(rightPlayerCard);
-            
-            // Check for win
-            if (rightPaddle.score >= WINNING_SCORE) {
-                gameOver = true;
-                winner = 'Joueur 2';
-                startButton.textContent = "Nouvelle Partie";
-            } else {
-                resetBall();
-            }
-        } else if (ball.x + ball.radius > canvas.width) {
-            // Left player scores
-            leftPaddle.score++;
-            
-            // Highlight the player who scored
-            highlightPlayer(leftPlayerCard);
-            
-            // Check for win
-            if (leftPaddle.score >= WINNING_SCORE) {
-                gameOver = true;
-                winner = 'Joueur 1';
-                startButton.textContent = "Nouvelle Partie";
-            } else {
-                resetBall();
-            }
-        }
-        
-        // Update score display
-        drawScore();
-    }
-    
-    function resetBall(): void {
-        ball.x = canvas.width / 2;
-        ball.y = canvas.height / 2;
-        
-        // Stop the ball momentarily
-        ball.velocityX = 0;
-        ball.velocityY = 0;
-        
-        // Add a small delay before the ball starts moving again
-        setTimeout(() => {
-            // Set a random angle, but avoid too vertical trajectories
-            let angle;
-            if (Math.random() < 0.5) {
-                // Lower range: 30° to 60° (π/6 to π/3)
-                angle = Math.random() * (Math.PI/3 - Math.PI/6) + Math.PI/6;
-            } else {
-                // Upper range: 120° to 150° (2π/3 to 5π/6)
-                angle = Math.random() * (5*Math.PI/6 - 2*Math.PI/3) + 2*Math.PI/3;
-            }
-            
-            // Calculate velocity components
-            ball.velocityX = ball.speed * Math.cos(angle);
-            ball.velocityY = ball.speed * Math.sin(angle);
-            
-            // 50% chance of going left instead of right
-            if (Math.random() < 0.5) {
-                ball.velocityX = -ball.velocityX;
-            }
-            
-            // 50% chance of going up instead of down
-            if (Math.random() < 0.5) {
-                ball.velocityY = -ball.velocityY;
-            }
-            
-            // ENSURE exact speed (safety check)
-            let currentSpeed = Math.sqrt(ball.velocityX * ball.velocityX + ball.velocityY * ball.velocityY);
-            ball.velocityX = (ball.velocityX / currentSpeed) * ball.speed;
-            ball.velocityY = (ball.velocityY / currentSpeed) * ball.speed;
-        }, 1000);
-    }
-    
-    function resetGame(): void {
-        // Reset scores
-        leftPaddle.score = 0;
-        rightPaddle.score = 0;
-        
-        // Reset paddles position
-        leftPaddle.y = (canvas.height - leftPaddle.height) / 2;
-        rightPaddle.y = (canvas.height - rightPaddle.height) / 2;
-        
-        // Reset ball and its velocity
-        resetBall();
-        
-        // Update score display
-        drawScore();
-        
-        // Redraw the game
-        render();
-    }
-    
-    function render(): void {
-        // Clear the canvas - use clearRect for better performance
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawRect(0, 0, canvas.width, canvas.height, '#111827');
-        
-        // Draw the net
-        drawNet();
+        ctx.moveTo(width / 2, 0);
+        ctx.lineTo(width / 2, height);
+        ctx.stroke();
+        ctx.setLineDash([]);
         
         // Draw paddles
-        drawPaddle(leftPaddle);
-        drawPaddle(rightPaddle);
-        
-        // Draw the ball
-        drawCircle(ball.x, ball.y, ball.radius, ball.color);
-        
-        // Display FPS counter (for development)
         ctx.fillStyle = 'white';
-        ctx.font = '12px Arial';
-        ctx.fillText(`FPS: ${currentFps}`, canvas.width - 70, 20);
+        const pw = this.PADDLE_WIDTH * width;
+        const ph = this.PADDLE_HEIGHT * height;
         
-        // Display game information
-        if (gameOver) {
-            // Game over overlay
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 48px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('PARTIE TERMINÉE', canvas.width / 2, canvas.height / 2 - 50);
-            
-            ctx.font = 'bold 32px Arial';
-            ctx.fillText(`${winner} gagne!`, canvas.width / 2, canvas.height / 2 + 10);
-            
-            ctx.font = '20px Arial';
-            ctx.fillText('Cliquez sur "Nouvelle Partie" pour recommencer', canvas.width / 2, canvas.height / 2 + 60);
-            
-            ctx.textAlign = 'left'; // Reset text alignment
-        } else if (gamePaused && gameRunning) {
-            // Pause overlay
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 32px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('PAUSE', canvas.width / 2, canvas.height / 2);
-            ctx.textAlign = 'left'; // Reset text alignment
+        // Left paddle
+        ctx.fillRect(
+            0.02 * width,
+            (this.paddles.left.y - this.PADDLE_HEIGHT / 2) * height,
+            pw,
+            ph
+        );
+        
+        // Right paddle
+        ctx.fillRect(
+            0.98 * width - pw,
+            (this.paddles.right.y - this.PADDLE_HEIGHT / 2) * height,
+            pw,
+            ph
+        );
+        
+        // Draw ball
+        const ballRadius = this.BALL_SIZE * width / 2;
+        ctx.beginPath();
+        ctx.arc(this.ball.x * width, this.ball.y * height, ballRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw game state overlays
+        if (this.gameState === 'paused') {
+            this.drawOverlay('PAUSE');
+        } else if (this.gameState === 'gameover') {
+            this.drawOverlay(`PARTIE TERMINÉE\n${this.winner} gagne!`);
         }
     }
     
-    let gameLoopRunning = false;
+    private scorePoint(side: 'left' | 'right'): void {
+        if (this.gameState !== 'playing') return; // Prevent multiple scoring
+        
+        this.gameState = 'scoring'; // Temporarily block further scoring
+        
+        if (side === 'right') {
+            this.paddles.right.score++;
+            this.updateScore();
+            this.highlightWinner(this.elements.rightCard);
+            
+            if (this.paddles.right.score >= this.WINNING_SCORE) {
+                this.endGame('Joueur 2');
+            } else {
+                this.ball.x = 0.5;
+                this.ball.y = 0.5;
+                this.ball.vx = 0;
+                this.ball.vy = 0;
+                setTimeout(() => {
+                    if (this.gameState === 'scoring') {
+                        this.gameState = 'playing';
+                        this.serveBall();
+                    }
+                }, 1000);
+            }
+        } else {
+            this.paddles.left.score++;
+            this.updateScore();
+            this.highlightWinner(this.elements.leftCard);
+            
+            if (this.paddles.left.score >= this.WINNING_SCORE) {
+                this.endGame('Joueur 1');
+            } else {
+                this.ball.x = 0.5;
+                this.ball.y = 0.5;
+                this.ball.vx = 0;
+                this.ball.vy = 0;
+                setTimeout(() => {
+                    if (this.gameState === 'scoring') {
+                        this.gameState = 'playing';
+                        this.serveBall();
+                    }
+                }, 1000);
+            }
+        }
+    }
+    
+    private drawOverlay(text: string): void {
+        const { width, height } = this.canvas;
+        const ctx = this.ctx;
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, width, height);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${width * 0.06}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const lines = text.split('\n');
+        lines.forEach((line, i) => {
+            ctx.fillText(line, width / 2, height / 2 + (i - 0.5) * width * 0.08);
+        });
+    }
+    
+    private updateScore(): void {
+        this.elements.leftScore.textContent = this.paddles.left.score.toString();
+        this.elements.rightScore.textContent = this.paddles.right.score.toString();
+    }
+    
+    private highlightWinner(card: HTMLElement): void {
+        card.classList.add('scoring');
+        setTimeout(() => card.classList.remove('scoring'), 500);
+    }
+    
+    private endGame(winner: string): void {
+        this.winner = winner;
+        this.gameState = 'gameover';
+        this.elements.startBtn.textContent = 'Nouvelle Partie';
+    }
+    
+    private gameLoop = (timestamp: number = 0): void => {
+        this.deltaTime = Math.min((timestamp - this.lastTime) / 1000, 0.1); // Cap at 100ms
+        this.lastTime = timestamp;
+        
+        this.update();
+        this.render();
+        
+        this.animationId = requestAnimationFrame(this.gameLoop);
+    }
+}
 
-    function gameLoop(timestamp: number = 0): void {
-        // Calculate delta time for smooth animation
-        const deltaTime = timestamp - lastTime;
-        lastTime = timestamp;
-        
-        // Update FPS counter
-        fpsCounter++;
-        fpsTimer += deltaTime;
-        if (fpsTimer >= 1000) {
-            currentFps = fpsCounter;
-            fpsCounter = 0;
-            fpsTimer -= 1000;
-        }
-        
-        update();
-        render();
-        requestAnimationFrame(gameLoop);
-    }
-    
-    function startGame(): void {
-        resetGame();
-        gameRunning = true;
-        gamePaused = false;
-        gameOver = false;
-        winner = '';
-        startButton.textContent = "Pause";
-        lastTime = performance.now();
-    }
-    
-    // Initialize the game
-    resetGame();
-    if (!gameLoopRunning) {
-        gameLoopRunning = true;
-        requestAnimationFrame(gameLoop);
-    }
+// Initialize game when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new PongGame('game-canvas');
 });
+
+// Add CSS for scoring animation
+const style = document.createElement('style');
+style.textContent = `
+    .scoring {
+        animation: scoreFlash 0.5s ease-out;
+    }
+    
+    @keyframes scoreFlash {
+        0% { box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
+        50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+        100% { box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
+    }
+`;
+document.head.appendChild(style);
