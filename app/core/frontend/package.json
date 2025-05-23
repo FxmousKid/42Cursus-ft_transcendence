@@ -4,7 +4,7 @@
   "description": "Frontend for ft_transcendence project",
   "main": "index.js",
   "scripts": {
-    "build": "webpack && tailwindcss -i ./src/css/input.css -o ./src/css/output.css && cp -r ./src/*.html ./dist/ && cp -r ./src/components ./dist/ && cp -r ./src/css ./dist/",
+    "build": "webpack && mkdir -p ./dist && tailwindcss -i ./src/css/input.css -o ./src/css/output.css && cp -r ./src/*.html ./dist/ && cp -r ./src/components ./dist/ && cp -r ./src/css ./dist/",
     "dev": "concurrently \"webpack --watch\" \"tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch\" \"serve src -p 5173\"",
     "serve": "fastify static -r ./src",
     "start": "npm run build && serve src -p 5173",
@@ -22,6 +22,7 @@
     "ws": "^8.18.2"
   },
   "devDependencies": {
+    "@fastify/type-provider-typebox": "^5.1.0",
     "autoprefixer": "^10.4.14",
     "concurrently": "^8.2.0",
     "playwright": "^1.52.0",

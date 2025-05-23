@@ -4,7 +4,7 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
     volumes:
       - ../vault/agent/env:/tmp/env:ro
-      - certs:/usr/share/elasticsearch/config/certs
+      - escerts:/usr/share/elasticsearch/config/certs
     user: "0"
     depends_on:
       vault-agent:
@@ -82,7 +82,7 @@ services:
     labels:
       co.elastic.logs/module: elasticsearch
     volumes:
-      - certs:/usr/share/elasticsearch/config/certs
+      - escerts:/usr/share/elasticsearch/config/certs
       - esdata01:/usr/share/elasticsearch/data
       - ../vault/agent/env:/tmp/env:ro
       - ./elasticsearch/entrypoint-wrapper.sh:/entrypoint-wrapper.sh
@@ -149,7 +149,7 @@ services:
       - "XPACK_SECURITY_SECURECOOKIES=false"
     volumes:
       - kibanadata:/usr/share/kibana/data
-      - certs:/usr/share/kibana/config/certs
+      - escerts:/usr/share/kibana/config/certs
       - ../vault/agent/env:/tmp/env:ro
       - ./kibana/entrypoint-wrapper.sh:/entrypoint-wrapper.sh
     mem_limit: 2g
@@ -173,7 +173,7 @@ services:
     image: docker.elastic.co/beats/filebeat:8.18.0
     user: root  # Required to access logs
     volumes:
-      - certs:/usr/share/filebeat/certs
+      - escerts:/usr/share/filebeat/certs
       - filebeatdata01:/usr/share/filebeat/data
       - "./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
       - "/var/lib/docker:/var/lib/docker:ro"
@@ -205,18 +205,3 @@ services:
         fi;
         filebeat -e --strict.perms=false
       '
-     
-
-volumes:
-  certs:
-    driver: local
-  esdata01:
-     driver: local
-  kibanadata:
-    driver: local
-  metricbeatdata01:
-    driver: local
-  filebeatdata01:
-    driver: local
-  logstashdata01:
-    driver: local

@@ -24,6 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn('Auth service not available or missing init method');
   }
   
+  // Force refresh authentication state from storage
+  if (authService && authService.restoreSession) {
+    console.log('Forcing session restoration');
+    authService.restoreSession();
+  }
+  
   // Vérifier si l'utilisateur est authentifié de façon sécurisée
   const isAuthenticated = authService && 
                         authService.isAuthenticated && 
@@ -31,6 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         authService.isAuthenticated();
   
   console.log('User is authenticated:', isAuthenticated);
+  
+  // Log additional details to debug
+  if (isAuthenticated) {
+    console.log('Authenticated user details: ID:', authService.getUserId(), 'Username:', authService.getUsername());
+  }
   
   // Charger le header approprié
   const headerFile = isAuthenticated ? 'components/header.html' : 'components/header-guest.html';
@@ -80,6 +91,15 @@ function initHeaderBehaviors(isAuthenticated: boolean) {
   // Ne configurer les comportements de déconnexion que si l'utilisateur est authentifié
   if (isAuthenticated) {
     setupLogoutHandlers();
+    
+    // Update username display with the actual username
+    const authService = (window as any).authService;
+    if (authService && authService.getUsername) {
+      const usernameDisplay = document.getElementById('username-display');
+      if (usernameDisplay) {
+        usernameDisplay.textContent = `Salut, ${authService.getUsername() || 'Utilisateur'}`;
+      }
+    }
   }
 }
 
@@ -91,6 +111,7 @@ function setupLogoutHandlers() {
   const logoutButton = document.getElementById('logout-button');
   const mobileLogoutButton = document.getElementById('mobile-logout-button');
   const navLogoutButton = document.getElementById('nav-logout-button');
+  const headerLogoutButton = document.getElementById('header-logout-button');
   const authService = (window as any).authService;
   
   const handleLogout = async (e: Event) => {
@@ -126,6 +147,11 @@ function setupLogoutHandlers() {
     // Bouton de déconnexion de la navigation desktop
     if (navLogoutButton) {
       navLogoutButton.addEventListener('click', handleLogout);
+    }
+    
+    // Bouton de déconnexion principal dans le header
+    if (headerLogoutButton) {
+      headerLogoutButton.addEventListener('click', handleLogout);
     }
     
     // Événement pour le bouton de déconnexion mobile

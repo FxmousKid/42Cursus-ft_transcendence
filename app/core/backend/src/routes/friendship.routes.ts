@@ -36,7 +36,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
       try {
         const { User, Friendship } = fastify.db.models;
         const userId = request.user!.id;
-
+        
         // Find all friendships where the current user is involved
         const friendships = await Friendship.findAll({
           where: {
@@ -115,7 +115,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
     preHandler: fastify.authenticate,
     handler: async (request: FastifyRequest<{ Body: FriendshipRequest }>, reply: FastifyReply) => {
       try {
-        const { Friendship } = fastify.db.models;
+        const { Friendship, User } = fastify.db.models;
         const userId = request.user!.id;
         const { friend_id } = request.body;
 
@@ -149,6 +149,8 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
           friend_id,
           status: 'pending'
         });
+        
+        // Notification via WebSocket is handled separately by the WebSocket server
 
         return { success: true, data: newFriendship };
       } catch (error) {
@@ -195,7 +197,9 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
       try {
         const { User, Friendship } = fastify.db.models;
         const userId = request.user!.id;
-
+        
+        fastify.log.info(`Getting pending friend requests for user ${userId}`);
+        
         // Find pending friend requests
         const pendingRequests = await Friendship.findAll({
           where: {
@@ -210,7 +214,14 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             }
           ]
         });
-
+        
+        fastify.log.info(`Found ${pendingRequests.length} pending requests for user ${userId}`);
+        
+        // Log de debugging - visualiser la structure des données
+        if (pendingRequests.length > 0) {
+          fastify.log.info(`Sample request structure: ${JSON.stringify(pendingRequests[0].toJSON())}`);
+        }
+        
         return { success: true, data: pendingRequests };
       } catch (error) {
         fastify.log.error(error);
@@ -220,13 +231,13 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
   });
 
   // Accept friend request
-  fastify.put<{ Body: FriendshipRequest }>('/friendships/accept', {
+  fastify.post<{ Params: { request_id: number } }>('/friendships/accept/:request_id', {
     schema: {
-      body: {
+      params: {
         type: 'object',
-        required: ['friend_id'],
+        required: ['request_id'],
         properties: {
-          friend_id: { type: 'number' }
+          request_id: { type: 'number' }
         }
       },
       response: {
@@ -248,16 +259,16 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
       }
     },
     preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Body: FriendshipRequest }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Params: { request_id: number } }>, reply: FastifyReply) => {
       try {
         const { Friendship } = fastify.db.models;
         const userId = request.user!.id;
-        const { friend_id } = request.body;
-
+        const { request_id } = request.params;
+        
         // Find the friendship request
         const friendship = await Friendship.findOne({
           where: {
-            user_id: friend_id,
+            id: request_id,
             friend_id: userId,
             status: 'pending'
           }
@@ -273,7 +284,9 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
         // Update friendship status
         friendship.status = 'accepted';
         await friendship.save();
-
+        
+        // Notification via WebSocket is handled separately by the WebSocket server
+        
         return { success: true, data: friendship };
       } catch (error) {
         fastify.log.error(error);
@@ -281,15 +294,15 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
       }
     }
   });
-
+  
   // Reject friend request
-  fastify.put<{ Body: FriendshipRequest }>('/friendships/reject', {
+  fastify.post<{ Params: { request_id: number } }>('/friendships/reject/:request_id', {
     schema: {
-      body: {
+      params: {
         type: 'object',
-        required: ['friend_id'],
+        required: ['request_id'],
         properties: {
-          friend_id: { type: 'number' }
+          request_id: { type: 'number' }
         }
       },
       response: {
@@ -303,16 +316,16 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
       }
     },
     preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Body: FriendshipRequest }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Params: { request_id: number } }>, reply: FastifyReply) => {
       try {
         const { Friendship } = fastify.db.models;
         const userId = request.user!.id;
-        const { friend_id } = request.body;
-
+        const { request_id } = request.params;
+        
         // Find the friendship request
         const friendship = await Friendship.findOne({
           where: {
-            user_id: friend_id,
+            id: request_id,
             friend_id: userId,
             status: 'pending'
           }
@@ -327,10 +340,12 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
 
         // Delete the friendship
         await friendship.destroy();
-
-        return {
-          success: true,
-          message: 'Friend request rejected successfully'
+        
+        // Notification via WebSocket is handled separately by the WebSocket server
+        
+        return { 
+          success: true, 
+          message: 'Friend request rejected successfully' 
         };
       } catch (error) {
         fastify.log.error(error);
@@ -340,7 +355,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
   });
 
   // Remove friend
-  fastify.delete<{ Params: FriendshipRequest }>('/friendships/:friend_id', {
+  fastify.delete<{ Params: { friend_id: number } }>('/friendships/:friend_id', {
     schema: {
       params: {
         type: 'object',
@@ -360,7 +375,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
       }
     },
     preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Params: FriendshipRequest }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Params: { friend_id: number } }>, reply: FastifyReply) => {
       try {
         const { Friendship } = fastify.db.models;
         const userId = request.user!.id;
@@ -386,10 +401,12 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
 
         // Delete the friendship
         await friendship.destroy();
-
-        return {
-          success: true,
-          message: 'Friend removed successfully'
+        
+        // Notification via WebSocket is handled separately by the WebSocket server
+        
+        return { 
+          success: true, 
+          message: 'Friend removed successfully' 
         };
       } catch (error) {
         fastify.log.error(error);
