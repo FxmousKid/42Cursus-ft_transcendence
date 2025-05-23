@@ -1095,6 +1095,10 @@ a:hover {
   height: 0.625rem;
 }
 
+.h-2\.5 {
+  height: 0.625rem;
+}
+
 .h-20 {
   height: 5rem;
 }
@@ -1157,6 +1161,10 @@ a:hover {
 
 .w-16 {
   width: 4rem;
+}
+
+.w-2\.5 {
+  width: 0.625rem;
 }
 
 .w-2\.5 {
