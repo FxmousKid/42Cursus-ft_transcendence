@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Setup - ft_transcendence</title>
+    <link rel="stylesheet" href="css/output.css">
+    <meta name="description" content="ft_transcendence - Player name input page">
+</head>
+<body class="flex flex-col min-h-screen bg-gray-50">
+
+    <!-- En-tête -->
+    <div id="header-container"></div>
+
+    <!-- Contenu principal -->
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="w-full max-w-md text-center">
+            <h1 class="text-2xl font-semibold text-gray-800 mb-4">Enter Player Names</h1>
+            <form id="player-form" class="space-y-3"></form>
+
+            <button id="add-player" type="button" class="mt-3 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-semibold">
+                ➕ Add Player
+            </button>
+
+            <button id="start-button" type="button" class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg text-lg font-bold hidden">
+                Start
+            </button>
+        </div>
+    </main>
+
+    <!-- Pied de page -->
+    <div id="footer-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/header-loader.js"></script>
+    <script src="js/route-guard.js"></script>
+    <script type="module" src="js/tournament.js"></script>
+</body>
+</html>
