@@ -4,10 +4,7 @@ import cookie from '@fastify/cookie';
 import session from '@fastify/session';
 import * as dotenv from 'dotenv';
 import crypto from 'crypto';
-<<<<<<< HEAD
 import { FastifyRequest } from 'fastify';
-=======
->>>>>>> google-sign-in
 
 // Explicitly load environment variables
 dotenv.config();
