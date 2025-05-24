@@ -14,6 +14,8 @@ module.exports = {
     login: './src/ts/login.ts',
     register: './src/ts/register.ts',
     game: './src/ts/game.ts',
+    tournament: './src/ts/tournament.ts',
+    tournament_round: './src/ts/tournament_round',
   },
   module: {
     rules: [

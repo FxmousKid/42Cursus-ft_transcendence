@@ -1,9 +1,16 @@
+import { api } from './api';
+
 const form = document.getElementById('player-form') as HTMLFormElement;
 const addButton = document.getElementById('add-player') as HTMLButtonElement;
 const startButton = document.getElementById('start-button') as HTMLButtonElement;
 
 let playerCount = 0;
 const maxPlayers = 16;
+
+interface TournamentBody {
+  host_id: number;
+  users: string[];
+}
 
 function updateStartVisibility() {
     const inputs = form.querySelectorAll('input');
@@ -19,7 +26,7 @@ function createPlayerField(index: number) {
     input.name = `player${index}`;
     input.placeholder = `Player ${index}`;
     input.required = true;
-    input.className = 'flex-1 p-2 rounded-lg border border-gray-300';
+    input.className = 'flex-1 p-2 rounded-lg border bg-blue-800 border-gray-800';
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
@@ -62,14 +69,19 @@ addButton.addEventListener('click', () => {
     addPlayerField();
 });
 
+
 startButton.addEventListener('click', () => {
+
+
+
     const names: string[] = Array.from(form.querySelectorAll('input'))
         .map(input => (input as HTMLInputElement).value.trim())
         .filter(name => name !== '');
 
     if (names.length >= 2) {
         console.log('Starting with players:', names);
-        alert(`Game starting with players: ${names.join(', ')}`);
+        api.tournament.createTournament(1, names);
+        //window.location.href = '/tournament_round.html';
     } else {
         alert('Please enter at least 2 player names.');
     }

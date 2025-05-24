@@ -277,6 +277,15 @@ export const api = {
         body: JSON.stringify({ friend_id: friendId })
       });
     }
+  },
+
+  tournament: {
+    async createTournament(host_id: number, users: string[]) {
+      return request('/tournaments', {
+        method: 'POST',
+        body: JSON.stringify({host_id: host_id, users: users}),
+      })
+    }
   }
 };
 

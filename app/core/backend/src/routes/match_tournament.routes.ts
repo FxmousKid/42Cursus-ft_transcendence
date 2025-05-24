@@ -238,7 +238,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 	});
 
 
-	fastify.patch<{ Body: ScoreUpdateBody }>('/match_tournaments/status', {
+	fastify.patch<{ Body: ScoreUpdateBody }>('/match_tournaments/scores', {
 		schema: {
 			body: {
 				type: 'object',
