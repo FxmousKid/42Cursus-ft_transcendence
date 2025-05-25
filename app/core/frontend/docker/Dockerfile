@@ -18,4 +18,4 @@ RUN npm run build
 EXPOSE 5173
 
 # Start the static server
-CMD ["npm", "run", "serve"] 
+CMD ["npm", "run", "dev"] 

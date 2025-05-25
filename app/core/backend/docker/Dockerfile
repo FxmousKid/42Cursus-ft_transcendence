@@ -13,8 +13,8 @@ RUN apk add zsh git curl jq && \
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application ## TEMPORARILY REMOVED BECAUSE OF BREAKING CHANGE
+# RUN npm run build 
 
 # Expose the port
 EXPOSE 3000
