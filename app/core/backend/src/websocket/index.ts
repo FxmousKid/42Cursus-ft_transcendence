@@ -22,8 +22,6 @@ interface DB {
     Tournament: typeof Tournament;
     MatchTournament: typeof MatchTournament;
     Match: any;
-    Tournament: typeof Tournament;
-    MatchTournament: typeof MatchTournament;
   };
   Sequelize?: typeof Sequelize;
 }
