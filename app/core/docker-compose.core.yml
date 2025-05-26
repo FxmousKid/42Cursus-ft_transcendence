@@ -18,6 +18,22 @@ services:
         condition: service_healthy
       modsec-nginx:
         condition: service_healthy
+    command:
+      - sh -c '
+          while [ ! -f /app/env/.env ]; do
+            echo "Waiting for .env file to be created..."
+            sleep 1
+          done
+          if [ -f /app/env/.env ]; then
+            set -o allexport
+            set -a
+            source /app/env/.env
+            set +o allexport
+            set +a
+          fi
+          echo "Starting frontend..."
+          npm run dev
+        '
 
   backend:
     build:
