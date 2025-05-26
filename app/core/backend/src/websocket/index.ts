@@ -4,9 +4,8 @@ import { Friendship } from '../models/friendship.model';
 import * as jwt from 'jsonwebtoken';
 import { Sequelize } from 'sequelize-typescript';
 import { Op } from 'sequelize';
-import { Tournament } from '../models/tournament.model';
-import { MatchTournament } from '../models/match_tournament.model';
-
+import { Tournament } from 'src/models/tournament.model';
+import { MatchTournament } from 'src/models/match_tournament.model';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
@@ -23,6 +22,8 @@ interface DB {
     Tournament: typeof Tournament;
     MatchTournament: typeof MatchTournament;
     Match: any;
+    Tournament: typeof Tournament;
+    MatchTournament: typeof MatchTournament;
   };
   Sequelize?: typeof Sequelize;
 }

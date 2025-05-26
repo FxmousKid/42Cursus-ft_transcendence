@@ -71,4 +71,5 @@ http://localhost:3001/api-docs
 
 ## Framework Implementation
 
-This backend uses Fastify as the framework to comply with the requirements of the ft_transcendence project. 
+This backend uses Fastify as the framework to comply with the requirements of the ft_transcendence project.
+._.
