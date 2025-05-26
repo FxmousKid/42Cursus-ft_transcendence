@@ -1,6 +1,6 @@
 # core/modsec-nginx/nginx/default.conf.template
 server {
-    listen       ${PORT} default_server;      # PORT defaults to 8080
+    listen       ${NGINX_SERVER_PORT} default_server;      # PORT defaults to 8080
     listen       ${SSL_PORT} ssl http2;       # SSL_PORT defaults to 8443
     server_name  ${SERVER_NAME};
 

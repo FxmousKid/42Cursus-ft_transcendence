@@ -39,9 +39,30 @@ fi
 if ! vault policy list | grep -q agent-policy; then
 	echo "Creating agent policy..."
 	vault policy write agent-policy - << EOF
+
 path "kv/+/elk/*" {
 	capabilities = ["read", "list"]
 }
+
+path "kv/+/frontend/*" {
+	capabilities = ["read", "list"]
+}
+path "kv/+/backend/*" {
+	capabilities = ["read", "list"]
+}
+path "kv/+/server/*" {
+	capabilities = ["read", "list"]
+}
+path "kv/+/database/*" {
+	capabilities = ["read", "list"]
+}
+path "kv/+/google_oauth/*" {
+	capabilities = ["read", "list"]
+}
+path "kv/+/session/*" {
+	capabilities = ["read", "list"]
+}
+
 EOF
 fi
 
@@ -54,8 +75,49 @@ fi
 # Check if secrets exist
 if ! vault kv get -field=username kv/elk/elasticsearch >/dev/null 2>&1; then
 	echo "Creating secrets..."
+
+	# ELK secrets
 	vault kv put kv/elk/elasticsearch username=elastic password=changeme
 	vault kv put kv/elk/kibana username=kibana_system password=changeme
+	vault kv put kv/elk/stack_version version='8.18.0'
+	vault kv put kv/elk/elastic_cluster_name name='docker-cluster'
+	vault kv put kv/elk/es_port port=9200
+	vault kv put kv/elk/kibana_port port=5601
+	vault kv put kv/elk/encryption_key key='c34d38b3a14956121ff2170e5030b471551370178f43e5626eec58b04a30fae2'
+
+	# Frontend secrets
+	vault kv put kv/frontend/app_name name=Transcendence
+	vault kv put kv/frontend/port port=5173
+	vault kv put kv/frontend/url url='http://localhost:5173'
+
+	# Backend secrets
+	vault kv put kv/backend/port port=3000
+	vault kv put kv/backend/url url='http://localhost:3000'
+	vault kv put kv/backend/api_url url='http://localhost:3000'
+	vault kv put kv/backend/vite_api_url url='http://backend:3000'
+	vault kv put kv/backend/jwt_secret secret='supersecretkey'
+	vault kv put kv/backend/jwt_expiration expiration='1d'
+	vault kv put kv/backend/node_env env='development'
+	vault kv put kv/backend/cors_origin origin='http://localhost:5173'
+	
+	# Server configuration
+	vault kv put kv/server/host host='0.0.0.0'
+
+	# Database
+	vault kv put kv/database/url url='sqlite:./database.sqlite'
+	vault kv put kv/database/path path='./database.sqlite'
+
+	# Google OAuth
+	vault kv put kv/google_oauth/client_id id='1083014390405-g5dbj1ac072b42ed7jejr47v6r1ruei2.apps.googleusercontent.com'
+	vault kv put kv/google_oauth/client_secret secret='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'
+	vault kv put kv/google_oauth/callback_url url='http://localhost:3000/auth/google/callback'
+
+	# Session
+	vault kv put kv/session/secret secret='42-transcendence-session-secret-must-be-at-least-32-characters-long'
+
+
+
+
 fi
 
 # deleting approle

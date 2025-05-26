@@ -19,6 +19,8 @@ interface DB {
   models: {
     User: typeof User;
     Friendship: typeof Friendship;
+    Tournament: typeof Tournament;
+    MatchTournament: typeof MatchTournament;
     Match: any;
     Tournament: typeof Tournament;
     MatchTournament: typeof MatchTournament;
