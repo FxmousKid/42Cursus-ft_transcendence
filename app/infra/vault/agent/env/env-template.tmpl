@@ -22,14 +22,13 @@ LICENSE=basic
 ES_PORT={{ with secret "kv/data/elk/es_port" }}{{ .Data.data.port }}{{ end }}
 KIBANA_PORT={{ with secret "kv/data/elk/kibana_port" }}{{ .Data.data.port }}{{ end }}
 
-# Port to expose Kibana to the host
-
 # SAMPLE Predefined Key only to be used in POC environments
 ENCRYPTION_KEY={{ with secret "kv/data/elk/encryption_key" }}{{ .Data.data.key }}{{ end }}
 XPACK_SECURITY_ENCRYPTIONKEY={{ with secret "kv/data/elk/encryption_key" }}{{ .Data.data.key }}{{ end }}
 XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY={{ with secret "kv/data/elk/encryption_key" }}{{ .Data.data.key }}{{ end }}
 XPACK_REPORTING_ENCRYPTIONKEY={{ with secret "kv/data/elk/encryption_key" }}{{ .Data.data.key }}{{ end }}
  
+
 # Frontend configuration
 VITE_APP_NAME={{ with secret "kv/data/frontend/app_name" }}{{ .Data.data.name }}{{ end }}
 FRONTEND_PORT={{ with secret "kv/data/frontend/port" }}{{ .Data.data.port }}{{ end }}
@@ -45,7 +44,7 @@ API_URL={{ with secret "kv/data/backend/api_url" }}{{ .Data.data.url }}{{ end }}
 VITE_API_URL={{ with secret "kv/data/backend/vite_api_url" }}{{ .Data.data.url }}{{ end }}
 
 # Server Configuration
-SERVER_PORT={{ with secret "kv/data/backend/port" }}{{ .Data.data.port }}{{ end }}
+NGINX_SERVER_PORT={{ with secret "kv/data/backend/port" }}{{ .Data.data.port }}{{ end }}
 HOST={{ with secret "kv/data/server/host" }}{{ .Data.data.host }}{{ end }}
 
 # Database Configuration
