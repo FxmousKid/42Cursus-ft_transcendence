@@ -167,6 +167,7 @@ dist
 .pnp.*
 app/.env
 app/core/backend/.env
+app/core/frontend/.env
 
 app/core/frontend/package-lock.json
 app/core/backend/package-lock.json
