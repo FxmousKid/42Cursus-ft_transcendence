@@ -13,22 +13,29 @@ interface BlockUserRequest {
 
 export function registerChatRoutes(fastify: FastifyInstance) {
   // Get chat messages with a specific user
-  fastify.get<{ Params: { user_id: number } }>('/chat/messages/:user_id', {
+  fastify.get<{ Params: { user_id: string } }>('/chat/messages/:user_id', {
     schema: {
       params: {
         type: 'object',
         required: ['user_id'],
         properties: {
-          user_id: { type: 'number' },
+          user_id: { type: 'string' },
         },
       },
     },
     preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Params: { user_id: number } }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Params: { user_id: string } }>, reply: FastifyReply) => {
       try {
         const { ChatMessage, UserBlock } = fastify.db.models;
         const userId = request.user!.id;
-        const { user_id } = request.params;
+        const user_id = parseInt(request.params.user_id);
+
+        if (isNaN(user_id)) {
+          return reply.status(400).send({
+            success: false,
+            message: 'Invalid user_id parameter',
+          });
+        }
 
         // Check if either user has blocked the other
         const blockExists = await UserBlock.findOne({
@@ -145,22 +152,29 @@ export function registerChatRoutes(fastify: FastifyInstance) {
   });
 
   // Unblock a user
-  fastify.delete<{ Params: { user_id: number } }>('/chat/block/:user_id', {
+  fastify.delete<{ Params: { user_id: string } }>('/chat/block/:user_id', {
     schema: {
       params: {
         type: 'object',
         required: ['user_id'],
         properties: {
-          user_id: { type: 'number' },
+          user_id: { type: 'string' },
         },
       },
     },
     preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Params: { user_id: number } }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Params: { user_id: string } }>, reply: FastifyReply) => {
       try {
         const { UserBlock } = fastify.db.models;
         const userId = request.user!.id;
-        const { user_id } = request.params;
+        const user_id = parseInt(request.params.user_id);
+
+        if (isNaN(user_id)) {
+          return reply.status(400).send({
+            success: false,
+            message: 'Invalid user_id parameter',
+          });
+        }
 
         const block = await UserBlock.findOne({
           where: {

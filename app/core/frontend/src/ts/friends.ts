@@ -4,6 +4,7 @@
 import { api } from './api';
 import { websocketService } from './websocket';
 import { friendshipService, Friend, PendingRequest } from './friendship';
+import { chatManager } from './chat';
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Friends page loaded');
@@ -262,6 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const avatar = friendElement.querySelector('.friend-avatar') as HTMLElement;
         const statusIndicator = friendElement.querySelector('.friend-status-indicator') as HTMLElement;
         const status = friendElement.querySelector('.friend-status') as HTMLElement;
+        const chatButton = friendElement.querySelector('.chat-friend-button') as HTMLButtonElement;
         const inviteButton = friendElement.querySelector('.invite-game-button') as HTMLButtonElement;
         const removeButton = friendElement.querySelector('.remove-friend-button') as HTMLButtonElement;
         
@@ -439,7 +441,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
         
-        // Add event listener to invite button
+        // Add event listeners
+        chatButton.addEventListener('click', () => {
+            chatManager.openChatWithFriend(friend.id, friend.username);
+        });
+
         inviteButton.addEventListener('click', () => {
             // Montrer animation sur le bouton pour indiquer que l'invitation est envoyée
             inviteButton.disabled = true;
@@ -1183,55 +1189,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 if (!token) {
                     console.error('No token available, auth service getToken returned null');
-                    // Essayer de forcer la restauration de session
-                    authService.restoreSession();
-                    const tokenAfterRestore = authService.getToken();
-                    console.log('Token after forced restore:', !!tokenAfterRestore);
-                    
-                    if (!tokenAfterRestore) {
-                        console.error('Still no token after restore, authentication may be invalid');
-                        showNotification('Problème d\'authentification, veuillez vous reconnecter', 'error');
-                        setTimeout(() => {
-                            window.location.href = '/login.html';
-                        }, 2000);
-                        return;
-                    }
+                    showNotification('Problème d\'authentification, veuillez vous reconnecter', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                    return;
                 }
                 
-                // Vérifier l'état de la connexion WebSocket
+                // Vérifier l'état de la connexion WebSocket une seule fois
                 const websocketService = (window as any).websocketService;
-                if (websocketService) {
-                    console.log('WebSocket service status on page load:', 
-                        websocketService.isConnected ? 
-                        (websocketService.isConnected() ? 'Connected' : 'Disconnected') : 
-                        'Function not available');
-                    
-                    // Forcer la connexion WebSocket
-                    console.log('Forcing WebSocket connection on page load');
+                if (websocketService && !websocketService.isConnected()) {
+                    console.log('WebSocket service not connected, initiating connection');
                     websocketService.connect();
-                    
-                    // Vérifier si la connexion a réussi après un court délai
-                    setTimeout(() => {
-                        console.log('WebSocket connection status after delay:', websocketService.isConnected());
-                        
-                        // Si toujours déconnecté après un délai, essayer à nouveau
-                        if (!websocketService.isConnected()) {
-                            console.log('Still disconnected, trying one more time...');
-                            websocketService.connect();
-                            
-                            // Vérifier à nouveau après un autre délai
-                            setTimeout(() => {
-                                const connected = websocketService.isConnected();
-                                console.log('WebSocket final connection status:', connected);
-                                
-                                if (!connected) {
-                                    console.warn('WebSocket connection failed after multiple attempts');
-                                    console.log('Switching to polling mode for friendship updates');
-                                    showNotification('Mode temps réel indisponible, passage en mode polling', 'info');
-                                }
-                            }, 1000);
-                        }
-                    }, 1000);
+                } else if (websocketService && websocketService.isConnected()) {
+                    console.log('WebSocket already connected');
+                } else {
+                    console.warn('WebSocket service not available');
                 }
             }
             
@@ -1246,7 +1219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             setInterval(() => {
                 console.log('Refreshing friend requests...');
                 loadFriendRequests();
-            }, 5000); // Rafraîchir toutes les 5 secondes pour une mise à jour plus rapide
+            }, 30000); // Rafraîchir toutes les 30 secondes au lieu de 5 pour réduire le spam
             
             console.log('Friends page initialized successfully');
         } catch (error) {

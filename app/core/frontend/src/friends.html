@@ -208,6 +208,11 @@
                 </div>
             </div>
             <div class="flex space-x-2">
+                <button class="chat-friend-button py-1.5 px-4 text-white text-sm rounded-lg transition-all duration-200 
+                    bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 
+                    shadow-md hover:shadow-green-500/30 flex items-center justify-center font-medium">
+                    <i class="fas fa-comments mr-1.5"></i> Chat
+                </button>
                 <button class="invite-game-button py-1.5 px-4 text-white text-sm rounded-lg transition-all duration-200 
                     bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 
                     shadow-md hover:shadow-blue-500/30 flex items-center justify-center font-medium">
@@ -406,6 +411,10 @@
             })
             .catch(error => console.error('Erreur lors du chargement du footer:', error));
             
+        // Variables globales pour le chat
+        let currentChatUserId = null;
+        let currentChatUsername = null;
+        
         // Ajouter un gestionnaire pour fermer les résultats de recherche
         document.addEventListener('DOMContentLoaded', () => {
             const closeButton = document.getElementById('close-search-results');
@@ -416,7 +425,220 @@
                     searchResults.classList.add('hidden');
                 });
             }
+            
+            // Gestionnaires pour les onglets
+            const searchTabBtn = document.getElementById('search-tab-btn');
+            const chatTabBtn = document.getElementById('chat-tab-btn');
+            const searchTab = document.getElementById('search-tab');
+            const chatTab = document.getElementById('chat-tab');
+            
+            // Fonction pour changer d'onglet
+            function switchTab(activeBtn, inactiveBtn, activeTab, inactiveTab) {
+                // Mettre à jour les boutons
+                activeBtn.classList.remove('bg-dark-700', 'text-gray-400');
+                activeBtn.classList.add('bg-gradient-to-r', 'from-blue-500', 'to-indigo-600', 'text-white', 'shadow-lg');
+                
+                inactiveBtn.classList.remove('bg-gradient-to-r', 'from-blue-500', 'to-indigo-600', 'text-white', 'shadow-lg');
+                inactiveBtn.classList.add('bg-dark-700', 'text-gray-400');
+                
+                // Mettre à jour les contenus
+                activeTab.classList.remove('hidden');
+                inactiveTab.classList.add('hidden');
+            }
+            
+            // Gestionnaires d'événements pour les onglets
+            searchTabBtn.addEventListener('click', () => {
+                switchTab(searchTabBtn, chatTabBtn, searchTab, chatTab);
+            });
+            
+            chatTabBtn.addEventListener('click', () => {
+                switchTab(chatTabBtn, searchTabBtn, chatTab, searchTab);
+            });
+            
+            // Gestionnaire pour le formulaire de chat
+            const chatForm = document.getElementById('chat-form');
+            const messageInput = document.getElementById('message-input');
+            
+            if (chatForm) {
+                chatForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    sendChatMessage();
+                });
+            }
+            
+            // Gestionnaire pour les options de chat
+            const chatOptionsBtn = document.getElementById('chat-options-btn');
+            const chatOptionsDropdown = document.getElementById('chat-options-dropdown');
+            
+            if (chatOptionsBtn && chatOptionsDropdown) {
+                chatOptionsBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    chatOptionsDropdown.classList.toggle('hidden');
+                });
+                
+                // Fermer le dropdown quand on clique ailleurs
+                document.addEventListener('click', () => {
+                    chatOptionsDropdown.classList.add('hidden');
+                });
+            }
+            
+            // Configurer les WebSockets pour le chat
+            setupChatWebSockets();
         });
+        
+        // Fonction pour envoyer un message de chat
+        function sendChatMessage() {
+            const messageInput = document.getElementById('message-input');
+            const content = messageInput.value.trim();
+            
+            if (!content || !currentChatUserId) {
+                return;
+            }
+            
+            const websocketService = window.websocketService;
+            
+            if (websocketService && websocketService.send) {
+                // Envoyer via WebSocket
+                websocketService.send('chat-message', {
+                    receiver_id: currentChatUserId,
+                    content: content,
+                    type: 'text'
+                });
+                
+                // Ajouter le message à l'interface immédiatement
+                addMessageToChat({
+                    content: content,
+                    type: 'text',
+                    sender_id: getCurrentUserId(),
+                    receiver_id: currentChatUserId,
+                    created_at: new Date()
+                }, true);
+                
+                messageInput.value = '';
+            } else {
+                console.warn('WebSocket non disponible pour le chat');
+            }
+        }
+        
+        // Fonction pour ajouter un message au chat
+        function addMessageToChat(message, isSentByMe) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageTemplate = document.getElementById('chat-message-template');
+            
+            if (!messageTemplate) return;
+            
+            const messageElement = document.importNode(messageTemplate.content, true);
+            const messageDiv = messageElement.querySelector('.message');
+            const messageContent = messageElement.querySelector('.message-content');
+            const messageText = messageElement.querySelector('.message-text');
+            const messageTime = messageElement.querySelector('.message-time');
+            
+            // Configurer le contenu du message
+            messageText.textContent = message.content;
+            
+            // Formater l'heure
+            const time = new Date(message.created_at);
+            messageTime.textContent = time.toLocaleTimeString('fr-FR', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            // Appliquer le style selon l'expéditeur
+            if (isSentByMe) {
+                messageDiv.classList.add('items-end');
+                messageContent.classList.add('bg-blue-600', 'text-white', 'ml-auto');
+            } else {
+                messageDiv.classList.add('items-start');
+                messageContent.classList.add('bg-dark-700', 'text-gray-200');
+            }
+            
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Fonction pour ouvrir une conversation avec un ami
+        function openChatWithFriend(friendId, friendUsername) {
+            currentChatUserId = friendId;
+            currentChatUsername = friendUsername;
+            
+            const chatMessages = document.getElementById('chat-messages');
+            const noChatSelected = document.getElementById('no-chat-selected');
+            const chatInput = document.getElementById('chat-input');
+            
+            // Masquer le message "aucun chat sélectionné"
+            noChatSelected.classList.add('hidden');
+            
+            // Afficher l'input de chat
+            chatInput.classList.remove('hidden');
+            
+            // Vider les messages précédents
+            chatMessages.innerHTML = '';
+            
+            // Charger l'historique des messages (si disponible)
+            loadChatHistory(friendId);
+            
+            // Changer vers l'onglet chat
+            document.getElementById('chat-tab-btn').click();
+        }
+        
+        // Fonction pour charger l'historique du chat
+        function loadChatHistory(friendId) {
+            // Pour l'instant, on affiche juste un message de bienvenue
+            const welcomeMessage = {
+                content: `Conversation avec ${currentChatUsername}`,
+                type: 'text',
+                sender_id: 0, // Message système
+                receiver_id: getCurrentUserId(),
+                created_at: new Date()
+            };
+            
+            const chatMessages = document.getElementById('chat-messages');
+            const welcomeDiv = document.createElement('div');
+            welcomeDiv.className = 'text-center text-gray-400 text-sm py-2 border-b border-dark-600 mb-4';
+            welcomeDiv.textContent = `Conversation avec ${currentChatUsername}`;
+            chatMessages.appendChild(welcomeDiv);
+        }
+        
+        // Fonction pour configurer les WebSockets pour le chat
+        function setupChatWebSockets() {
+            const websocketService = window.websocketService;
+            
+            if (!websocketService) {
+                console.warn('WebSocket service non disponible');
+                return;
+            }
+            
+            // Écouter les messages de chat reçus
+            websocketService.on('chat-message-received', (data) => {
+                console.log('Message de chat reçu:', data);
+                
+                // Si c'est un message de la conversation actuelle
+                if (currentChatUserId && data.sender_id === currentChatUserId) {
+                    addMessageToChat({
+                        content: data.content,
+                        type: data.type || 'text',
+                        sender_id: data.sender_id,
+                        receiver_id: getCurrentUserId(),
+                        created_at: data.created_at || new Date()
+                    }, false);
+                }
+            });
+            
+            // Écouter les confirmations d'envoi
+            websocketService.on('chat-message-sent', (data) => {
+                console.log('Message de chat envoyé:', data);
+            });
+        }
+        
+        // Fonction utilitaire pour obtenir l'ID de l'utilisateur actuel
+        function getCurrentUserId() {
+            const authService = window.authService;
+            if (authService && authService.getCurrentUser) {
+                const user = authService.getCurrentUser();
+                return user ? user.id : null;
+            }
+            return localStorage.getItem('user_id') ? parseInt(localStorage.getItem('user_id')) : null;
+        }
     </script>
     
     <!-- Core scripts -->

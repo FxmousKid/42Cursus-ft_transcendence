@@ -268,14 +268,42 @@ export const api = {
   // Game services
   game: {
     async getAllMatches() {
-      return request('/matches');
+      return request('/game/matches');
     },
     
     async sendInvitation(friendId: number) {
-      return request('/games/invite', {
+      return request('/game/invite', {
         method: 'POST',
         body: JSON.stringify({ friend_id: friendId })
       });
+    }
+  },
+
+  // Chat services
+  chat: {
+    async getMessages(userId: number) {
+      return request(`/chat/messages/${userId}`);
+    },
+    
+    async getUnreadCount() {
+      return request('/chat/unread');
+    },
+    
+    async blockUser(userId: number) {
+      return request('/chat/block', {
+        method: 'POST',
+        body: JSON.stringify({ blocked_id: userId })
+      });
+    },
+    
+    async unblockUser(userId: number) {
+      return request(`/chat/block/${userId}`, {
+        method: 'DELETE'
+      });
+    },
+    
+    async getBlockedUsers() {
+      return request('/chat/blocks');
     }
   }
 };

@@ -174,13 +174,19 @@ class WebSocketService {
     // If already connected, register with socket.io server
     if (this.socket && this.socket.connected) {
       console.log(`[Socket.io] Already connected, subscribing to ${event}`);
+      // Remove existing listeners for this event to avoid duplicates
+      this.socket.off(event);
       this.socket.on(event, (data: any) => {
         console.log(`[Socket.io] Direct event ${event}:`, data);
         // Add type if missing
         if (!data.type) {
           data.type = event;
         }
-        callback(data);
+        // Call all callbacks for this event
+        const eventCallbacks = this.listeners.get(event);
+        if (eventCallbacks) {
+          eventCallbacks.forEach(cb => cb(data));
+        }
       });
     }
   }
@@ -228,6 +234,10 @@ class WebSocketService {
     if (!this.socket || !this.socket.connected) return;
 
     console.log('[Socket.io] Reattaching event listeners');
+    
+    // Clear all existing listeners first to avoid duplicates
+    this.socket.removeAllListeners();
+    
     this.listeners.forEach((callbacks, event) => {
       console.log(`[Socket.io] Resubscribing to event: ${event}`);
       
