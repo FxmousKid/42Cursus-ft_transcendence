@@ -6,6 +6,8 @@ import { Friendship } from '../models/friendship.model';
 import { Match } from '../models/match.model';
 import { Tournament } from '../models/tournament.model';
 import { MatchTournament } from '../models/match_tournament.model';
+import { ChatMessage } from '../models/chat_message.model';
+import { UserBlock } from '../models/user_block.model';
 
 // Database configuration
 const DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, '../../database.sqlite');
@@ -21,6 +23,8 @@ declare module 'fastify' {
         Match: typeof Match;
         Tournament: typeof Tournament;
         MatchTournament: typeof MatchTournament;
+        ChatMessage: typeof ChatMessage;
+        UserBlock: typeof UserBlock;
       };
       Sequelize?: typeof Sequelize;
     };
@@ -32,7 +36,7 @@ const sequelize = new Sequelize({
   dialect: 'sqlite',
   storage: DATABASE_PATH,
   logging: process.env.NODE_ENV !== 'production' ? console.log : false,
-  models: [User, Friendship, Match, Tournament, MatchTournament], // Add your models here
+  models: [User, Friendship, Match, Tournament, MatchTournament, ChatMessage, UserBlock], // Add your models here
   define: {
     // Ensure foreign keys are respected
     // This helps with SQLite's limited ALTER TABLE support
@@ -68,6 +72,8 @@ export const configureDatabasePlugin = fp(async (fastify, options) => {
         Match,
         Tournament,
         MatchTournament,
+        ChatMessage,
+        UserBlock,
       },
     });
 
