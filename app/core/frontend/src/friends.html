@@ -141,25 +141,6 @@
 
                     <!-- Chat tab content -->
                     <div id="chat-tab" class="space-y-4 hidden">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-lg text-white flex items-center">
-                                <i class="fas fa-comments mr-2 text-blue-400"></i>
-                                Messages
-                            </h3>
-                            <div class="relative">
-                                <button id="chat-options-btn" class="text-gray-400 hover:text-white transition-colors">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <!-- Chat options dropdown -->
-                                <div id="chat-options-dropdown" class="hidden absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-dark-700 border border-dark-600 py-1 z-10">
-                                    <button class="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-dark-600 flex items-center">
-                                        <i class="fas fa-user-slash mr-2"></i>
-                                        Utilisateurs bloqués
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Chat messages container -->
                         <div id="chat-messages" class="h-96 overflow-y-auto custom-scrollbar space-y-4 mb-4">
                             <div id="no-chat-selected" class="flex flex-col items-center justify-center h-full text-gray-400">
@@ -177,9 +158,6 @@
                                             class="w-full bg-dark-700/90 border border-dark-600 focus:border-blue-500 rounded-xl py-3 px-4 pr-12 text-gray-200 transition duration-200 focus:ring-2 focus:ring-blue-500/30 outline-none placeholder-gray-400" 
                                             placeholder="Écrivez votre message..." 
                                             autocomplete="off">
-                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                            <i class="fas fa-paper-plane text-gray-500"></i>
-                                        </div>
                                     </div>
                                     <button type="submit" class="px-4 py-3 rounded-xl font-medium transition-all duration-200 
                                         bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 
@@ -189,10 +167,6 @@
                                 </form>
                                 <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
                                     <span>Appuyez sur Entrée pour envoyer</span>
-                                    <span class="flex items-center">
-                                        <i class="fas fa-shield-alt mr-1"></i>
-                                        Conversation sécurisée
-                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -379,17 +353,8 @@
         </div>
     </template>
     
-    <!-- Animation pour les nouveaux éléments -->
+    <!-- Simplified styles - removed complex blocking animations -->
     <style>
-        @keyframes pulse-once {
-            0% { opacity: 0.7; transform: scale(0.98); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.2); }
-            50% { opacity: 1; transform: scale(1.01); box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        .animate-pulse-once {
-            animation: pulse-once 1.2s ease-in-out 1;
-        }
-        
         /* Custom scrollbar */
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;

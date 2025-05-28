@@ -462,6 +462,136 @@ export function setupWebSocket(io: Server, db: DB) {
       }
     });
     
+    // Handle user blocking
+    socket.on('user-block', async (data: { blockedUserId: number }) => {
+      try {
+        console.log('[WebSocket] User block request received:', data);
+        const { blockedUserId } = data;
+        
+        if (!userId) {
+          socket.emit('error', { type: 'error', message: 'You are not authenticated' });
+          return;
+        }
+        
+        if (userId === blockedUserId) {
+          socket.emit('error', { type: 'error', message: 'Cannot block yourself' });
+          return;
+        }
+        
+        // Check if user exists
+        const userToBlock = await db.models.User.findByPk(blockedUserId);
+        if (!userToBlock) {
+          socket.emit('error', { type: 'error', message: 'User not found' });
+          return;
+        }
+        
+        // Create or find existing block
+        const [block, created] = await db.models.UserBlock.findOrCreate({
+          where: {
+            blocker_id: userId,
+            blocked_id: blockedUserId
+          }
+        });
+        
+        if (created) {
+          console.log(`[WebSocket] User ${userId} blocked user ${blockedUserId}`);
+          
+          // Get blocker user info
+          const blockerUser = await db.models.User.findByPk(userId);
+          if (!blockerUser) {
+            throw new Error('Blocker user not found');
+          }
+          
+          // Notify the blocked user if they're online (no message, just status update)
+          const blockedUserSocketId = onlineUsers.get(blockedUserId);
+          if (blockedUserSocketId) {
+            io.to(blockedUserSocketId).emit('user-blocked-by', {
+              type: 'user-blocked-by',
+              blocker_id: userId,
+              blocker_username: blockerUser.username
+            });
+          }
+          
+          // Confirm block to the blocker (no message)
+          socket.emit('user-block-success', {
+            type: 'user-block-success',
+            blocked_id: blockedUserId,
+            blocked_username: userToBlock.username
+          });
+        } else {
+          // User was already blocked
+          socket.emit('user-block-success', {
+            type: 'user-block-success',
+            blocked_id: blockedUserId,
+            blocked_username: userToBlock.username
+          });
+        }
+      } catch (error) {
+        console.error('[WebSocket] Error blocking user:', error);
+        socket.emit('error', { type: 'error', message: 'Failed to block user: ' + error.message });
+      }
+    });
+
+    // Handle user unblocking
+    socket.on('user-unblock', async (data: { unblockedUserId: number }) => {
+      try {
+        console.log('[WebSocket] User unblock request received:', data);
+        const { unblockedUserId } = data;
+        
+        if (!userId) {
+          socket.emit('error', { type: 'error', message: 'You are not authenticated' });
+          return;
+        }
+        
+        // Find the block
+        const block = await db.models.UserBlock.findOne({
+          where: {
+            blocker_id: userId,
+            blocked_id: unblockedUserId
+          }
+        });
+        
+        if (!block) {
+          socket.emit('error', { type: 'error', message: 'Block not found' });
+          return;
+        }
+        
+        // Get user info before removing block
+        const unblockedUser = await db.models.User.findByPk(unblockedUserId);
+        const unblockerUser = await db.models.User.findByPk(userId);
+        
+        if (!unblockedUser || !unblockerUser) {
+          socket.emit('error', { type: 'error', message: 'User not found' });
+          return;
+        }
+        
+        // Remove the block
+        await block.destroy();
+        
+        console.log(`[WebSocket] User ${userId} unblocked user ${unblockedUserId}`);
+        
+        // Notify the unblocked user if they're online (no message, just status update)
+        const unblockedUserSocketId = onlineUsers.get(unblockedUserId);
+        if (unblockedUserSocketId) {
+          io.to(unblockedUserSocketId).emit('user-unblocked-by', {
+            type: 'user-unblocked-by',
+            unblocker_id: userId,
+            unblocker_username: unblockerUser.username
+          });
+        }
+        
+        // Confirm unblock to the unblocker (no message)
+        socket.emit('user-unblock-success', {
+          type: 'user-unblock-success',
+          unblocked_id: unblockedUserId,
+          unblocked_username: unblockedUser.username
+        });
+      } catch (error) {
+        console.error('[WebSocket] Error unblocking user:', error);
+        socket.emit('error', { type: 'error', message: 'Failed to unblock user: ' + error.message });
+      }
+    });
+    
     // Handle disconnection
     socket.on('disconnect', async () => {
       console.log(`[WebSocket] User disconnected: ${username} (${userId})`);
