@@ -21,6 +21,12 @@ export class ChatManager {
             return;
         }
         
+        // CORRECTION: Configurer les WebSockets AVANT tout le reste
+        if (!this.chatWebSocketSetup) {
+            this.setupChatWebSocket();
+            this.chatWebSocketSetup = true;
+        }
+        
         // CORRECTION: Vider immédiatement l'interface pour éviter le mélange visuel
         const chatMessages = document.getElementById('chat-messages') as HTMLElement;
         if (chatMessages) {
@@ -41,12 +47,6 @@ export class ChatManager {
         setTimeout(() => {
             this.loadChatHistory(friendId);
         }, 50);
-        
-        // Configurer les WebSockets si ce n'est pas déjà fait
-        if (!this.chatWebSocketSetup) {
-            this.setupChatWebSocket();
-            this.chatWebSocketSetup = true;
-        }
         
         console.log(`✅ Chat opened with ${friendUsername}`);
     }
@@ -99,27 +99,32 @@ export class ChatManager {
         // Clear previous messages from UI
         chatMessages.innerHTML = '';
         
-        // Add header with friend info and game invite button
+        // Add simplified header with friend info
         const chatHeader = document.createElement('div');
-        chatHeader.className = 'sticky top-0 bg-dark-800 border-b border-dark-600 p-4 mb-4 z-10';
+        chatHeader.className = 'sticky top-0 bg-dark-800 border-b border-dark-600 p-3 mb-2 z-10';
         chatHeader.innerHTML = `
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <div class="w-10 h-10 bg-dark-600 rounded-full mr-3 flex items-center justify-center border-2 border-dark-500">
-                        <i class="fas fa-user text-gray-400"></i>
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-3 flex items-center justify-center">
+                        <i class="fas fa-user text-white"></i>
                     </div>
                     <div>
-                        <h3 class="font-semibold text-white">${friendUsername}</h3>
-                        <p class="text-sm text-gray-400">Conversation</p>
+                        <h3 class="font-medium text-white">${friendUsername}</h3>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
                     <button id="invite-game-chat" class="px-3 py-1.5 text-white text-sm rounded-lg transition-all duration-200 
-                        bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 
-                        shadow-md hover:shadow-blue-500/30 flex items-center justify-center font-medium">
-                        <i class="fas fa-gamepad mr-1.5"></i> Jouer
+                        bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 
+                        flex items-center justify-center font-medium">
+                        <i class="fas fa-gamepad mr-1.5"></i> 
+                        Jouer
                     </button>
-                    <button id="close-chat" class="text-gray-400 hover:text-white transition-colors">
+                    <button id="block-user-chat" class="px-3 py-1.5 text-gray-400 hover:text-red-400 text-sm rounded-lg transition-all duration-200 
+                        hover:bg-red-500/10 flex items-center justify-center">
+                        <i class="fas fa-ban"></i>
+                    </button>
+                    <button id="close-chat" class="text-gray-400 hover:text-white transition-all duration-200 
+                        p-1.5 rounded-lg hover:bg-dark-600">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -140,6 +145,14 @@ export class ChatManager {
         if (gameInviteButton) {
             gameInviteButton.addEventListener('click', () => {
                 this.sendGameInvitation(friendId, friendUsername);
+            });
+        }
+        
+        // Add event listener to block button
+        const blockButton = chatHeader.querySelector('#block-user-chat');
+        if (blockButton) {
+            blockButton.addEventListener('click', () => {
+                this.blockUser(friendId, friendUsername);
             });
         }
     }
@@ -186,9 +199,6 @@ export class ChatManager {
             
             // Clear input immediately
             messageInput.value = '';
-            
-            // Show typing indicator
-            this.showTypingIndicator();
         } else {
             console.warn('⚠️ WebSocket not available');
             this.showNotification('Connexion WebSocket indisponible', 'error');
@@ -200,38 +210,6 @@ export class ChatManager {
         this.sendChatMessage();
     }
     
-    private showTypingIndicator() {
-        const chatMessages = document.getElementById('chat-messages') as HTMLElement;
-        if (!chatMessages) return;
-        
-        // Remove existing typing indicator
-        const existingIndicator = document.getElementById('typing-indicator');
-        if (existingIndicator) {
-            existingIndicator.remove();
-        }
-        
-        const typingDiv = document.createElement('div');
-        typingDiv.id = 'typing-indicator';
-        typingDiv.className = 'flex items-center text-gray-400 text-sm py-2 px-4';
-        typingDiv.innerHTML = `
-            <div class="flex space-x-1 mr-2">
-                <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-                <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-            </div>
-            <span>Envoi en cours...</span>
-        `;
-        chatMessages.appendChild(typingDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-    
-    private removeTypingIndicator() {
-        const typingIndicator = document.getElementById('typing-indicator');
-        if (typingIndicator) {
-            typingIndicator.remove();
-        }
-    }
-    
     private addMessageToChat(messageData: any, isSentByMe: boolean = false) {
         const chatMessages = document.getElementById('chat-messages') as HTMLElement;
         
@@ -240,74 +218,44 @@ export class ChatManager {
             return;
         }
         
-        // CORRECTION: Vérifier que le message appartient à la conversation actuelle
-        if (this.currentChatUserId && 
-            messageData.sender_id !== this.currentChatUserId && 
-            messageData.receiver_id !== this.currentChatUserId &&
-            messageData.sender_id !== this.getCurrentUserId() &&
-            messageData.receiver_id !== this.getCurrentUserId()) {
-            console.log(`⚠️ Message ${messageData.id} doesn't belong to current conversation`);
+        // Simple check: only add if we're in a chat
+        if (!this.currentChatUserId) {
             return;
         }
         
-        // Debug log for message positioning
-        console.log(`💬 Adding message ${messageData.id}: sender=${messageData.sender_id}, receiver=${messageData.receiver_id}, isSentByMe=${isSentByMe}`);
+        console.log(`💬 Adding message: ${messageData.content} (sent by me: ${isSentByMe})`);
         
-        // Create message element
+        // Create simple message element
         const messageDiv = document.createElement('div');
-        messageDiv.className = `flex mb-4 ${isSentByMe ? 'justify-end' : 'justify-start'}`;
-        messageDiv.setAttribute('data-message-id', messageData.id?.toString() || '');
-        messageDiv.setAttribute('data-sender-id', messageData.sender_id?.toString() || '');
+        messageDiv.className = `flex mb-3 px-4 ${isSentByMe ? 'justify-end' : 'justify-start'}`;
         
         const messageContent = document.createElement('div');
-        messageContent.className = `max-w-[70%] rounded-lg px-4 py-2 shadow-md ${
+        messageContent.className = `max-w-[70%] rounded-lg px-3 py-2 ${
             isSentByMe 
                 ? 'bg-blue-600 text-white' 
-                : 'bg-dark-700 text-gray-200'
+                : 'bg-dark-700 text-gray-200 border border-dark-600'
         }`;
         
         const messageText = document.createElement('div');
         messageText.className = 'break-words';
         messageText.textContent = messageData.content;
         
-        const messageTime = document.createElement('div');
-        messageTime.className = `text-xs mt-1 ${isSentByMe ? 'text-blue-200' : 'text-gray-400'}`;
-        
-        // Format time
-        const messageDate = new Date(messageData.created_at);
-        messageTime.textContent = messageDate.toLocaleTimeString('fr-FR', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
-        
         messageContent.appendChild(messageText);
-        messageContent.appendChild(messageTime);
         messageDiv.appendChild(messageContent);
         
-        // Add to chat (before typing indicator if it exists)
-        const typingIndicator = document.getElementById('typing-indicator');
-        if (typingIndicator) {
-            chatMessages.insertBefore(messageDiv, typingIndicator);
-        } else {
-            chatMessages.appendChild(messageDiv);
-        }
+        // Add to chat
+        chatMessages.appendChild(messageDiv);
         
         // Scroll to bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
-        // Add to cache seulement si c'est pour la conversation actuelle
-        if (this.currentChatUserId) {
-            const conversationPartnerId = isSentByMe ? messageData.receiver_id : messageData.sender_id;
-            if (conversationPartnerId === this.currentChatUserId) {
-                if (!this.chatHistory.has(this.currentChatUserId)) {
-                    this.chatHistory.set(this.currentChatUserId, []);
-                }
-                const history = this.chatHistory.get(this.currentChatUserId);
-                if (history && !history.find(msg => msg.id === messageData.id)) {
-                    history.push(messageData);
-                    console.log(`📚 Message ${messageData.id} added to cache for user ${this.currentChatUserId}`);
-                }
-            }
+        // Simple cache management
+        if (!this.chatHistory.has(this.currentChatUserId)) {
+            this.chatHistory.set(this.currentChatUserId, []);
+        }
+        const history = this.chatHistory.get(this.currentChatUserId);
+        if (history && !history.find(msg => msg.id === messageData.id)) {
+            history.push(messageData);
         }
     }
     
@@ -321,35 +269,34 @@ export class ChatManager {
         
         // Create simple game invite message element
         const messageDiv = document.createElement('div');
-        messageDiv.className = `flex mb-4 ${isSentByMe ? 'justify-end' : 'justify-start'}`;
-        messageDiv.setAttribute('data-invite-id', inviteData.id?.toString() || '');
+        messageDiv.className = `flex mb-3 px-4 ${isSentByMe ? 'justify-end' : 'justify-start'}`;
         
         const messageContent = document.createElement('div');
-        messageContent.className = `max-w-[70%] rounded-lg px-4 py-3 shadow-md border ${
+        messageContent.className = `max-w-[70%] rounded-lg px-3 py-2 border ${
             isSentByMe 
-                ? 'bg-blue-600 text-white border-blue-500' 
-                : 'bg-dark-700 text-gray-200 border-dark-600'
+                ? 'bg-emerald-600 text-white border-emerald-500' 
+                : 'bg-purple-600/20 text-gray-200 border-purple-500'
         }`;
         
         // Simple game invite content
         const inviteText = document.createElement('div');
         inviteText.className = 'flex items-center mb-2';
         inviteText.innerHTML = `
-            <i class="fas fa-gamepad mr-2 text-sm"></i>
-            <span class="text-sm">${isSentByMe ? 'Invitation de jeu envoyée' : 'Invitation à jouer'}</span>
+            <i class="fas fa-gamepad mr-2"></i>
+            <span class="text-sm">${isSentByMe ? 'Invitation envoyée' : 'Invitation à jouer'}</span>
         `;
         
         messageContent.appendChild(inviteText);
         
-        // Add simple action buttons ONLY for received invitations
+        // Add action buttons ONLY for received invitations
         if (!isSentByMe) {
             const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'flex space-x-2 mt-2';
+            actionsDiv.className = 'flex space-x-2';
             actionsDiv.innerHTML = `
-                <button class="accept-game-invite px-3 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded transition-colors">
+                <button class="accept-game-invite px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded">
                     Accepter
                 </button>
-                <button class="reject-game-invite px-3 py-1 text-xs bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors">
+                <button class="reject-game-invite px-2 py-1 text-xs bg-gray-600 hover:bg-gray-700 text-white rounded">
                     Refuser
                 </button>
             `;
@@ -361,59 +308,32 @@ export class ChatManager {
             
             if (acceptBtn) {
                 acceptBtn.addEventListener('click', () => {
-                    console.log('🎮 Accepting game invitation:', inviteData.id);
                     this.acceptGameInvitation(inviteData.id);
-                    
-                    // Replace buttons with simple acceptance message
-                    actionsDiv.innerHTML = `
-                        <span class="text-green-400 text-xs">✓ Acceptée</span>
-                    `;
+                    actionsDiv.innerHTML = `<span class="text-green-300 text-xs">✓ Acceptée</span>`;
                 });
             }
             
             if (rejectBtn) {
                 rejectBtn.addEventListener('click', () => {
-                    console.log('❌ Rejecting game invitation:', inviteData.id);
                     this.rejectGameInvitation(inviteData.id);
-                    
-                    // Replace buttons with simple rejection message
-                    actionsDiv.innerHTML = `
-                        <span class="text-gray-400 text-xs">✗ Refusée</span>
-                    `;
+                    actionsDiv.innerHTML = `<span class="text-gray-300 text-xs">✗ Refusée</span>`;
                 });
             }
         }
         
-        // Add simple timestamp
-        const messageTime = document.createElement('div');
-        messageTime.className = `text-xs mt-2 ${isSentByMe ? 'text-blue-200' : 'text-gray-400'}`;
-        
-        // Format time
-        const messageDate = new Date(inviteData.created_at || new Date());
-        messageTime.textContent = messageDate.toLocaleTimeString('fr-FR', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
-        
-        messageContent.appendChild(messageTime);
         messageDiv.appendChild(messageContent);
         
-        // Add to chat (before typing indicator if it exists)
-        const typingIndicator = document.getElementById('typing-indicator');
-        if (typingIndicator) {
-            chatMessages.insertBefore(messageDiv, typingIndicator);
-        } else {
-            chatMessages.appendChild(messageDiv);
-        }
+        // Add to chat
+        chatMessages.appendChild(messageDiv);
         
         // Scroll to bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
-        console.log(`🎮 Simple game invitation added to chat - Sent by me: ${isSentByMe}, ID: ${inviteData.id}`);
+        console.log(`🎮 Game invitation added - Sent by me: ${isSentByMe}`);
     }
     
     private loadChatHistory(friendId: number) {
-        // CORRECTION: Vérifier que nous sommes toujours dans la bonne conversation
+        // Simple check: make sure we're still in the right conversation
         if (this.currentChatUserId !== friendId) {
             return;
         }
@@ -424,22 +344,14 @@ export class ChatManager {
             const messages = this.chatHistory.get(friendId)!;
             const currentUserId = this.getCurrentUserId();
             
-            // CORRECTION: Double vérification avant d'ajouter les messages
-            if (this.currentChatUserId === friendId && currentUserId) {
+            if (currentUserId) {
                 messages.forEach((message: any) => {
-                    // Vérifier encore une fois avant chaque message
-                    if (this.currentChatUserId === friendId) {
-                        // CORRECTION: Logique corrigée pour déterminer qui a envoyé le message
-                        const isSentByMe = message.sender_id === currentUserId;
-                        
-                        console.log(`📝 Message ${message.id}: sender=${message.sender_id}, currentUser=${currentUserId}, isSentByMe=${isSentByMe}`);
-                        
-                        // Check if it's a game invitation
-                        if (message.type === 'game_invite') {
-                            this.addGameInviteToChat(message, isSentByMe);
-                        } else {
-                            this.addMessageToChat(message, isSentByMe);
-                        }
+                    const isSentByMe = message.sender_id === currentUserId;
+                    
+                    if (message.type === 'game_invite') {
+                        this.addGameInviteToChat(message, isSentByMe);
+                    } else {
+                        this.addMessageToChat(message, isSentByMe);
                     }
                 });
                 
@@ -455,32 +367,24 @@ export class ChatManager {
             return;
         }
         
-        // Show loading indicator
+        // Show simple loading
         const loadingDiv = document.createElement('div');
         loadingDiv.id = 'chat-loading';
-        loadingDiv.className = 'flex items-center justify-center py-8 text-gray-400';
-        loadingDiv.innerHTML = `
-            <div class="flex items-center">
-                <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Chargement des messages...</span>
-            </div>
-        `;
+        loadingDiv.className = 'text-center text-gray-400 py-4';
+        loadingDiv.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Chargement...`;
         chatMessages.appendChild(loadingDiv);
         
         console.log('📡 Loading chat history from API');
         
-        // Load chat history from API
+        // Load from API
         api.chat.getMessages(friendId)
             .then(response => {
-                // CORRECTION: Vérifier que nous sommes toujours dans la bonne conversation
+                // Check we're still in the right conversation
                 if (this.currentChatUserId !== friendId) {
                     return;
                 }
                 
-                // Remove loading indicator
+                // Remove loading
                 const loading = document.getElementById('chat-loading');
                 if (loading) {
                     loading.remove();
@@ -490,63 +394,42 @@ export class ChatManager {
                     const messages = response.data;
                     const currentUserId = this.getCurrentUserId();
                     
-                    console.log(`📚 Loaded ${messages.length} messages for user ${currentUserId}`);
-                    
                     // Cache the messages
                     this.chatHistory.set(friendId, messages);
                     
                     if (messages.length > 0 && currentUserId) {
-                        // Add each message to the chat avec vérification
                         messages.forEach((message: any) => {
-                            // Vérifier encore une fois avant chaque message
-                            if (this.currentChatUserId === friendId) {
-                                // CORRECTION: Logique corrigée pour déterminer qui a envoyé le message
-                                const isSentByMe = message.sender_id === currentUserId;
-                                
-                                console.log(`📝 Message ${message.id}: sender=${message.sender_id}, currentUser=${currentUserId}, isSentByMe=${isSentByMe}`);
-                                
-                                // Check if it's a game invitation
-                                if (message.type === 'game_invite') {
-                                    this.addGameInviteToChat(message, isSentByMe);
-                                } else {
-                                    this.addMessageToChat(message, isSentByMe);
-                                }
+                            const isSentByMe = message.sender_id === currentUserId;
+                            
+                            if (message.type === 'game_invite') {
+                                this.addGameInviteToChat(message, isSentByMe);
+                            } else {
+                                this.addMessageToChat(message, isSentByMe);
                             }
                         });
                     } else {
-                        // Vérifier avant d'afficher l'indicateur
-                        if (this.currentChatUserId === friendId) {
-                            this.showNoMessagesIndicator();
-                        }
+                        this.showNoMessagesIndicator();
                     }
                 } else {
                     console.error('❌ Failed to load chat history');
-                    if (this.currentChatUserId === friendId) {
-                        this.showChatError('Erreur lors du chargement des messages');
-                    }
+                    this.showChatError('Erreur lors du chargement');
                 }
                 
-                // Scroll to bottom seulement si on est toujours dans la bonne conversation
-                if (this.currentChatUserId === friendId) {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }
+                chatMessages.scrollTop = chatMessages.scrollHeight;
             })
             .catch(error => {
                 console.error('❌ Error loading chat history:', error);
                 
-                // CORRECTION: Vérifier que nous sommes toujours dans la bonne conversation
                 if (this.currentChatUserId !== friendId) {
                     return;
                 }
                 
-                // Remove loading indicator
                 const loading = document.getElementById('chat-loading');
                 if (loading) {
                     loading.remove();
                 }
                 
-                this.showChatError('Erreur lors du chargement des messages');
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                this.showChatError('Erreur lors du chargement');
             });
     }
     
@@ -555,11 +438,23 @@ export class ChatManager {
         if (!chatMessages) return;
         
         const noMessagesDiv = document.createElement('div');
-        noMessagesDiv.className = 'text-center text-gray-500 text-sm py-8';
+        noMessagesDiv.className = 'text-center text-gray-500 py-12 px-6';
         noMessagesDiv.innerHTML = `
-            <i class="fas fa-comments text-3xl mb-3 text-gray-600"></i>
-            <p class="mb-2">Aucun message encore</p>
-            <p class="text-xs text-gray-600">Commencez la conversation !</p>
+            <div class="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-indigo-600/20 rounded-full mx-auto mb-4 flex items-center justify-center border border-blue-500/30">
+                <i class="fas fa-comments text-2xl text-blue-400"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-300 mb-2">Aucun message encore</h3>
+            <p class="text-sm text-gray-500 mb-4">Commencez la conversation avec ${this.currentChatUsername || 'votre ami'} !</p>
+            <div class="flex items-center justify-center space-x-4 text-xs text-gray-600">
+                <div class="flex items-center">
+                    <i class="fas fa-paper-plane mr-1"></i>
+                    <span>Tapez votre message</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-gamepad mr-1"></i>
+                    <span>Ou lancez un défi</span>
+                </div>
+            </div>
         `;
         chatMessages.appendChild(noMessagesDiv);
     }
@@ -587,7 +482,7 @@ export class ChatManager {
             return;
         }
 
-        // Éviter la configuration multiple
+        // Avoid multiple setups
         if (this.chatWebSocketSetup) {
             return;
         }
@@ -596,26 +491,20 @@ export class ChatManager {
 
         // Listen for incoming chat messages
         websocketService.on('chat-message-received', (data: any) => {
-            // CORRECTION: Vérifier que le message appartient à la conversation actuelle
-            if (!this.currentChatUserId || data.sender_id !== this.currentChatUserId) {
-                // Add to cache for the sender même si ce n'est pas la conversation actuelle
-                if (!this.chatHistory.has(data.sender_id)) {
-                    this.chatHistory.set(data.sender_id, []);
-                }
-                const senderHistory = this.chatHistory.get(data.sender_id);
-                if (senderHistory && !senderHistory.find(msg => msg.id === data.id)) {
-                    senderHistory.push(data);
-                }
-                
-                // Show notification for messages from other users
-                const senderName = this.getFriendNameById(data.sender_id) || 'Un ami';
-                console.log(`📨 New message from ${senderName}`);
-                return;
+            console.log('📨 Received message from:', data.sender_id);
+            
+            // Simple check: only show if it's from current chat user
+            if (this.currentChatUserId && data.sender_id === this.currentChatUserId) {
+                this.addMessageToChat({
+                    content: data.content,
+                    type: data.type || 'text',
+                    sender_id: data.sender_id,
+                    receiver_id: this.getCurrentUserId(),
+                    id: data.id
+                }, false);
             }
             
-            console.log('📨 Received message');
-            
-            // Add to cache for the sender
+            // Always cache the message for the sender
             if (!this.chatHistory.has(data.sender_id)) {
                 this.chatHistory.set(data.sender_id, []);
             }
@@ -623,89 +512,62 @@ export class ChatManager {
             if (senderHistory && !senderHistory.find(msg => msg.id === data.id)) {
                 senderHistory.push(data);
             }
-
-            // Only show message if it's from the current chat user
-            this.addMessageToChat({
-                content: data.content,
-                type: data.type || 'text',
-                sender_id: data.sender_id,
-                receiver_id: this.getCurrentUserId(),
-                created_at: data.created_at || new Date().toISOString()
-            }, false);
         });
 
         // Listen for message confirmations
         websocketService.on('chat-message-sent', (data: any) => {
-            console.log('✅ Message sent');
-            // Remove typing indicator
-            this.removeTypingIndicator();
+            console.log('✅ Message sent confirmation');
             
-            // CORRECTION: Vérifier que la confirmation est pour la conversation actuelle
-            if (!this.currentChatUserId || data.receiver_id !== this.currentChatUserId) {
-                return;
+            // Only show if it's for current conversation
+            if (this.currentChatUserId && data.receiver_id === this.currentChatUserId) {
+                this.addMessageToChat({
+                    content: data.content,
+                    type: data.type || 'text',
+                    sender_id: this.getCurrentUserId(),
+                    receiver_id: data.receiver_id,
+                    id: data.id
+                }, true);
             }
-            
-            // Add the confirmed message to chat only if it's for the current conversation
-            this.addMessageToChat({
-                content: data.content,
-                type: data.type || 'text',
-                sender_id: this.getCurrentUserId(),
-                receiver_id: data.receiver_id,
-                created_at: data.created_at || new Date().toISOString()
-            }, true);
         });
 
         // Listen for WebSocket errors
         websocketService.on('error', (data: any) => {
             console.error('❌ WebSocket error:', data);
-            // Remove typing indicator on error
-            this.removeTypingIndicator();
-            // Show error message
-            if (data.message && data.message.includes('chat')) {
-                this.showNotification(`Erreur de chat: ${data.message}`, 'error');
-            }
         });
 
         // Listen for game invitation confirmations
         websocketService.on('game-invite-sent', (data: any) => {
-            console.log('✅ Game invitation sent confirmation:', data);
-            this.showNotification('Invitation de jeu envoyée avec succès', 'success');
+            console.log('✅ Game invitation sent');
         });
 
         // Listen for incoming game invitations
         websocketService.on('game-invite-received', (data: any) => {
-            console.log('🎮 Game invitation received:', data);
-            const senderName = this.getFriendNameById(data.sender_id) || 'Un ami';
-            this.showNotification(`${senderName} vous invite à jouer !`, 'info');
+            console.log('🎮 Game invitation received from:', data.sender_id);
             
-            // Ensure the invitation has proper structure
             const invitationData = {
                 id: data.id,
                 sender_id: data.sender_id,
                 receiver_id: this.getCurrentUserId(),
-                created_at: data.created_at || new Date().toISOString(),
                 type: 'game_invite',
                 content: 'Invitation à jouer'
             };
             
-            // Add game invitation message to chat if it's from current conversation
+            // Add to current chat if it's from current user
             if (this.currentChatUserId === data.sender_id) {
-                console.log('🎮 Adding invitation to current chat');
                 this.addGameInviteToChat(invitationData, false);
-            } else {
-                console.log('🎮 Caching invitation for later');
-                // Cache the invitation for when the conversation is opened
-                if (!this.chatHistory.has(data.sender_id)) {
-                    this.chatHistory.set(data.sender_id, []);
-                }
-                const senderHistory = this.chatHistory.get(data.sender_id);
-                if (senderHistory) {
-                    senderHistory.push(invitationData);
-                }
+            }
+            
+            // Always cache for later
+            if (!this.chatHistory.has(data.sender_id)) {
+                this.chatHistory.set(data.sender_id, []);
+            }
+            const senderHistory = this.chatHistory.get(data.sender_id);
+            if (senderHistory) {
+                senderHistory.push(invitationData);
             }
         });
 
-        // Marquer comme configuré
+        // Mark as setup
         this.chatWebSocketSetup = true;
     }
     
@@ -897,6 +759,37 @@ export class ChatManager {
         } else {
             console.warn('⚠️ WebSocket not available');
             this.showNotification('Connexion WebSocket indisponible', 'error');
+        }
+    }
+    
+    // Method to block a user
+    blockUser(userId: number, username: string) {
+        if (confirm(`Êtes-vous sûr de vouloir bloquer ${username} ?`)) {
+            console.log(`Blocking user ${username} (ID: ${userId})`);
+            
+            // Call API to block user using chat endpoint
+            api.chat.blockUser(userId)
+                .then((response: any) => {
+                    if (response.success) {
+                        console.log(`✅ User ${username} blocked successfully`);
+                        this.showNotification(`${username} a été bloqué`, 'success');
+                        
+                        // Close the chat conversation
+                        this.closeChatConversation();
+                        
+                        // Refresh friends list to update UI
+                        if ((window as any).friendsManager) {
+                            (window as any).friendsManager.loadFriends();
+                        }
+                    } else {
+                        console.error('❌ Failed to block user:', response.message);
+                        this.showNotification('Erreur lors du blocage', 'error');
+                    }
+                })
+                .catch((error: any) => {
+                    console.error('❌ Error blocking user:', error);
+                    this.showNotification('Erreur lors du blocage', 'error');
+                });
         }
     }
 }
