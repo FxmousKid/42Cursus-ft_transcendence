@@ -269,13 +269,6 @@ export const api = {
   game: {
     async getAllMatches() {
       return request('/game/matches');
-    },
-    
-    async sendInvitation(friendId: number) {
-      return request('/game/invite', {
-        method: 'POST',
-        body: JSON.stringify({ friend_id: friendId })
-      });
     }
   },
 

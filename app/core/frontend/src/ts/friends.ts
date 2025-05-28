@@ -264,7 +264,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const statusIndicator = friendElement.querySelector('.friend-status-indicator') as HTMLElement;
         const status = friendElement.querySelector('.friend-status') as HTMLElement;
         const chatButton = friendElement.querySelector('.chat-friend-button') as HTMLButtonElement;
-        const inviteButton = friendElement.querySelector('.invite-game-button') as HTMLButtonElement;
         const removeButton = friendElement.querySelector('.remove-friend-button') as HTMLButtonElement;
         
         // Set username
@@ -445,56 +444,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         chatButton.addEventListener('click', () => {
             chatManager.openChatWithFriend(friend.id, friend.username);
         });
-
-        inviteButton.addEventListener('click', () => {
-            // Montrer animation sur le bouton pour indiquer que l'invitation est envoyée
-            inviteButton.disabled = true;
-            inviteButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Envoi...';
-            inviteButton.classList.add('opacity-75');
-            
-            // Send game invitation via API
-            sendGameInvitation(friend.id, friend.username);
-            
-            // Rétablir le bouton après un court délai
-            setTimeout(() => {
-                inviteButton.disabled = false;
-                inviteButton.innerHTML = '<i class="fas fa-gamepad mr-1.5"></i> Jouer';
-                inviteButton.classList.remove('opacity-75');
-            }, 1500);
-        });
         
         // Add to container
         friendsContainer.appendChild(friendElement);
-    }
-    
-    // Function to send game invitation
-    function sendGameInvitation(friendId: number, friendUsername: string) {
-        // Check if websocket available
-        const websocketService = (window as any).websocketService;
-        
-        if (websocketService && websocketService.send) {
-            // Send game invitation via WebSocket
-            websocketService.send('game-invite', { 
-                friendId: friendId, 
-                friendUsername: friendUsername 
-            });
-            
-            showNotification(`Invitation envoyée à ${friendUsername}`, 'success');
-        } else {
-            // Fallback to API
-            api.game.sendInvitation(friendId)
-                .then((response: any) => {
-                    if (response.success) {
-                        showNotification(`Invitation envoyée à ${friendUsername}`, 'success');
-                    } else {
-                        showNotification(`Erreur: ${response.message}`, 'error');
-                    }
-                })
-                .catch((error: any) => {
-                    console.error('Error sending game invitation:', error);
-                    showNotification("Erreur lors de l'envoi de l'invitation", 'error');
-                });
-        }
     }
     
     // Function to load friend requests

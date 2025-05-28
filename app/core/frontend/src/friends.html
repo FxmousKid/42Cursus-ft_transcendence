@@ -170,17 +170,31 @@
 
                         <!-- Chat input -->
                         <div id="chat-input" class="hidden">
-                            <form id="chat-form" class="flex space-x-2">
-                                <input type="text" id="message-input" 
-                                    class="flex-grow bg-dark-700/80 border border-dark-600 focus:border-blue-500 rounded-lg py-2 px-4 text-gray-200 transition duration-200 focus:ring-2 focus:ring-blue-500/30 outline-none" 
-                                    placeholder="Écrivez votre message..." 
-                                    autocomplete="off">
-                                <button type="submit" class="px-4 py-2 rounded-lg font-medium transition-all duration-200 
-                                    bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 
-                                    text-white shadow-lg hover:shadow-blue-500/25 flex items-center justify-center">
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                            </form>
+                            <div class="border-t border-dark-600 pt-4">
+                                <form id="chat-form" class="flex space-x-3">
+                                    <div class="flex-grow relative">
+                                        <input type="text" id="message-input" 
+                                            class="w-full bg-dark-700/90 border border-dark-600 focus:border-blue-500 rounded-xl py-3 px-4 pr-12 text-gray-200 transition duration-200 focus:ring-2 focus:ring-blue-500/30 outline-none placeholder-gray-400" 
+                                            placeholder="Écrivez votre message..." 
+                                            autocomplete="off">
+                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <i class="fas fa-paper-plane text-gray-500"></i>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="px-4 py-3 rounded-xl font-medium transition-all duration-200 
+                                        bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 
+                                        text-white shadow-lg hover:shadow-blue-500/25 flex items-center justify-center min-w-[50px]">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </form>
+                                <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
+                                    <span>Appuyez sur Entrée pour envoyer</span>
+                                    <span class="flex items-center">
+                                        <i class="fas fa-shield-alt mr-1"></i>
+                                        Conversation sécurisée
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -212,11 +226,6 @@
                     bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 
                     shadow-md hover:shadow-green-500/30 flex items-center justify-center font-medium">
                     <i class="fas fa-comments mr-1.5"></i> Chat
-                </button>
-                <button class="invite-game-button py-1.5 px-4 text-white text-sm rounded-lg transition-all duration-200 
-                    bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 
-                    shadow-md hover:shadow-blue-500/30 flex items-center justify-center font-medium">
-                    <i class="fas fa-gamepad mr-1.5"></i> Jouer
                 </button>
                 <button class="remove-friend-button py-1.5 px-3 text-white text-sm rounded-lg transition-all duration-200
                     bg-dark-600 hover:bg-red-600/80 shadow-md hover:shadow-red-500/30 flex items-center justify-center">
@@ -462,7 +471,9 @@
             if (chatForm) {
                 chatForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    sendChatMessage();
+                    if (window.chatManager) {
+                        window.chatManager.sendMessage();
+                    }
                 });
             }
             
@@ -482,153 +493,14 @@
                 });
             }
             
-            // Configurer les WebSockets pour le chat
-            setupChatWebSockets();
+            // CORRECTION: Utiliser le ChatManager au lieu de setupChatWebSockets
+            // Le ChatManager gère automatiquement les WebSockets
+            if (window.chatManager) {
+                console.log('ChatManager disponible');
+            } else {
+                console.warn('ChatManager non disponible');
+            }
         });
-        
-        // Fonction pour envoyer un message de chat
-        function sendChatMessage() {
-            const messageInput = document.getElementById('message-input');
-            const content = messageInput.value.trim();
-            
-            if (!content || !currentChatUserId) {
-                return;
-            }
-            
-            const websocketService = window.websocketService;
-            
-            if (websocketService && websocketService.send) {
-                // Envoyer via WebSocket
-                websocketService.send('chat-message', {
-                    receiver_id: currentChatUserId,
-                    content: content,
-                    type: 'text'
-                });
-                
-                // Ajouter le message à l'interface immédiatement
-                addMessageToChat({
-                    content: content,
-                    type: 'text',
-                    sender_id: getCurrentUserId(),
-                    receiver_id: currentChatUserId,
-                    created_at: new Date()
-                }, true);
-                
-                messageInput.value = '';
-            } else {
-                console.warn('WebSocket non disponible pour le chat');
-            }
-        }
-        
-        // Fonction pour ajouter un message au chat
-        function addMessageToChat(message, isSentByMe) {
-            const chatMessages = document.getElementById('chat-messages');
-            const messageTemplate = document.getElementById('chat-message-template');
-            
-            if (!messageTemplate) return;
-            
-            const messageElement = document.importNode(messageTemplate.content, true);
-            const messageDiv = messageElement.querySelector('.message');
-            const messageContent = messageElement.querySelector('.message-content');
-            const messageText = messageElement.querySelector('.message-text');
-            const messageTime = messageElement.querySelector('.message-time');
-            
-            // Configurer le contenu du message
-            messageText.textContent = message.content;
-            
-            // Formater l'heure
-            const time = new Date(message.created_at);
-            messageTime.textContent = time.toLocaleTimeString('fr-FR', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-            
-            // Appliquer le style selon l'expéditeur
-            if (isSentByMe) {
-                messageDiv.classList.add('items-end');
-                messageContent.classList.add('bg-blue-600', 'text-white', 'ml-auto');
-            } else {
-                messageDiv.classList.add('items-start');
-                messageContent.classList.add('bg-dark-700', 'text-gray-200');
-            }
-            
-            chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        // Fonction pour ouvrir une conversation avec un ami
-        function openChatWithFriend(friendId, friendUsername) {
-            currentChatUserId = friendId;
-            currentChatUsername = friendUsername;
-            
-            const chatMessages = document.getElementById('chat-messages');
-            const noChatSelected = document.getElementById('no-chat-selected');
-            const chatInput = document.getElementById('chat-input');
-            
-            // Masquer le message "aucun chat sélectionné"
-            noChatSelected.classList.add('hidden');
-            
-            // Afficher l'input de chat
-            chatInput.classList.remove('hidden');
-            
-            // Vider les messages précédents
-            chatMessages.innerHTML = '';
-            
-            // Charger l'historique des messages (si disponible)
-            loadChatHistory(friendId);
-            
-            // Changer vers l'onglet chat
-            document.getElementById('chat-tab-btn').click();
-        }
-        
-        // Fonction pour charger l'historique du chat
-        function loadChatHistory(friendId) {
-            // Pour l'instant, on affiche juste un message de bienvenue
-            const welcomeMessage = {
-                content: `Conversation avec ${currentChatUsername}`,
-                type: 'text',
-                sender_id: 0, // Message système
-                receiver_id: getCurrentUserId(),
-                created_at: new Date()
-            };
-            
-            const chatMessages = document.getElementById('chat-messages');
-            const welcomeDiv = document.createElement('div');
-            welcomeDiv.className = 'text-center text-gray-400 text-sm py-2 border-b border-dark-600 mb-4';
-            welcomeDiv.textContent = `Conversation avec ${currentChatUsername}`;
-            chatMessages.appendChild(welcomeDiv);
-        }
-        
-        // Fonction pour configurer les WebSockets pour le chat
-        function setupChatWebSockets() {
-            const websocketService = window.websocketService;
-            
-            if (!websocketService) {
-                console.warn('WebSocket service non disponible');
-                return;
-            }
-            
-            // Écouter les messages de chat reçus
-            websocketService.on('chat-message-received', (data) => {
-                console.log('Message de chat reçu:', data);
-                
-                // Si c'est un message de la conversation actuelle
-                if (currentChatUserId && data.sender_id === currentChatUserId) {
-                    addMessageToChat({
-                        content: data.content,
-                        type: data.type || 'text',
-                        sender_id: data.sender_id,
-                        receiver_id: getCurrentUserId(),
-                        created_at: data.created_at || new Date()
-                    }, false);
-                }
-            });
-            
-            // Écouter les confirmations d'envoi
-            websocketService.on('chat-message-sent', (data) => {
-                console.log('Message de chat envoyé:', data);
-            });
-        }
         
         // Fonction utilitaire pour obtenir l'ID de l'utilisateur actuel
         function getCurrentUserId() {
