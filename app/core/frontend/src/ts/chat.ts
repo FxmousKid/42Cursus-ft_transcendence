@@ -267,6 +267,7 @@ class BlockingManager {
     }
     
     private getCurrentUserId(): number | null {
+        // Try to get from auth service first
         const authService = (window as any).authService;
         if (authService?.getUserId) {
             const userId = parseInt(authService.getUserId());
@@ -492,7 +493,7 @@ export class ChatManager {
         }
     }
     
-    sendChatMessage() {
+    async sendChatMessage() {
         const messageInput = document.getElementById('message-input') as HTMLInputElement;
         
         if (!messageInput) {
@@ -515,20 +516,59 @@ export class ChatManager {
         
         console.log(`📤 Sending: "${message}"`);
         
-        // Send message via WebSocket
+        // Clear input immediately to provide immediate feedback
+        messageInput.value = '';
+        
+        // Send message via WebSocket with improved connection handling
         const websocketService = (window as any).websocketService;
-        if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
-            websocketService.send('chat-message', {
-                receiver_id: this.currentChatUserId,
-                content: message,
-                type: 'text'
-            });
-            
-            // Clear input immediately
-            messageInput.value = '';
+        if (websocketService) {
+            try {
+                // Ensure connection is established before sending
+                const sent = await websocketService.send('chat-message', {
+                    receiver_id: this.currentChatUserId,
+                    content: message,
+                    type: 'text'
+                });
+                
+                if (!sent) {
+                    console.warn('⚠️ Failed to send message, restoring input');
+                    // Restore message in input if sending failed
+                    messageInput.value = message;
+                    
+                    // Show user feedback
+                    this.showTemporaryError('Message non envoyé - problème de connexion');
+                }
+            } catch (error) {
+                console.error('❌ Error sending message:', error);
+                // Restore message in input if sending failed
+                messageInput.value = message;
+                this.showTemporaryError('Erreur lors de l\'envoi du message');
+            }
         } else {
-            console.warn('⚠️ WebSocket not available');
+            console.warn('⚠️ WebSocket service not available');
+            // Restore message in input
+            messageInput.value = message;
+            this.showTemporaryError('Service de chat indisponible');
         }
+    }
+    
+    private showTemporaryError(message: string) {
+        const chatMessages = document.getElementById('chat-messages') as HTMLElement;
+        if (!chatMessages) return;
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'bg-red-500/20 border border-red-500/30 rounded-lg p-3 mx-4 mb-3 text-red-300 text-sm';
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
+        
+        chatMessages.appendChild(errorDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Remove error after 3 seconds
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.parentNode.removeChild(errorDiv);
+            }
+        }, 3000);
     }
     
     // Alias pour compatibilité
@@ -861,7 +901,7 @@ export class ChatManager {
         chatMessages.appendChild(errorDiv);
     }
     
-    private setupChatWebSocket() {
+    private async setupChatWebSocket() {
         const websocketService = (window as any).websocketService;
         if (!websocketService) {
             console.error('❌ WebSocket service not available');
@@ -874,6 +914,18 @@ export class ChatManager {
         }
 
         console.log('🔌 Setting up chat WebSocket');
+
+        // Ensure WebSocket is connected before setting up listeners
+        try {
+            if (!websocketService.isConnected()) {
+                console.log('🔌 WebSocket not connected, establishing connection...');
+                await websocketService.connect();
+                console.log('✅ WebSocket connection established for chat');
+            }
+        } catch (error) {
+            console.error('❌ Failed to establish WebSocket connection for chat:', error);
+            // Continue with setup anyway, listeners will be attached when connection is established
+        }
 
         // Listen for incoming chat messages
         websocketService.on('chat-message-received', (data: any) => {
@@ -990,67 +1042,6 @@ export class ChatManager {
         return null;
     }
     
-    private getCurrentUserId(): number | null {
-        const authService = (window as any).authService;
-        if (authService?.getUserId) {
-            const userIdStr = authService.getUserId();
-            if (userIdStr) {
-                const userId = parseInt(userIdStr);
-                if (!isNaN(userId)) {
-                    console.log(`🔍 Current user ID from authService: ${userId}`);
-                    return userId;
-                }
-            }
-        }
-        
-        // 2. Try localStorage as fallback (both keys)
-        let userIdStr = localStorage.getItem('user_id') || localStorage.getItem('USER_ID_KEY');
-        if (userIdStr) {
-            const userId = parseInt(userIdStr);
-            if (!isNaN(userId)) {
-                console.log(`🔍 Current user ID from localStorage: ${userId}`);
-                return userId;
-            }
-        }
-        
-        // 3. Try sessionStorage as fallback
-        userIdStr = sessionStorage.getItem('user_id') || sessionStorage.getItem('USER_ID_KEY');
-        if (userIdStr) {
-            const userId = parseInt(userIdStr);
-            if (!isNaN(userId)) {
-                console.log(`🔍 Current user ID from sessionStorage: ${userId}`);
-                return userId;
-            }
-        }
-        
-        // 4. Try to get from JWT token
-        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                if (payload.id) {
-                    const userId = typeof payload.id === 'number' ? payload.id : parseInt(payload.id);
-                    if (!isNaN(userId)) {
-                        console.log(`🔍 Current user ID from JWT: ${userId}`);
-                        return userId;
-                    }
-                }
-            } catch (error) {
-                console.warn('⚠️ Failed to parse JWT token:', error);
-            }
-        }
-        
-        console.error('❌ Could not determine current user ID');
-        console.log('Debug info:', {
-            authService: !!authService,
-            authServiceUserId: authService?.getUserId?.(),
-            localStorage_user_id: localStorage.getItem('user_id'),
-            localStorage_auth_token: !!localStorage.getItem('auth_token'),
-            sessionStorage_user_id: sessionStorage.getItem('user_id')
-        });
-        return null;
-    }
-    
     private initializeChatEventListeners() {
         console.log('🎧 Initializing chat listeners');
         
@@ -1087,6 +1078,24 @@ export class ChatManager {
         return this.currentChatUsername;
     }
     
+    // Get current user ID
+    private getCurrentUserId(): number | null {
+        // Try to get from auth service first
+        const authService = (window as any).authService;
+        if (authService?.getUserId) {
+            const userId = parseInt(authService.getUserId());
+            if (!isNaN(userId)) return userId;
+        }
+        
+        const userIdStr = localStorage.getItem('user_id');
+        if (userIdStr) {
+            const userId = parseInt(userIdStr);
+            if (!isNaN(userId)) return userId;
+        }
+        
+        return null;
+    }
+
     // Method to clear chat history cache
     clearChatHistory(friendId?: number) {
         if (friendId) {
