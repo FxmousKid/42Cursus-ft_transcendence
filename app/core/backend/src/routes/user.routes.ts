@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { User } from '../models/user.model';
 import { Op } from 'sequelize';
+import multipart from '@fastify/multipart';
 
 interface UserUpdateBody {
   username?: string;
@@ -14,6 +15,13 @@ interface StatusUpdateBody {
 
 // Define the route handler
 export function registerUserRoutes(fastify: FastifyInstance) {
+  // Register multipart support for this plugin
+  fastify.register(multipart, {
+    limits: {
+      fileSize: 2 * 1024 * 1024, // 2MB limit
+    }
+  });
+
   // Get all users
   fastify.get('/users', {
     schema: {
@@ -32,6 +40,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
                   email: { type: 'string' },
                   status: { type: 'string' },
                   avatar_url: { type: ['string', 'null'] },
+                  has_avatar_data: { type: 'boolean' },
                 }
               }
             }
@@ -45,7 +54,14 @@ export function registerUserRoutes(fastify: FastifyInstance) {
         const users = await fastify.db.models.User.findAll({
           attributes: ['id', 'username', 'email', 'status', 'avatar_url']
         });
-        return { success: true, data: users };
+        
+        // Add has_avatar_data flag without sending the actual data
+        const usersWithAvatarFlag = users.map(user => ({
+          ...user.toJSON(),
+          has_avatar_data: !!user.avatar_data
+        }));
+        
+        return { success: true, data: usersWithAvatarFlag };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });
@@ -71,6 +87,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
                   email: { type: 'string' },
                   status: { type: 'string' },
                   avatar_url: { type: ['string', 'null'] },
+                  has_avatar_data: { type: 'boolean' },
                 }
               }
             }
@@ -83,9 +100,19 @@ export function registerUserRoutes(fastify: FastifyInstance) {
       try {
         const users = await fastify.db.models.User.findAll({
           where: { status: 'online' },
-          attributes: ['id', 'username', 'email', 'status', 'avatar_url']
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data']
         });
-        return { success: true, data: users };
+        
+        const usersWithAvatarFlag = users.map(user => ({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          status: user.status,
+          avatar_url: user.avatar_url,
+          has_avatar_data: !!user.avatar_data
+        }));
+        
+        return { success: true, data: usersWithAvatarFlag };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });
@@ -109,6 +136,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
                 email: { type: 'string' },
                 status: { type: 'string' },
                 avatar_url: { type: ['string', 'null'] },
+                has_avatar_data: { type: 'boolean' },
               }
             }
           }
@@ -119,14 +147,200 @@ export function registerUserRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const user = await fastify.db.models.User.findByPk(request.user!.id, {
-          attributes: ['id', 'username', 'email', 'status', 'avatar_url']
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data']
         });
 
         if (!user) {
           return reply.status(404).send({ success: false, message: 'User not found' });
         }
+        
+        const userData = {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          status: user.status,
+          avatar_url: user.avatar_url,
+          has_avatar_data: !!user.avatar_data
+        };
+        
+        return { success: true, data: userData };
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(400).send({ success: false, message: error.message });
+      }
+    }
+  });
 
-        return { success: true, data: user };
+  // Upload avatar image
+  fastify.post('/users/profile/avatar', {
+    preHandler: fastify.authenticate,
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const data = await request.file();
+        
+        if (!data) {
+          return reply.status(400).send({ success: false, message: 'No file uploaded' });
+        }
+
+        // Validate file type
+        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedMimeTypes.includes(data.mimetype)) {
+          return reply.status(400).send({ 
+            success: false, 
+            message: 'Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.' 
+          });
+        }
+
+        // Check file size (2MB limit already enforced by multipart config, but double-check)
+        const buffer = await data.toBuffer();
+        if (buffer.length > 2 * 1024 * 1024) {
+          return reply.status(400).send({ 
+            success: false, 
+            message: 'File too large. Maximum size is 2MB.' 
+          });
+        }
+
+        // Find user and update avatar data
+        const user = await fastify.db.models.User.findByPk(request.user!.id);
+        if (!user) {
+          return reply.status(404).send({ success: false, message: 'User not found' });
+        }
+
+        // Store the image as-is without processing
+        user.avatar_data = buffer;
+        user.avatar_mime_type = data.mimetype; // Keep original mime type
+        await user.save();
+
+        return { 
+          success: true, 
+          message: 'Avatar uploaded successfully',
+          data: {
+            has_avatar_data: true
+          }
+        };
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({ 
+          success: false, 
+          message: 'Failed to upload avatar' 
+        });
+      }
+    }
+  });
+
+  // Serve avatar image
+  fastify.get('/users/avatar/:userId', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          userId: { type: 'string' }
+        }
+      }
+    },
+    handler: async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+      try {
+        const user = await fastify.db.models.User.findByPk(request.params.userId, {
+          attributes: ['avatar_data', 'avatar_mime_type']
+        });
+
+        if (!user || !user.avatar_data) {
+          // Return default avatar placeholder
+          return reply.status(404).send({ success: false, message: 'Avatar not found' });
+        }
+
+        // Set proper content type and caching headers
+        reply
+          .header('Content-Type', user.avatar_mime_type || 'image/jpeg')
+          .header('Cache-Control', 'public, max-age=3600') // Cache for 1 hour
+          .send(user.avatar_data);
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({ success: false, message: 'Failed to load avatar' });
+      }
+    }
+  });
+
+  // Delete uploaded avatar
+  fastify.delete('/users/profile/avatar', {
+    preHandler: fastify.authenticate,
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const user = await fastify.db.models.User.findByPk(request.user!.id);
+        
+        if (!user) {
+          return reply.status(404).send({ success: false, message: 'User not found' });
+        }
+
+        // Clear avatar data but keep avatar_url if it exists
+        user.avatar_data = null;
+        user.avatar_mime_type = null;
+        await user.save();
+
+        return { 
+          success: true, 
+          message: 'Avatar removed successfully',
+          data: {
+            has_avatar_data: false,
+            avatar_url: user.avatar_url
+          }
+        };
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({ success: false, message: 'Failed to remove avatar' });
+      }
+    }
+  });
+
+  // Get user matches
+  fastify.get('/users/matches', {
+    preHandler: fastify.authenticate,
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const userId = request.user!.id;
+        
+        // Query matches where the user is either player1 or player2
+        const matches = await fastify.db.models.Match.findAll({
+          where: {
+            [Op.or]: [
+              { player1_id: userId },
+              { player2_id: userId }
+            ]
+          },
+          include: [
+            { 
+              model: fastify.db.models.User, 
+              as: 'player1',
+              attributes: ['username']
+            },
+            { 
+              model: fastify.db.models.User, 
+              as: 'player2',
+              attributes: ['username']
+            }
+          ],
+          order: [['created_at', 'DESC']]
+        });
+        
+        // Transform matches to include player usernames
+        const transformedMatches = matches.map((match: any) => {
+          const m = match.toJSON();
+          return {
+            id: m.id,
+            player1_id: m.player1_id,
+            player2_id: m.player2_id,
+            player1_score: m.player1_score,
+            player2_score: m.player2_score,
+            player1_username: m.player1?.username || 'Unknown',
+            player2_username: m.player2?.username || 'Unknown',
+            winner_id: m.winner_id,
+            status: m.status,
+            created_at: m.created_at,
+            updated_at: m.updated_at
+          };
+        });
+        
+        return { success: true, data: transformedMatches };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });
@@ -269,6 +483,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
                 email: { type: 'string' },
                 status: { type: 'string' },
                 avatar_url: { type: ['string', 'null'] },
+                has_avatar_data: { type: 'boolean' },
               }
             }
           }
@@ -288,11 +503,20 @@ export function registerUserRoutes(fastify: FastifyInstance) {
         // Update only provided fields
         if (updateData.username) user.username = updateData.username;
         if (updateData.email) user.email = updateData.email;
-        if (updateData.avatar_url) user.avatar_url = updateData.avatar_url;
-
+        if (updateData.avatar_url !== undefined) user.avatar_url = updateData.avatar_url;
+        
         await user.save();
-
-        return { success: true, data: user };
+        
+        const userData = {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          status: user.status,
+          avatar_url: user.avatar_url,
+          has_avatar_data: !!user.avatar_data
+        };
+        
+        return { success: true, data: userData };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });
@@ -357,6 +581,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
                   email: { type: 'string' },
                   status: { type: 'string' },
                   avatar_url: { type: ['string', 'null'] },
+                  has_avatar_data: { type: 'boolean' },
                 }
               }
             }
