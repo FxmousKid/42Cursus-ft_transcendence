@@ -134,9 +134,12 @@ services:
       co.elastic.logs/module: kibana
     restart: unless-stopped
     container_name: logging-kibana
-    ports:
-      - 5601:5601
+    # ports:
+    #   - 5601:5601
+    expose: ["5601"]
     environment:
+      - SERVER_BASEPATH=/kibana
+      - SERVER_REWRITEBASEPATH=true
       - TZ=Europe/Paris
       - SERVER_NAME=kibana
       - ELASTICSEARCH_HOSTS=https://es01:9200
@@ -159,7 +162,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
+          "curl -s -I https://localhost/kibana | grep -q 'HTTP/1.1 302 Found'",
         ]
       interval: 10s
       timeout: 10s

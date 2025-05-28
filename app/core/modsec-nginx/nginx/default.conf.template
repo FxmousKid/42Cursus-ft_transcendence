@@ -1,27 +1,68 @@
 # core/modsec-nginx/nginx/default.conf.template
+
+# upstream api_up { server ${BACKEND};  }
+# upstream frontend_up  { server ${FRONTEND}; }
+# upstream api_up { server backend:3000;  }
+# upstream frontend_up  { server frontend:5173; }
+
 server {
-    listen       ${NGINX_SERVER_PORT} default_server;      # PORT defaults to 8080
-    listen       ${SSL_PORT} ssl http2;       # SSL_PORT defaults to 8443
-    server_name  ${SERVER_NAME};
+    # listen       ${NGINX_SERVER_PORT} default_server;
+    listen			${SSL_PORT} ssl http2 default_server;       # SSL_PORT defaults to 8443
+    server_name		${SERVER_NAME:-localhost};
+	# index			index.html;
+	# root			/app/src/;
 
     # ── TLS (replace with real certs in core/modsec-nginx/certs) ───────────────────
     ssl_certificate     /etc/nginx/conf/server.crt;
     ssl_certificate_key /etc/nginx/conf/server.key;
 
     # ── Security headers (optional hardening) ─────────────────────────────────────
-    add_header X-Frame-Options SAMEORIGIN always;
-    add_header X-Content-Type-Options nosniff   always;
+    # add_header X-Frame-Options SAMEORIGIN always;
+    # add_header X-Content-Type-Options nosniff   always;
 
     # ── Enable ModSecurity ────────────────────────────────────────────────────────
     modsecurity           on;
-    modsecurity_rules_file /etc/modsecurity/modsecurity.conf;
+    # modsecurity_rules_file /etc/modsecurity/modsecurity.conf;
 
-    # ── Reverse‑proxy to the NestJS back‑end ──────────────────────────────────────
-    location / {
-        proxy_pass         ${BACKEND};        # ← env BACKEND=http://backend:3000
-        proxy_set_header   Host              $host;
-        proxy_set_header   X-Real-IP         $remote_addr;
-        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
+    # ── frontend ──────────────────────────────────────
+	location / {
+		proxy_pass			http://frontend:5173/;
+		# try_files			$uri				/app/src/index.html;
+		proxy_set_header	Host				$host;
+		proxy_set_header	X-Forwarded-Proto	$scheme;
+	}
+	
+    # ── API ─────────────────────────────────────
+    location /api/ {
+        proxy_pass         	http://backend:3000/api/; # ← env BACKEND=http://backend:3000
+        proxy_set_header   	Host              	$host;
+        proxy_set_header   	X-Real-IP         	$remote_addr;
+        proxy_set_header   	X-Forwarded-Proto 	$scheme;
     }
+
+
+    # ── Kibana ─────────────────────────────────────
+	location /kibana/ {
+		proxy_pass			http://kibana:5601/kibana/;
+		proxy_set_header	Host				$host;
+		proxy_set_header	X-Real-IP			$remote_addr;	
+        proxy_set_header   	X-Forwarded-Proto 	$scheme;
+	}
+
+
+    # ── Websocket ─────────────────────────────────────
+	location /socket.io/ {
+		proxy_pass http://backend:3000/socket.io/;
+
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection "upgrade";
+		
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-Proto $scheme;
+
+		proxy_read_timeout 3600s;
+		proxy_send_timeout 3600s;
+	}
 }
