@@ -32,6 +32,13 @@ async function goToNextRound() {
     window.location.href = '/tournament_round.html';
 }
 
+async function launchMatch() {
+    localStorage.setItem('matchType', JSON.stringify({
+			type: 'tournament',
+		}));
+    window.location.href = `game.html`;
+}
+
 document.getElementById('start-match')!.addEventListener('click', () => {
     console.log('yooo');
     if (!tournamentService) {
@@ -42,5 +49,6 @@ document.getElementById('start-match')!.addEventListener('click', () => {
     } else {
         console.log(`Starting match: ${tournamentService.getCurrentMatch().player1_name} vs ${tournamentService.getCurrentMatch().player2_name}`);
     }
-    goToNextRound();
+    //goToNextRound();
+    launchMatch();
 });

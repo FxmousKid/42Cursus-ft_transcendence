@@ -60,7 +60,12 @@ export class TournamentService {
 
 	async createMatchs(names: string[]) {
 		this.matchs = new Array();
-		for (let i = 0; i < names.length; i += 2) {
+		let odd = 0;
+		if (names.length % 2 == 1) {
+			odd = 1;
+			this.winners.push(names[names.length - 1]);
+		}
+		for (let i = 0; i < names.length - odd; i += 2) {
 			const apiRespond = await api.tournament.createMatchTournament( this.id, names[i], names[i + 1] );
 			this.matchs.push( apiRespond.data );
 			console.log('Tournament Match create: ', apiRespond.data);

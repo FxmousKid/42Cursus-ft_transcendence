@@ -248,6 +248,10 @@ export const api = {
       return request(`/users/search?username=${encodeURIComponent(username)}`);
     },
 
+    async getUser(id: number) {
+      return request(`/users/${id}/profile`);
+    },
+
     async checkUsername(username: string) {
       return request(`/users/check-username?username=${encodeURIComponent(username)}`);
     },
@@ -312,7 +316,21 @@ export const api = {
   game: {
     async getAllMatches() {
       return request('/game/matches');
-    }
+    },
+
+    async createMatch(player1: number, player2: number) {
+      return request('/matches', {
+        method: 'POST',
+        body: JSON.stringify({ player1_id: player1, player2_id: player2 }),
+      })
+    },
+
+    async updateMatch(id: number, player1_score: number, player2_score: number, status: string) {
+      return request(`/matches/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify( { player1_score: player1_score, player2_score: player2_score, status: status }),
+      })
+    },
   },
 
   // Chat services

@@ -57,8 +57,10 @@
             <!-- Player Avatars and Scores -->
             <div class="flex justify-center items-center mb-6 flex-wrap gap-2">
                 <div class="flex flex-col items-center p-5 bg-dark-800/40 rounded-xl transition-all duration-300 hover:bg-dark-700/40" id="player-left-card">
-                    <img src="/api/placeholder/64/64" alt="Joueur 1" class="w-16 h-16 rounded-full object-cover border-3 border-dark-700 bg-dark-700 shadow-lg">
-                    <div class="mt-3 font-bold text-gray-200">Joueur 1</div>
+                    <div class="friend-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border-2 border-dark-500 shadow-inner">
+                         <i class="fas fa-user text-white text-2xl sm:text-3xl" id="player1-avatar"></i>
+                    </div>
+                    <div class="mt-3 font-bold text-gray-200" id="player1_name">Joueur 1</div>
                     <div class="flex items-center mt-2 gap-1">
                         <span class="key bg-dark-700 border border-dark-600 text-gray-200 rounded-lg px-3 py-2 font-mono shadow-md text-sm">A</span>
                         <span class="key bg-dark-700 border border-dark-600 text-gray-200 rounded-lg px-3 py-2 font-mono shadow-md text-sm">D</span>
@@ -69,8 +71,10 @@
                 <div class="flex items-center justify-center w-12 h-12 bg-dark-700 rounded-full text-gray-400 font-bold mx-4 shadow-lg">VS</div>
                 
                 <div class="flex flex-col items-center p-5 bg-dark-800/40 rounded-xl transition-all duration-300 hover:bg-dark-700/40" id="player-right-card">
-                    <img src="/api/placeholder/64/64" alt="Joueur 2" class="w-16 h-16 rounded-full object-cover border-3 border-dark-700 bg-dark-700 shadow-lg">
-                    <div class="mt-3 font-bold text-gray-200">Joueur 2</div>
+                    <div class="friend-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border-2 border-dark-500 shadow-inner">
+                         <i class="fas fa-user text-white text-2xl sm:text-3xl" id="player2-avatar"></i>
+                    </div>
+                    <div class="mt-3 font-bold text-gray-200" id="player2_name">Joueur 2</div>
                     <div class="flex items-center mt-2 gap-1">
                         <span class="key bg-dark-700 border border-dark-600 text-gray-200 rounded-lg px-3 py-2 font-mono shadow-md text-sm">←</span>
                         <span class="key bg-dark-700 border border-dark-600 text-gray-200 rounded-lg px-3 py-2 font-mono shadow-md text-sm">→</span>
