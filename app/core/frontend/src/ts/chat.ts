@@ -6,6 +6,7 @@ class BlockingManager {
     private blockedUsers: Set<number> = new Set();
     private blockedByUsers: Set<number> = new Set();
     private isLoading: boolean = false;
+    private blockingWebSocketSetup = false;
     
     constructor() {
         this.loadBlockedUsers();
@@ -18,6 +19,14 @@ class BlockingManager {
             console.warn('⚠️ WebSocket service not available for blocking system');
             return;
         }
+
+        // Check if handlers are already setup to avoid conflicts
+        if (this.blockingWebSocketSetup) {
+            console.log('🔌 Blocking WebSocket handlers already setup, skipping');
+            return;
+        }
+
+        console.log('🔌 Setting up blocking WebSocket handlers');
 
         // Listen for successful block confirmation
         websocketService.on('user-block-success', (data: any) => {
@@ -70,6 +79,8 @@ class BlockingManager {
                 chatManager.forceRefreshChat(data.unblocker_id, data.unblocker_username);
             }
         });
+
+        this.blockingWebSocketSetup = true;
     }
     
     async loadBlockedUsers() {
@@ -236,20 +247,6 @@ export class ChatManager {
             console.warn('⚠️ Could not refresh blocking system:', error);
         }
         
-        // Check if chat is allowed AFTER ensuring data is loaded
-        if (!this.blockingManager.canChat(friendId)) {
-            console.log(`🚫 Chat not allowed with ${friendUsername}`);
-            
-            if (this.blockingManager.isBlocked(friendId)) {
-                console.log(`📛 User ${friendUsername} is blocked by me`);
-                this.showBlockedInterface(friendId, friendUsername, true);
-            } else if (this.blockingManager.isBlockedBy(friendId)) {
-                console.log(`🚫 I am blocked by ${friendUsername}`);
-                this.showBlockedInterface(friendId, friendUsername, false);
-            }
-            return;
-        }
-        
         // Si on ouvre la même conversation, ne rien faire
         if (this.currentChatUserId === friendId) {
             console.log('ℹ️ Same chat already open');
@@ -276,7 +273,21 @@ export class ChatManager {
         // Switch to chat tab
         this.switchToChatTab();
         
-        // Setup chat interface
+        // Check if chat is blocked AFTER setting up the interface
+        if (!this.blockingManager.canChat(friendId)) {
+            console.log(`🚫 Chat not allowed with ${friendUsername} - showing blocked interface`);
+            
+            if (this.blockingManager.isBlocked(friendId)) {
+                console.log(`📛 User ${friendUsername} is blocked by me`);
+                this.showBlockedInterface(friendId, friendUsername, true);
+            } else if (this.blockingManager.isBlockedBy(friendId)) {
+                console.log(`🚫 I am blocked by ${friendUsername}`);
+                this.showBlockedInterface(friendId, friendUsername, false);
+            }
+            return;
+        }
+        
+        // Setup chat interface for normal chat
         this.setupChatInterface(friendId, friendUsername);
         
         // Load chat history with small delay to avoid race conditions
@@ -877,12 +888,13 @@ export class ChatManager {
             return;
         }
 
-        // Avoid multiple setups
+        // Avoid multiple setups to prevent conflicts with friends system
         if (this.chatWebSocketSetup) {
+            console.log('🔌 Chat WebSocket handlers already setup, skipping');
             return;
         }
 
-        console.log('🔌 Setting up chat WebSocket');
+        console.log('🔌 Setting up chat WebSocket handlers');
 
         // Ensure WebSocket is connected before setting up listeners
         try {
@@ -896,7 +908,7 @@ export class ChatManager {
             // Continue with setup anyway, listeners will be attached when connection is established
         }
 
-        // Listen for incoming chat messages
+        // Listen for incoming chat messages - use unique handler names to avoid conflicts
         websocketService.on('chat-message-received', (data: any) => {
             console.log('📨 Received message from:', data.sender_id);
             
@@ -945,18 +957,6 @@ export class ChatManager {
             }
         });
 
-        // Listen for WebSocket errors
-        websocketService.on('error', (data: any) => {
-            console.error('❌ WebSocket error:', data);
-            
-            // Handle blocking-related errors
-            if (data.message && data.message.includes('blocked')) {
-                console.log('🚫 Message bloqué - utilisateur indisponible');
-                // Refresh blocking status
-                this.refreshBlockedUsers();
-            }
-        });
-
         // Listen for game invitation confirmations
         websocketService.on('game-invite-sent', (data: any) => {
             console.log('✅ Game invitation sent');
@@ -995,8 +995,9 @@ export class ChatManager {
             }
         });
 
-        // Mark as setup
+        // Mark as setup to avoid conflicts
         this.chatWebSocketSetup = true;
+        console.log('✅ Chat WebSocket handlers setup complete');
     }
     
     private getFriendNameById(friendId: number): string | null {
@@ -1129,6 +1130,13 @@ export class ChatManager {
                 
                 // If currently chatting with this user, show blocked interface
                 if (this.currentChatUserId === userId) {
+                    this.showBlockedInterface(userId, username, true);
+                }
+                
+                // NOUVEAU: Si on bloque quelqu'un depuis un autre endroit, fermer le chat s'il est ouvert
+                if (this.currentChatUserId === userId) {
+                    console.log('🔄 User blocked - updating chat interface');
+                    // Pas besoin de fermer complètement, juste montrer l'interface bloquée
                     this.showBlockedInterface(userId, username, true);
                 }
             } else {

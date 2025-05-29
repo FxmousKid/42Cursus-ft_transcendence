@@ -88,93 +88,96 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Register WebSocket event handlers if available
     if (websocketService && websocketService.on) {
-        console.log('Setting up WebSocket event handlers');
+        console.log('Setting up WebSocket event handlers for friends system');
         
-        // Écouteur pour recevoir une demande d'ami
-        websocketService.on('friend-request-received', (data: any) => {
-            console.log('Received friend request via WebSocket:', data);
+        // Check if friends WebSocket handlers are already setup to avoid conflicts
+        if ((window as any).friendsWebSocketSetup) {
+            console.log('🔌 Friends WebSocket handlers already setup, skipping');
+        } else {
+            console.log('🔌 Setting up friends WebSocket handlers');
             
-            // Correction du format des données - chercher le nom d'utilisateur au bon endroit
-            const username = data.from?.username || 'Quelqu\'un';
-            
-            // Recharger les demandes d'amitié en attente
-            loadFriendRequests();
-            
-            // Afficher une notification
-            showNotification(`Nouvelle demande d'ami de ${username}`);
-            
-            // Forcer le rechargement après un court délai pour s'assurer que les données sont à jour
-            setTimeout(() => {
+            // Écouteur pour recevoir une demande d'ami
+            websocketService.on('friend-request-received', (data: any) => {
+                console.log('Received friend request via WebSocket:', data);
+                
+                // Correction du format des données - chercher le nom d'utilisateur au bon endroit
+                const username = data.from?.username || 'Quelqu\'un';
+                
+                // Recharger les demandes d'amitié en attente
                 loadFriendRequests();
-            }, 500);
-        });
-        
-        // Écouteur pour les demandes envoyées
-        websocketService.on('friend-request-sent', (data: any) => {
-            console.log('Friend request sent via WebSocket:', data);
+                
+                // Afficher une notification
+                showNotification(`Nouvelle demande d'ami de ${username}`);
+                
+                // Forcer le rechargement après un court délai pour s'assurer que les données sont à jour
+                setTimeout(() => {
+                    loadFriendRequests();
+                }, 500);
+            });
             
-            // Trouver et mettre à jour le bouton d'ajout dans l'interface si présent
-            const searchResultItem = document.querySelector(`.search-result-item[data-id="${data.friend_id}"]`);
-            if (searchResultItem) {
-                const sendButton = searchResultItem.querySelector('.add-friend-button') as HTMLButtonElement;
-                if (sendButton) {
-                    sendButton.innerHTML = '<i class="fas fa-check mr-2"></i> Demande envoyée';
-                    sendButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                    sendButton.classList.add('bg-blue-600', 'cursor-not-allowed');
-                    sendButton.disabled = true;
+            // Écouteur pour les demandes envoyées
+            websocketService.on('friend-request-sent', (data: any) => {
+                console.log('Friend request sent via WebSocket:', data);
+                
+                // Trouver et mettre à jour le bouton d'ajout dans l'interface si présent
+                const searchResultItem = document.querySelector(`.search-result-item[data-id="${data.friend_id}"]`);
+                if (searchResultItem) {
+                    const sendButton = searchResultItem.querySelector('.add-friend-button') as HTMLButtonElement;
+                    if (sendButton) {
+                        sendButton.innerHTML = '<i class="fas fa-check mr-2"></i> Demande envoyée';
+                        sendButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        sendButton.classList.add('bg-blue-600', 'cursor-not-allowed');
+                        sendButton.disabled = true;
+                    }
                 }
-            }
+                
+                showNotification(`Demande d'ami envoyée à ${data.friend_username || 'un utilisateur'}`);
+            });
             
-            showNotification(`Demande d'ami envoyée à ${data.friend_username || 'un utilisateur'}`);
-        });
-        
-        // Écouteur quand une demande d'ami est acceptée
-        websocketService.on('friend-request-accepted', (data: any) => {
-            console.log('Friend request accepted via WebSocket:', data);
-            // Recharger la liste d'amis
-            loadFriends();
-            // Afficher une notification
-            showNotification(`${data.friend_username || 'Quelqu\'un'} a accepté votre demande d'ami`);
-        });
-        
-        // Écouteur pour la réponse (acceptation ou rejet) envoyée
-        websocketService.on('friend-request-response-sent', (data: any) => {
-            console.log('Friend request response sent via WebSocket:', data);
-            const action = data.accepted ? 'acceptée' : 'rejetée';
-            showNotification(`Demande d'ami ${action}`);
-            // Si c'est une acceptation, recharger la liste d'amis
-            if (data.accepted) {
+            // Écouteur quand une demande d'ami est acceptée
+            websocketService.on('friend-request-accepted', (data: any) => {
+                console.log('Friend request accepted via WebSocket:', data);
+                // Recharger la liste d'amis
                 loadFriends();
-            }
-        });
-        
-        // Écouteur pour la suppression d'amitié
-        websocketService.on('friend-removed', (data: any) => {
-            console.log('Friend removed via WebSocket:', data);
+                // Afficher une notification
+                showNotification(`${data.friend_username || 'Quelqu\'un'} a accepté votre demande d'ami`);
+            });
             
-            if (data.friend_id) {
-                // Si on est notifié qu'un ami nous a retiré
-                showNotification(`Un utilisateur vous a retiré de sa liste d'amis`, 'info');
-                loadFriends(); // Rafraîchir la liste d'amis
-            } else {
-                // Confirmation de notre suppression
-                showNotification(`Ami supprimé avec succès`, 'success');
-            }
-        });
-        
-        // Écouteur pour les changements de statut d'amis
-        websocketService.on('friend-status-change', (data: any) => {
-            console.log('Friend status changed via WebSocket:', data);
-            updateFriendStatus(data.friend_id, data.status);
-        });
-        
-        // Écoute des erreurs generales
-        websocketService.on('error', (data: any) => {
-            console.error('Error from WebSocket:', data);
-            if (data.message) {
-                showNotification(`Erreur: ${data.message}`, 'error');
-            }
-        });
+            // Écouteur pour la réponse (acceptation ou rejet) envoyée
+            websocketService.on('friend-request-response-sent', (data: any) => {
+                console.log('Friend request response sent via WebSocket:', data);
+                const action = data.accepted ? 'acceptée' : 'rejetée';
+                showNotification(`Demande d'ami ${action}`);
+                // Si c'est une acceptation, recharger la liste d'amis
+                if (data.accepted) {
+                    loadFriends();
+                }
+            });
+            
+            // Écouteur pour la suppression d'amitié
+            websocketService.on('friend-removed', (data: any) => {
+                console.log('Friend removed via WebSocket:', data);
+                
+                if (data.friend_id) {
+                    // Si on est notifié qu'un ami nous a retiré
+                    showNotification(`Un utilisateur vous a retiré de sa liste d'amis`, 'info');
+                    loadFriends(); // Rafraîchir la liste d'amis
+                } else {
+                    // Confirmation de notre suppression
+                    showNotification(`Ami supprimé avec succès`, 'success');
+                }
+            });
+            
+            // Écouteur pour les changements de statut d'amis
+            websocketService.on('friend-status-change', (data: any) => {
+                console.log('Friend status changed via WebSocket:', data);
+                updateFriendStatus(data.friend_id, data.status);
+            });
+            
+            // Mark as setup to avoid conflicts
+            (window as any).friendsWebSocketSetup = true;
+            console.log('✅ Friends WebSocket handlers setup complete');
+        }
     } else {
         console.warn('WebSocket service not available for event handling');
     }
@@ -381,6 +384,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 console.log('Removing friend via WebSocket');
                                 websocketService.send('friend-remove', { friendId: friend.id });
                                 
+                                // NOUVEAU: Fermer le chat si c'est l'ami actuellement en discussion
+                                const chatManager = (window as any).chatManager;
+                                if (chatManager && chatManager.getCurrentChatUserId() === friend.id) {
+                                    console.log('🔄 Closing current chat conversation after friend removal');
+                                    chatManager.closeChatConversation();
+                                }
+                                
                                 // Animer la disparition de l'ami
                                 friendItem.style.transition = 'all 0.3s ease-out';
                                 friendItem.style.transform = 'translateX(10px)';
@@ -404,6 +414,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 const response = await api.friendship.removeFriend(friend.id);
                                 
                                 if (response.success) {
+                                    // NOUVEAU: Fermer le chat si c'est l'ami actuellement en discussion
+                                    const chatManager = (window as any).chatManager;
+                                    if (chatManager && chatManager.getCurrentChatUserId() === friend.id) {
+                                        console.log('🔄 Closing current chat conversation after friend removal');
+                                        chatManager.closeChatConversation();
+                                    }
+                                    
                                     // Animer la disparition de l'ami
                                     friendItem.style.transition = 'all 0.3s ease-out';
                                     friendItem.style.transform = 'translateX(10px)';
@@ -442,6 +459,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Add event listeners
         chatButton.addEventListener('click', () => {
+            // NOUVEAU: Toujours permettre l'ouverture du chat (même bloqué) pour voir l'interface
+            console.log(`💬 Opening chat with ${friend.username} (ID: ${friend.id}) - allowing blocked users`);
             chatManager.openChatWithFriend(friend.id, friend.username);
         });
         
