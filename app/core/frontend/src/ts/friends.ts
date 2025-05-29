@@ -6,6 +6,31 @@ import { websocketService } from './websocket';
 import { friendshipService, Friend, PendingRequest } from './friendship';
 import { chatManager } from './chat';
 
+// Utility function to create avatar HTML with consistent styling
+function createAvatarHTML(avatarUrl: string | null | undefined, username: string, size: 'small' | 'medium' | 'large' = 'medium'): string {
+    const sizeClasses = {
+        small: 'w-10 h-10',
+        medium: 'w-12 h-12', 
+        large: 'w-24 h-24'
+    };
+    
+    const iconSizes = {
+        small: 'text-lg',
+        medium: 'text-xl',
+        large: 'text-3xl'
+    };
+    
+    const sizeClass = sizeClasses[size];
+    const iconSize = iconSizes[size];
+    
+    if (avatarUrl && avatarUrl.trim()) {
+        return `<img src="${avatarUrl}" alt="${username}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <i class="fas fa-user text-white ${iconSize}" style="display: none;"></i>`;
+    } else {
+        return `<i class="fas fa-user text-white ${iconSize}"></i>`;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Friends page loaded');
     
@@ -285,10 +310,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             showUserProfile(friend.id, friend.username);
         });
         
-        // Set avatar if available
-        if (friend.avatar_url) {
-            avatar.innerHTML = `<img src="${friend.avatar_url}" alt="${friend.username}" class="w-full h-full object-cover">`;
-        }
+        // Set avatar using consistent styling
+        avatar.innerHTML = createAvatarHTML(friend.avatar_url, friend.username);
         
         // Set status indicator color and text
         if (friend.status === 'online') {
@@ -610,10 +633,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <!-- Avatar and basic info -->
                         <div class="text-center mb-6">
                             <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg border-4 border-dark-700 overflow-hidden">
-                                ${profileData.avatar_url 
-                                    ? `<img src="${profileData.avatar_url}" alt="${profileData.username}" class="w-full h-full object-cover">`
-                                    : '<i class="fas fa-user text-white text-3xl"></i>'
-                                }
+                                ${profileData.avatar_url ? createAvatarHTML(profileData.avatar_url, profileData.username) : '<i class="fas fa-user text-white text-3xl"></i>'}
                             </div>
                             <h3 class="text-2xl font-bold text-white mb-2">${profileData.username}</h3>
                             <div class="flex items-center justify-center">
@@ -784,10 +804,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Set username
         username.textContent = userData.username;
         
-        // Set avatar if available
-        if (userData.avatar_url) {
-            avatar.innerHTML = `<img src="${userData.avatar_url}" alt="${userData.username}" class="w-full h-full object-cover">`;
-        }
+        // Set avatar using consistent styling
+        avatar.innerHTML = createAvatarHTML(userData.avatar_url, userData.username);
         
         // Add request ID as data attribute
         const requestItem = requestElement.querySelector('.friend-request-item') as HTMLElement;
@@ -1010,8 +1028,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 resultElement.innerHTML = `
                     <div class="flex items-center">
-                        <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
-                            ${exactUser.avatar_url ? `<img src="${exactUser.avatar_url}" alt="${exactUser.username}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-gray-500 text-xl"></i>'}
+                        <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                            ${exactUser.avatar_url ? createAvatarHTML(exactUser.avatar_url, exactUser.username) : '<i class="fas fa-user text-white text-xl"></i>'}
                         </div>
                         <div>
                             <p class="font-medium text-white">${exactUser.username} <i class="fas fa-check-circle text-purple-400 ml-1"></i></p>
@@ -1048,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <div class="flex items-center justify-between w-full">
                                 <div class="flex items-center">
                                     <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
-                                        ${exactUser.avatar_url ? `<img src="${exactUser.avatar_url}" alt="${exactUser.username}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-gray-500 text-xl"></i>'}
+                                        ${exactUser.avatar_url ? createAvatarHTML(exactUser.avatar_url, exactUser.username) : '<i class="fas fa-user text-white text-xl"></i>'}
                                     </div>
                                     <div>
                                         <p class="font-medium text-white">${exactUser.username}</p>
@@ -1158,10 +1176,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
         }
         
-        // Set avatar if available
-        if (user.avatar_url) {
-            avatar.innerHTML = `<img src="${user.avatar_url}" alt="${user.username}" class="w-full h-full object-cover">`;
-        }
+        // Set avatar using consistent styling
+        avatar.innerHTML = createAvatarHTML(user.avatar_url, user.username);
         
         // Add user ID as data attribute
         const resultItem = resultElement.querySelector('.search-result-item') as HTMLElement;
@@ -1191,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     resultItem.innerHTML = `
                         <div class="flex items-center justify-between w-full">
                             <div class="flex items-center">
-                                <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                                <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
                                     ${avatar.innerHTML}
                                 </div>
                                 <div>
@@ -1229,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         resultItem.innerHTML = `
                             <div class="flex items-center justify-between w-full">
                                 <div class="flex items-center">
-                                    <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                                    <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
                                         ${avatar.innerHTML}
                                     </div>
                                     <div>

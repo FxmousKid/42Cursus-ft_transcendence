@@ -19,6 +19,31 @@ interface MatchData {
  * Script pour gérer la page de profil
  */
 
+// Utility function to create avatar HTML with consistent styling
+function createAvatarHTML(avatarUrl: string | null | undefined, username: string, size: 'small' | 'medium' | 'large' = 'large'): string {
+    const sizeClasses = {
+        small: 'w-8 h-8',
+        medium: 'w-12 h-12', 
+        large: 'w-32 h-32'
+    };
+    
+    const iconSizes = {
+        small: 'text-lg',
+        medium: 'text-xl',
+        large: 'text-5xl'
+    };
+    
+    const sizeClass = sizeClasses[size];
+    const iconSize = iconSizes[size];
+    
+    if (avatarUrl && avatarUrl.trim()) {
+        return `<img src="${avatarUrl}" alt="${username}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <i class="fas fa-user text-white ${iconSize}" style="display: none;"></i>`;
+    } else {
+        return `<i class="fas fa-user text-white ${iconSize}"></i>`;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Profile page loaded');
     
@@ -108,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Afficher l'avatar si disponible
         if (avatarUrl) {
-            profileAvatar.innerHTML = `<img src="${avatarUrl}" alt="${username}" class="w-full h-full object-cover">`;
+            profileAvatar.innerHTML = createAvatarHTML(avatarUrl, username);
         }
     }
     
@@ -182,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Afficher l'avatar si disponible
                 if (profile.avatar_url && profileAvatar) {
-                    profileAvatar.innerHTML = `<img src="${profile.avatar_url}" alt="${profile.username}" class="w-full h-full object-cover">`;
+                    profileAvatar.innerHTML = createAvatarHTML(profile.avatar_url, profile.username);
                     // Stocker l'URL de l'avatar dans localStorage
                     localStorage.setItem('avatar_url', profile.avatar_url);
                 }
