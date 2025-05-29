@@ -18,7 +18,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
   // Register multipart support for this plugin
   fastify.register(multipart, {
     limits: {
-      fileSize: 2 * 1024 * 1024 * 1024, // 2MB limit
+      fileSize: 2 * 1024 * 1024, // 2MB limit
     }
   });
 
@@ -193,7 +193,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
 
         // Check file size (2MB limit already enforced by multipart config, but double-check)
         const buffer = await data.toBuffer();
-        if (buffer.length > 2 * 1024 * 1024 * 1024) {
+        if (buffer.length > 2 * 1024 * 1024) {
           return reply.status(400).send({ 
             success: false, 
             message: 'File too large. Maximum size is 2MB.' 
@@ -609,6 +609,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
                 email: { type: 'string' },
                 status: { type: 'string' },
                 avatar_url: { type: ['string', 'null'] },
+                has_avatar_data: { type: 'boolean' },
                 created_at: { type: 'string' },
                 statistics: {
                   type: 'object',
@@ -636,7 +637,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
 
         // Get user basic info
         const user = await fastify.db.models.User.findByPk(userId, {
-          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'createdAt']
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data', 'createdAt']
         });
 
         if (!user) {
@@ -675,6 +676,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
           email: user.email,
           status: user.status,
           avatar_url: user.avatar_url,
+          has_avatar_data: !!user.avatar_data,
           created_at: user.createdAt,
           statistics: {
             games_played: gamesPlayed,

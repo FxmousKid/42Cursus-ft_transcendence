@@ -655,7 +655,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <!-- Avatar and basic info -->
                         <div class="text-center mb-6">
                             <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg border-4 border-dark-700 overflow-hidden">
-                                ${profileData.avatar_url ? createAvatarHTML(profileData, 'medium') : '<i class="fas fa-user text-white text-3xl"></i>'}
+                                ${createAvatarHTML(profileData, 'large')}
                             </div>
                             <h3 class="text-2xl font-bold text-white mb-2">${profileData.username}</h3>
                             <div class="flex items-center justify-center">

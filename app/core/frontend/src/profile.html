@@ -20,38 +20,36 @@
             <div class="card col-span-1">
                 <div class="flex flex-col items-center mb-6">
                     <!-- Avatar with upload functionality -->
-                    <div id="profile-avatar" class="relative w-32 h-32 bg-dark-700 rounded-full mb-4 flex items-center justify-center overflow-hidden border-2 border-primary-600 shadow-md cursor-pointer hover:border-primary-500 transition-colors">
-                        <!-- L'avatar sera inséré ici via JavaScript -->
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                        </svg>
+                    <div class="relative">
+                        <div id="profile-avatar" class="w-32 h-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mb-4 flex items-center justify-center overflow-hidden border-2 border-primary-600 shadow-md cursor-pointer hover:border-primary-500 transition-colors group">
+                            <!-- L'avatar sera inséré ici via JavaScript -->
+                            <i class="fas fa-user text-white text-5xl"></i>
+                            
+                            <!-- Overlay simple qui apparaît au hover -->
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center rounded-full pointer-events-none">
+                                <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-white text-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span class="text-xs font-medium">Changer</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bouton supprimer (visible seulement si avatar présent) -->
+                        <button id="remove-avatar-btn" class="hidden absolute top-0 right-0 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
                     
                     <!-- Hidden file input for avatar upload -->
                     <input type="file" id="avatar-upload-input" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden">
                     
-                    <!-- Remove avatar button -->
-                    <button id="remove-avatar-button" class="hidden text-sm text-red-400 hover:text-red-300 mb-3 transition-colors">
-                        Supprimer l'avatar
-                    </button>
-                    
                     <h2 id="profile-username" class="text-xl font-semibold text-white"></h2>
                     <p id="profile-email" class="text-gray-400"></p>
-                </div>
-                
-                <!-- Upload status message -->
-                <div id="upload-status" class="hidden mb-4 p-3 border-l-4 rounded-lg">
-                    <span id="upload-status-text"></span>
-                </div>
-                
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold mb-3 text-white">Informations</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">Statut:</span>
-                            <span id="profile-status" class="font-medium text-primary-400"></span>
-                        </div>
-                    </div>
                 </div>
                 
                 <button id="edit-profile-button" class="btn-primary w-full py-2.5 px-4 mb-4">
