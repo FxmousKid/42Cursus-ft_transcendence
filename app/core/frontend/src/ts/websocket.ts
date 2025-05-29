@@ -19,62 +19,87 @@ class WebSocketService {
   private maxReconnectAttempts = 3;
   private reconnectDelay = 3000;
   private isBackendAvailable = true;
+  private connectionPromise: Promise<boolean> | null = null;
+  private isConnecting = false;
 
   // Connect to the Socket.io server
-  connect() {
+  connect(): Promise<boolean> {
+    // Return existing connection promise if already connecting
+    if (this.connectionPromise) {
+      return this.connectionPromise;
+    }
+
     if (this.socket && this.socket.connected) {
       console.log('[Socket.io] Already connected');
-      return;
+      return Promise.resolve(true);
     }
 
     if (!this.isBackendAvailable) {
       console.log('[Socket.io] Backend previously marked as unavailable, skipping connection attempt');
-      return;
+      return Promise.resolve(false);
     }
 
-    // Get token from auth service or storage
-    let token = null;
-    
-    // Try to get token from auth service first
-    const authService = (window as any).authService;
-    if (authService && authService.getToken && typeof authService.getToken === 'function') {
-      token = authService.getToken();
-      console.log('[Socket.io] Got token from authService:', !!token);
-    }
-    
-    // Fallback to localStorage if token not available from auth service
-    if (!token) {
-      token = localStorage.getItem(TOKEN_KEY);
-      console.log('[Socket.io] Got token from localStorage:', !!token);
-    }
-    
-    if (!token) {
-      console.log('[Socket.io] No token available for connection');
-      return;
-    }
+    // Create a new connection promise
+    this.connectionPromise = new Promise((resolve, reject) => {
+      this.isConnecting = true;
 
-    try {
-      // Close any existing connection
-      this.disconnect();
-
-      // Import Socket.io client from CDN if not already available
-      if (typeof io === 'undefined') {
-        console.log('[Socket.io] io not defined, loading script from CDN');
-        const script = document.createElement('script');
-        script.src = 'https://cdn.socket.io/4.6.0/socket.io.min.js';
-        script.onload = () => this.initializeSocket(token);
-        document.head.appendChild(script);
-      } else {
-        this.initializeSocket(token);
+      // Get token from auth service or storage
+      let token = null;
+      
+      // Try to get token from auth service first
+      const authService = (window as any).authService;
+      if (authService && authService.getToken && typeof authService.getToken === 'function') {
+        token = authService.getToken();
+        console.log('[Socket.io] Got token from authService:', !!token);
       }
-    } catch (error) {
-      console.error('[Socket.io] Setup error:', error);
-      this.attemptReconnect();
-    }
+      
+      // Fallback to localStorage if token not available from auth service
+      if (!token) {
+        token = localStorage.getItem(TOKEN_KEY);
+        console.log('[Socket.io] Got token from localStorage:', !!token);
+      }
+      
+      if (!token) {
+        console.log('[Socket.io] No token available for connection');
+        this.isConnecting = false;
+        this.connectionPromise = null;
+        resolve(false);
+        return;
+      }
+
+      try {
+        // Close any existing connection
+        this.disconnect();
+
+        // Import Socket.io client from CDN if not already available
+        if (typeof io === 'undefined') {
+          console.log('[Socket.io] io not defined, loading script from CDN');
+          const script = document.createElement('script');
+          script.src = 'https://cdn.socket.io/4.6.0/socket.io.min.js';
+          script.onload = () => this.initializeSocket(token, resolve, reject);
+          script.onerror = () => {
+            console.error('[Socket.io] Failed to load Socket.io script');
+            this.isConnecting = false;
+            this.connectionPromise = null;
+            reject(new Error('Failed to load Socket.io script'));
+          };
+          document.head.appendChild(script);
+        } else {
+          this.initializeSocket(token, resolve, reject);
+        }
+      } catch (error) {
+        console.error('[Socket.io] Setup error:', error);
+        this.isConnecting = false;
+        this.connectionPromise = null;
+        reject(error);
+      }
+    });
+
+    return this.connectionPromise;
   }
 
   // Initialize Socket.io connection
-  private initializeSocket(token: string) {
+  private initializeSocket(token: string, resolve: (value: boolean) => void, reject: (reason?: any) => void) {
     console.log('[Socket.io] Initializing connection');
     try {
       // Log the original token format for debugging
@@ -103,7 +128,14 @@ class WebSocketService {
         console.log('[Socket.io] Connected successfully');
         this.reconnectAttempts = 0;
         this.isBackendAvailable = true;
-        this.reattachListeners();
+        this.isConnecting = false;
+        this.connectionPromise = null;
+        
+        // Wait a bit before reattaching listeners to ensure connection is stable
+        setTimeout(() => {
+          this.reattachListeners();
+          resolve(true);
+        }, 100);
       });
 
       // Connection error
@@ -114,20 +146,33 @@ class WebSocketService {
         if (this.reconnectAttempts > this.maxReconnectAttempts) {
           console.log('[Socket.io] Max reconnect attempts reached, giving up');
           this.isBackendAvailable = false;
+          this.isConnecting = false;
+          this.connectionPromise = null;
           this.socket.disconnect();
+          reject(error);
         }
       });
 
       // Handle disconnect
       this.socket.on('disconnect', (reason: string) => {
         console.log(`[Socket.io] Disconnected: ${reason}`);
+        this.isConnecting = false;
+        this.connectionPromise = null;
+        
+        // Auto-reconnect for certain disconnect reasons
+        if (reason === 'io server disconnect') {
+          // Server initiated disconnect, try to reconnect
+          setTimeout(() => {
+            this.connect();
+          }, 2000);
+        }
       });
 
       // Handle errors from server
       this.socket.on('error', (data: any) => {
         console.error('[Socket.io] Error from server:', data);
         if (data && data.message) {
-          alert(`Erreur: ${data.message}`);
+          console.error(`WebSocket Error: ${data.message}`);
         }
       });
 
@@ -149,7 +194,9 @@ class WebSocketService {
       });
     } catch (error) {
       console.error('[Socket.io] Initialization error:', error);
-      this.attemptReconnect();
+      this.isConnecting = false;
+      this.connectionPromise = null;
+      reject(error);
     }
   }
 
@@ -161,6 +208,8 @@ class WebSocketService {
       this.socket = null;
     }
     this.reconnectAttempts = 0;
+    this.isConnecting = false;
+    this.connectionPromise = null;
   }
 
   // Subscribe to an event
@@ -174,13 +223,19 @@ class WebSocketService {
     // If already connected, register with socket.io server
     if (this.socket && this.socket.connected) {
       console.log(`[Socket.io] Already connected, subscribing to ${event}`);
+      // Remove existing listeners for this event to avoid duplicates
+      this.socket.off(event);
       this.socket.on(event, (data: any) => {
         console.log(`[Socket.io] Direct event ${event}:`, data);
         // Add type if missing
         if (!data.type) {
           data.type = event;
         }
-        callback(data);
+        // Call all callbacks for this event
+        const eventCallbacks = this.listeners.get(event);
+        if (eventCallbacks) {
+          eventCallbacks.forEach(cb => cb(data));
+        }
       });
     }
   }
@@ -200,8 +255,25 @@ class WebSocketService {
     }
   }
 
-  // Send a message to the server
-  send(type: string, data: any) {
+  // Send a message to the server with connection check
+  async send(type: string, data: any): Promise<boolean> {
+    // Ensure we're connected before sending
+    if (!this.isConnected()) {
+      console.log('[Socket.io] Not connected, attempting to connect before sending message');
+      try {
+        const connected = await this.connect();
+        if (!connected) {
+          console.warn('[Socket.io] Failed to connect, cannot send message');
+          return false;
+        }
+        // Wait a bit more to ensure connection is stable
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (error) {
+        console.error('[Socket.io] Connection failed:', error);
+        return false;
+      }
+    }
+
     if (!this.socket || !this.socket.connected) {
       console.warn('[Socket.io] Cannot send message: not connected');
       return false;
@@ -219,8 +291,14 @@ class WebSocketService {
 
   // Check if connected
   isConnected() {
-    console.log('[Socket.io] Checking connection status:', this.socket?.connected || false);
-    return this.socket && this.socket.connected;
+    const connected = this.socket && this.socket.connected;
+    console.log('[Socket.io] Checking connection status:', connected || false);
+    return connected;
+  }
+
+  // Check if currently connecting
+  isCurrentlyConnecting() {
+    return this.isConnecting;
   }
 
   // Reattach all event listeners after reconnect
@@ -228,8 +306,13 @@ class WebSocketService {
     if (!this.socket || !this.socket.connected) return;
 
     console.log('[Socket.io] Reattaching event listeners');
+    
+    // Don't clear all listeners, just reattach our custom ones
     this.listeners.forEach((callbacks, event) => {
       console.log(`[Socket.io] Resubscribing to event: ${event}`);
+      
+      // Remove existing listener for this event to avoid duplicates
+      this.socket.off(event);
       
       this.socket.on(event, (data: any) => {
         console.log(`[Socket.io] Received reattached ${event}:`, data);
@@ -271,10 +354,15 @@ export { websocketService };
 (window as any).websocketService = websocketService;
 
 // Auto-connect if user is authenticated
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const token = localStorage.getItem('auth_token');
   if (token) {
     console.log('[Socket.io] Auto-connecting...');
-    websocketService.connect();
+    try {
+      await websocketService.connect();
+      console.log('[Socket.io] Auto-connection successful');
+    } catch (error) {
+      console.error('[Socket.io] Auto-connection failed:', error);
+    }
   }
 }); 
