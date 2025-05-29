@@ -1,11 +1,12 @@
-// API URL configuration
-// Force localhost:3000 for debugging
-const API_URL = 'http://localhost:3000';
+// // API URL configuration
 
-// Debug logging to help identify the issue
-console.log('[API] Debug - Forced API_URL to:', API_URL);
-console.log('[API] Debug - window.location.hostname:', window.location.hostname);
-console.log('[API] Debug - window.location.origin:', window.location.origin);
+
+export const API_URL = (
+  window.location.hostname === 'localhost' &&
+  window.location.port === '5173'
+)
+  ? 'http://localhost:3000'
+  : '/api';
 
 // Types for API responses
 export interface UserProfile {
@@ -340,7 +341,44 @@ export const api = {
     async getBlockedUsers() {
       return request('/chat/blocks');
     }
-  }
+  },
+
+  tournament: {
+    async createTournament(host_id: number, users: string[]) {
+      return request('/tournaments', {
+        method: 'POST',
+        body: JSON.stringify( {host_id: host_id, users: users} ),
+      })
+    },
+
+    async updateStatusTournament(id: number, status: string) {
+      return request('/tournaments/status', {
+        method: 'PATCH',
+        body: JSON.stringify( {id: id, status: status} ),
+      })
+    },
+
+    async createMatchTournament(host_id: number, player1: string, player2: string) {
+      return request('/match_tournaments', {
+        method: 'POST',
+        body: JSON.stringify( {tournament_id: host_id, player1_name: player1, player2_name: player2} )
+      })
+    },
+
+    async updateScoreMatchTournament(id: number, p1_score: number, p2_score: number, winner: string) {
+      return request('/match_tournaments/scores', {
+        method: 'PATCH',
+        body: JSON.stringify( {id: id, player1_score: p1_score, player2_score: p2_score, winner_name: winner} )
+      })
+    },
+
+    async updateStatusMatchTournament(id: number, status: string) {
+      return request('/match_tournaments/status', {
+        method: 'PATCH',
+        body: JSON.stringify( {id: id, status: status} )
+      })
+    },
+  },
 };
 
 // Pour la rétrocompatibilité, on expose aussi API globalement

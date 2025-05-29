@@ -1,8 +1,14 @@
+import { api } from './api';
+import { TournamentService } from './tournamentService';
+
+export const tournamentService = new TournamentService();
+
 const form = document.getElementById('player-form') as HTMLFormElement;
 const addButton = document.getElementById('add-player') as HTMLButtonElement;
 const startButton = document.getElementById('start-button') as HTMLButtonElement;
 
 let playerCount = 0;
+
 const maxPlayers = 16;
 
 function updateStartVisibility() {
@@ -19,7 +25,7 @@ function createPlayerField(index: number) {
     input.name = `player${index}`;
     input.placeholder = `Player ${index}`;
     input.required = true;
-    input.className = 'flex-1 p-2 rounded-lg border border-gray-300';
+    input.className = 'flex-1 p-2 rounded-lg border bg-blue-800 border-gray-800';
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
@@ -62,14 +68,49 @@ addButton.addEventListener('click', () => {
     addPlayerField();
 });
 
+function suffleArray(array: string[]) {
+  for (let i = array.length - 1; i > 0; i--) { 
+    const j = Math.floor(Math.random() * (i + 1)); 
+    [array[i], array[j]] = [array[j], array[i]]; 
+  }
+  return array; 
+}; 
+
+
+async function createTournament(users: string[]) {
+
+    if (!api || !api.tournament) {
+        throw Error("Api doesnt exit");
+    }
+
+    const apiRespondProfile = await api.user.getProfile();
+
+    let host_id = apiRespondProfile.data.id;
+
+    console.log('Starting with players:', users);
+
+    users = suffleArray(users);
+
+    const apiRespond = await api.tournament.createTournament(host_id, users);
+
+    const tournamentValue = apiRespond.data;
+
+    console.log('Tournament create: ', tournamentValue);
+
+    tournamentService.setValue(tournamentValue.id, tournamentValue.users);
+    await tournamentService.createMatchs(tournamentValue.users);
+    tournamentService.saveToStorage();
+
+    window.location.href = '/tournament_round.html';
+}
+
 startButton.addEventListener('click', () => {
     const names: string[] = Array.from(form.querySelectorAll('input'))
         .map(input => (input as HTMLInputElement).value.trim())
         .filter(name => name !== '');
 
     if (names.length >= 2) {
-        console.log('Starting with players:', names);
-        alert(`Game starting with players: ${names.join(', ')}`);
+        createTournament(names);
     } else {
         alert('Please enter at least 2 player names.');
     }

@@ -88,17 +88,17 @@ if ! vault kv get -field=username kv/elk/elasticsearch >/dev/null 2>&1; then
 	# Frontend secrets
 	vault kv put kv/frontend/app_name name=Transcendence
 	vault kv put kv/frontend/port port=5173
-	vault kv put kv/frontend/url url='http://localhost:5173'
+	vault kv put kv/frontend/url url='https://localhost'
 
 	# Backend secrets
 	vault kv put kv/backend/port port=3000
-	vault kv put kv/backend/url url='http://localhost:3000'
-	vault kv put kv/backend/api_url url='http://localhost:3000'
-	vault kv put kv/backend/vite_api_url url='http://backend:3000'
+	vault kv put kv/backend/url url='https://localhost/api'
+	vault kv put kv/backend/api_url url='https://localhost/api'
+	vault kv put kv/backend/vite_api_url url='https://localhost/api'
 	vault kv put kv/backend/jwt_secret secret='supersecretkey'
 	vault kv put kv/backend/jwt_expiration expiration='1d'
 	vault kv put kv/backend/node_env env='development'
-	vault kv put kv/backend/cors_origin origin='http://localhost:5173'
+	vault kv put kv/backend/cors_origin origin='https://localhost'
 	
 	# Server configuration
 	vault kv put kv/server/host host='0.0.0.0'
@@ -110,7 +110,7 @@ if ! vault kv get -field=username kv/elk/elasticsearch >/dev/null 2>&1; then
 	# Google OAuth
 	vault kv put kv/google_oauth/client_id id='1083014390405-g5dbj1ac072b42ed7jejr47v6r1ruei2.apps.googleusercontent.com'
 	vault kv put kv/google_oauth/client_secret secret='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'
-	vault kv put kv/google_oauth/callback_url url='http://localhost:3000/auth/google/callback'
+	vault kv put kv/google_oauth/callback_url url='https://localhost/api/auth/google/callback'
 
 	# Session
 	vault kv put kv/session/secret secret='42-transcendence-session-secret-must-be-at-least-32-characters-long'

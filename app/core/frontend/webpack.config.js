@@ -15,6 +15,10 @@ module.exports = {
     register: './src/ts/register.ts',
     game: './src/ts/game.ts',
     'google-auth-handler': './src/ts/google-auth-handler.ts',
+    tournament: './src/ts/tournament.ts',
+    tournament_round: './src/ts/tournament_round.ts',
+    tournamentService: './src/ts/tournamentService.ts',
+    tournament_finish: './src/ts/tournament_finish.ts',
   },
   module: {
     rules: [

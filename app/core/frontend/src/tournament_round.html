@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Match Start - ft_transcendence</title>
+  <link rel="stylesheet" href="css/output.css" />
+</head>
+<body class="flex flex-col min-h-screen bg-dark-800">
+
+  <!-- En-tête -->
+  <div id="header-container"></div>
+
+  <!-- Contenu principal -->
+  <main class="flex-grow flex flex-col items-center justify-center text-center px-4">
+    <h1 class="text-3xl font-bold text-gray-200 mb-8" id="text-round">Upcoming Match</h1>
+
+    <div class="bg-white shadow-md rounded-lg p-6 w-full max-w-md space-y-4">
+      <div class="text-2xl font-semibold text-blue-600" id="player1">Player 1</div>
+      <div class="text-lg text-gray-500">vs</div>
+      <div class="text-2xl font-semibold text-red-600" id="player2">Player 2</div>
+    </div>
+
+    <button id="start-match" class="mt-10 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-xl transition duration-200">
+      Start
+    </button>
+  </main>
+
+  <!-- Pied de page -->
+  <div id="footer-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/header-loader.js"></script>
+  <script src="js/route-guard.js"></script>
+  <script type="module" src="js/tournament_round.js"></script>
+</body>
+</html>
