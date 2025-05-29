@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Fastify backend for ft_transcendence",
   "main": "src/server.js",
+  "engines": {
+    "node": ">=18.17.0"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
@@ -18,6 +21,7 @@
     "@fastify/cors": "^8.3.0",
     "@fastify/oauth2": "^7.4.0",
     "@fastify/session": "^10.7.0",
+    "@fastify/multipart": "^8.0.0",
     "@fastify/static": "^6.10.2",
     "@fastify/swagger": "^8.8.0",
     "@fastify/swagger-ui": "^1.9.3",
