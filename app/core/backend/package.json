@@ -7,14 +7,22 @@
     "node": ">=18.17.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "npm run compile-contracts && ts-node-dev --respawn --transpile-only src/server.ts",
+    "compile-contracts": "npx hardhat compile",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest",
     "migrate": "ts-node src/migrations.ts",
     "cleanup-db": "ts-node src/cleanup-backup-tables.ts",
-    "fix-foreign-keys": "ts-node src/fix-foreign-keys.ts"
+    "fix-foreign-keys": "ts-node src/fix-foreign-keys.ts",
+    "blockchain:deploy:local": "hardhat run blockchain/scripts/deploy.ts --network localhost",
+    "blockchain:deploy:fuji": "hardhat run blockchain/scripts/deploy.ts --network fuji",
+    "testnet:generate-key": "node generate-testnet-key.js",
+    "testnet:deploy": "node deploy-testnet.js",
+    "testnet:check": "node check-keys.js",
+    "testnet:verify": "node verify-blockchain.js",
+    "testnet:compare": "node compare-data.js"
   },
   "dependencies": {
     "@fastify/cookie": "^8.3.0",
@@ -28,6 +36,7 @@
     "axios": "^1.9.0",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.3.1",
+    "ethers": "^6.7.1",
     "fastify": "^4.22.2",
     "fastify-plugin": "^4.5.1",
     "jsonwebtoken": "^9.0.2",
@@ -39,6 +48,8 @@
   },
   "devDependencies": {
     "@fastify/type-provider-json-schema-to-ts": "^5.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/contracts": "^5.0.0",
     "@types/bcrypt": "^5.0.0",
     "@types/express": "^5.0.2",
     "@types/jest": "^29.5.4",
@@ -50,6 +61,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
     "express": "^5.1.0",
+    "hardhat": "^2.19.0",
     "jest": "^29.6.4",
     "knex": "^3.1.0",
     "objection": "^3.1.5",

@@ -266,6 +266,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 								player2_score: { type: 'number' },
 								winner_name: { type: 'string' },
 								status: { type: 'string' },
+								blockchain_tx: { type: 'string' }
 							}
 						}
 					}
@@ -288,18 +289,64 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 				match.status = 'completed';
 				await match.save();
 
+				let blockchainTxHash: string | null = null;
+				
+				try {
+					if (fastify.blockchain && fastify.blockchain.isAvailable()) {
+						fastify.log.info(`Attempting to record match ${match.id} on blockchain`);
+						
+						blockchainTxHash = await fastify.blockchain.recordMatch({
+							id: match.id,
+							tournament_id: match.tournament_id,
+							player1_name: match.player1_name,
+							player2_name: match.player2_name,
+							player1_score: match.player1_score,
+							player2_score: match.player2_score,
+							winner_name: match.winner_name
+						});
+
+						if (blockchainTxHash) {
+							fastify.log.info(`Match ${match.id} recorded on blockchain: ${blockchainTxHash}`);
+							
+							// 🔗 STOCKER LA PREUVE BLOCKCHAIN EN DB
+							match.blockchain_tx_hash = blockchainTxHash;
+							match.blockchain_verified = true;
+							match.blockchain_recorded_at = new Date();
+							await match.save();
+							
+							fastify.log.info(`Blockchain proof stored in database for match ${match.id}`);
+						}
+					} else {
+						fastify.log.warn('Blockchain service not available, skipping blockchain recording');
+					}
+				} catch (blockchainError) {
+					fastify.log.error('Blockchain recording failed, but match saved in database:', blockchainError);
+				}
+
+				const responseData: any = {
+					id: match.id,
+					tournament_id: match.tournament_id,
+					player1_name: match.player1_name,
+					player2_name: match.player2_name,
+					player1_score: match.player1_score,
+					player2_score: match.player2_score,
+					winner_name: match.winner_name,
+					status: match.status,
+					blockchain_verified: match.blockchain_verified || false,
+				};
+
+				if (blockchainTxHash) {
+					responseData.blockchain_tx = blockchainTxHash;
+					responseData.blockchain_proof = {
+						tx_hash: blockchainTxHash,
+						verified: true,
+						recorded_at: match.blockchain_recorded_at
+					};
+				}
+
 				return {
 					success: true,
-					data: {
-						id: match.id,
-						tournament_id: match.tournament_id,
-						player1_name: match.player1_name,
-						player2_name: match.player2_name,
-						player1_score: match.player1_score,
-						player2_score: match.player2_score,
-						winner_name: match.winner_name,
-						status: match.status,
-					}
+					data: responseData
 				};
 			} catch (error) {
 				fastify.log.error(error);
@@ -375,6 +422,78 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 				return reply.status(400).send({
 					success: false,
 					message: error.message
+				});
+			}
+		}
+	});
+
+	// 🔍 ROUTE DE VÉRIFICATION BLOCKCHAIN SIMPLIFIÉE
+	fastify.get<{ Params: { tournamentId: string } }>('/tournaments/:tournamentId/blockchain-proof', {
+		preHandler: [fastify.authenticate],
+		schema: {
+			params: {
+				type: 'object',
+				properties: {
+					tournamentId: { type: 'string' }
+				},
+				required: ['tournamentId']
+			}
+		},
+		handler: async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
+			try {
+				const tournamentId = parseInt(request.params.tournamentId);
+
+				// Récupérer tous les matches du tournoi depuis la DB
+				const matches = await MatchTournament.findAll({
+					where: { tournament_id: tournamentId, status: 'completed' }
+				});
+
+				if (matches.length === 0) {
+					return reply.status(404).send({ 
+						success: false, 
+						message: 'No completed matches found for this tournament' 
+					});
+				}
+
+				// Statistiques des preuves blockchain
+				const totalMatches = matches.length;
+				const verifiedMatches = matches.filter(m => m.blockchain_verified).length;
+				const withTxHash = matches.filter(m => m.blockchain_tx_hash).length;
+
+				const proofSummary = {
+					tournament_id: tournamentId,
+					total_matches: totalMatches,
+					verified_matches: verifiedMatches,
+					matches_with_tx_hash: withTxHash,
+					verification_rate: totalMatches > 0 ? (verifiedMatches / totalMatches * 100).toFixed(2) + '%' : '0%',
+					blockchain_available: fastify.blockchain?.isAvailable() || false,
+					wallet_address: fastify.blockchain?.getWalletAddress() || null
+				};
+
+				const matchProofs = matches.map(match => ({
+					match_id: match.id,
+					player1_name: match.player1_name,
+					player2_name: match.player2_name,
+					winner_name: match.winner_name,
+					blockchain_verified: match.blockchain_verified || false,
+					blockchain_tx_hash: match.blockchain_tx_hash || null,
+					blockchain_recorded_at: match.blockchain_recorded_at || null,
+					status: match.status
+				}));
+
+				return {
+					success: true,
+					data: {
+						summary: proofSummary,
+						match_proofs: matchProofs
+					}
+				};
+
+			} catch (error) {
+				fastify.log.error(error);
+				return reply.status(500).send({
+					success: false,
+					message: 'Failed to retrieve blockchain proofs'
 				});
 			}
 		}
