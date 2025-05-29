@@ -1,10 +1,57 @@
 // This file will be compiled to JS and included in the HTML directly
 // Global services and types will be available
 
-import { api } from './api';
+import { api, getAvatarUrl } from './api';
 import { websocketService } from './websocket';
 import { friendshipService, Friend, PendingRequest } from './friendship';
 import { chatManager } from './chat';
+
+// Utility function to create avatar HTML with consistent styling
+function createAvatarHTML(user: { id?: number; avatar_url?: string | null; username: string; has_avatar_data?: boolean }, size: 'small' | 'medium' | 'large' = 'medium'): string {
+    const sizeClasses = {
+        small: 'w-8 h-8 sm:w-10 sm:h-10',
+        medium: 'w-10 h-10 sm:w-12 sm:h-12', 
+        large: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24'
+    };
+    
+    const iconSizes = {
+        small: 'text-sm sm:text-lg',
+        medium: 'text-lg sm:text-xl',
+        large: 'text-2xl sm:text-3xl md:text-4xl'
+    };
+    
+    const sizeClass = sizeClasses[size];
+    const iconSize = iconSizes[size];
+    
+    // Debug: Log user data for avatar creation
+    console.log('createAvatarHTML called with:', {
+        id: user.id,
+        username: user.username,
+        avatar_url: user.avatar_url,
+        has_avatar_data: user.has_avatar_data,
+        size: size
+    });
+    
+    // Use getAvatarUrl to prioritize uploaded avatars over URLs
+    let avatarUrl = '';
+    if (user.id) {
+        avatarUrl = getAvatarUrl({
+            id: user.id,
+            has_avatar_data: user.has_avatar_data,
+            avatar_url: user.avatar_url || undefined
+        });
+        console.log('Generated avatar URL:', avatarUrl);
+    } else {
+        console.log('No user ID provided, using default icon');
+    }
+    
+    if (avatarUrl && avatarUrl.trim()) {
+        return `<img src="${avatarUrl}" alt="${user.username}" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <i class="fas fa-user text-white ${iconSize}" style="display: none;"></i>`;
+    } else {
+        return `<i class="fas fa-user text-white ${iconSize}"></i>`;
+    }
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Friends page loaded');
@@ -285,10 +332,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             showUserProfile(friend.id, friend.username);
         });
         
-        // Set avatar if available
-        if (friend.avatar_url) {
-            avatar.innerHTML = `<img src="${friend.avatar_url}" alt="${friend.username}" class="w-full h-full object-cover">`;
-        }
+        // Set avatar using consistent styling
+        avatar.innerHTML = createAvatarHTML(friend, 'medium');
         
         // Set status indicator color and text
         if (friend.status === 'online') {
@@ -610,10 +655,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <!-- Avatar and basic info -->
                         <div class="text-center mb-6">
                             <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg border-4 border-dark-700 overflow-hidden">
-                                ${profileData.avatar_url 
-                                    ? `<img src="${profileData.avatar_url}" alt="${profileData.username}" class="w-full h-full object-cover">`
-                                    : '<i class="fas fa-user text-white text-3xl"></i>'
-                                }
+                                ${createAvatarHTML(profileData, 'large')}
                             </div>
                             <h3 class="text-2xl font-bold text-white mb-2">${profileData.username}</h3>
                             <div class="flex items-center justify-center">
@@ -773,6 +815,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Utiliser sender si user n'existe pas
         const userData = request.user || request.sender;
         
+        // Debug: Log user data to see what avatar information is available
+        console.log('Friend request user data:', {
+            id: userData.id,
+            username: userData.username,
+            avatar_url: userData.avatar_url,
+            has_avatar_data: userData.has_avatar_data
+        });
+        
         const requestElement = document.importNode(friendRequestTemplate.content, true);
         
         // Set request details
@@ -784,10 +834,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Set username
         username.textContent = userData.username;
         
-        // Set avatar if available
-        if (userData.avatar_url) {
-            avatar.innerHTML = `<img src="${userData.avatar_url}" alt="${userData.username}" class="w-full h-full object-cover">`;
-        }
+        // Set avatar using consistent styling - ensure all required properties are available
+        const avatarData = {
+            id: userData.id,
+            username: userData.username,
+            avatar_url: userData.avatar_url || null,
+            has_avatar_data: userData.has_avatar_data || false
+        };
+        
+        console.log('Creating avatar with data:', avatarData);
+        avatar.innerHTML = createAvatarHTML(avatarData, 'medium');
         
         // Add request ID as data attribute
         const requestItem = requestElement.querySelector('.friend-request-item') as HTMLElement;
@@ -1010,8 +1066,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 resultElement.innerHTML = `
                     <div class="flex items-center">
-                        <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
-                            ${exactUser.avatar_url ? `<img src="${exactUser.avatar_url}" alt="${exactUser.username}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-gray-500 text-xl"></i>'}
+                        <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                            ${exactUser.avatar_url ? createAvatarHTML(exactUser, 'medium') : '<i class="fas fa-user text-white text-xl"></i>'}
                         </div>
                         <div>
                             <p class="font-medium text-white">${exactUser.username} <i class="fas fa-check-circle text-purple-400 ml-1"></i></p>
@@ -1048,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <div class="flex items-center justify-between w-full">
                                 <div class="flex items-center">
                                     <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
-                                        ${exactUser.avatar_url ? `<img src="${exactUser.avatar_url}" alt="${exactUser.username}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-gray-500 text-xl"></i>'}
+                                        ${exactUser.avatar_url ? createAvatarHTML(exactUser, 'medium') : '<i class="fas fa-user text-white text-xl"></i>'}
                                     </div>
                                     <div>
                                         <p class="font-medium text-white">${exactUser.username}</p>
@@ -1158,10 +1214,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
         }
         
-        // Set avatar if available
-        if (user.avatar_url) {
-            avatar.innerHTML = `<img src="${user.avatar_url}" alt="${user.username}" class="w-full h-full object-cover">`;
-        }
+        // Set avatar using consistent styling
+        avatar.innerHTML = createAvatarHTML(user, 'medium');
         
         // Add user ID as data attribute
         const resultItem = resultElement.querySelector('.search-result-item') as HTMLElement;
@@ -1191,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     resultItem.innerHTML = `
                         <div class="flex items-center justify-between w-full">
                             <div class="flex items-center">
-                                <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                                <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
                                     ${avatar.innerHTML}
                                 </div>
                                 <div>
@@ -1229,7 +1283,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         resultItem.innerHTML = `
                             <div class="flex items-center justify-between w-full">
                                 <div class="flex items-center">
-                                    <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                                    <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
                                         ${avatar.innerHTML}
                                     </div>
                                     <div>

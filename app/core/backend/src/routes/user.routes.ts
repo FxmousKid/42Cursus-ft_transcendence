@@ -52,7 +52,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const users = await fastify.db.models.User.findAll({
-          attributes: ['id', 'username', 'email', 'status', 'avatar_url']
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data']
         });
         
         // Add has_avatar_data flag without sending the actual data
@@ -551,7 +551,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
               [Op.ne]: currentUserId // Exclude the current user
             }
           },
-          attributes: ['id', 'username', 'email', 'status', 'avatar_url']
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data']
         });
         
         // Then similar usernames
@@ -565,14 +565,128 @@ export function registerUserRoutes(fastify: FastifyInstance) {
               [Op.ne]: currentUserId // Exclude the current user
             }
           },
-          attributes: ['id', 'username', 'email', 'status', 'avatar_url'],
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data'],
           limit: 9 // Limit to 9 similar users (total 10 with exact match)
         });
         
         // Combine exact match with similar users, exact match first
         const users = exactMatch ? [exactMatch, ...similarUsers] : similarUsers;
         
-        return { success: true, data: users };
+        // Add has_avatar_data flag to each user
+        const usersWithAvatarFlag = users.map(user => ({
+          ...user.toJSON(),
+          has_avatar_data: !!user.avatar_data
+        }));
+        
+        return { success: true, data: usersWithAvatarFlag };
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(400).send({ success: false, message: error.message });
+      }
+    }
+  });
+
+  // Get user profile by ID with statistics
+  fastify.get<{ Params: { id: string } }>('/users/:id/profile', {
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: { type: 'string' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                username: { type: 'string' },
+                email: { type: 'string' },
+                status: { type: 'string' },
+                avatar_url: { type: ['string', 'null'] },
+                has_avatar_data: { type: 'boolean' },
+                created_at: { type: 'string' },
+                statistics: {
+                  type: 'object',
+                  properties: {
+                    games_played: { type: 'number' },
+                    wins: { type: 'number' },
+                    losses: { type: 'number' },
+                    win_rate: { type: 'number' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    preHandler: fastify.authenticate,
+    handler: async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const userId = parseInt(request.params.id);
+        
+        if (isNaN(userId)) {
+          return reply.status(400).send({ success: false, message: 'Invalid user ID' });
+        }
+
+        // Get user basic info
+        const user = await fastify.db.models.User.findByPk(userId, {
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data', 'createdAt']
+        });
+
+        if (!user) {
+          return reply.status(404).send({ success: false, message: 'User not found' });
+        }
+
+        // Calculate user statistics from matches
+        const matches = await fastify.db.models.Match.findAll({
+          where: {
+            [Op.or]: [
+              { player1_id: userId },
+              { player2_id: userId }
+            ],
+            status: 'completed' // Only count completed matches
+          }
+        });
+
+        let wins = 0;
+        let losses = 0;
+        const gamesPlayed = matches.length;
+
+        matches.forEach((match: any) => {
+          if (match.winner_id === userId) {
+            wins++;
+          } else if (match.winner_id !== null) {
+            // Only count as loss if there's a winner and it's not this user
+            losses++;
+          }
+        });
+
+        const winRate = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0;
+
+        const userData = {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          status: user.status,
+          avatar_url: user.avatar_url,
+          has_avatar_data: !!user.avatar_data,
+          created_at: user.createdAt,
+          statistics: {
+            games_played: gamesPlayed,
+            wins: wins,
+            losses: losses,
+            win_rate: winRate
+          }
+        };
+
+        return { success: true, data: userData };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });

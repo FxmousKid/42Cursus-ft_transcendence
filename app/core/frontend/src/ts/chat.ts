@@ -1,5 +1,40 @@
 // Chat functionality - Système de chat modulaire simplifié et robuste
-import { api } from './api';
+import { api, getAvatarUrl } from './api';
+
+// Utility function to create avatar HTML with consistent styling
+function createAvatarHTML(user: { id?: number; avatar_url?: string | null; username: string; has_avatar_data?: boolean }, size: 'small' | 'medium' | 'large' = 'medium'): string {
+    const sizeClasses = {
+        small: 'w-8 h-8',
+        medium: 'w-10 h-10', 
+        large: 'w-12 h-12'
+    };
+    
+    const iconSizes = {
+        small: 'text-sm',
+        medium: 'text-lg',
+        large: 'text-xl'
+    };
+    
+    const sizeClass = sizeClasses[size];
+    const iconSize = iconSizes[size];
+    
+    // Use getAvatarUrl to prioritize uploaded avatars over URLs
+    let avatarUrl = '';
+    if (user.id) {
+        avatarUrl = getAvatarUrl({
+            id: user.id,
+            has_avatar_data: user.has_avatar_data,
+            avatar_url: user.avatar_url || undefined
+        });
+    }
+    
+    if (avatarUrl && avatarUrl.trim()) {
+        return `<img src="${avatarUrl}" alt="${user.username}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <i class="fas fa-user text-white ${iconSize}" style="display: none;"></i>`;
+    } else {
+        return `<i class="fas fa-user text-white ${iconSize}"></i>`;
+    }
+}
 
 // Blocking system manager - Version simplifiée et fiable
 class BlockingManager {
@@ -348,14 +383,30 @@ export class ChatManager {
         // Clear previous messages from UI
         chatMessages.innerHTML = '';
         
+        // Try to get friend's avatar from the friends list
+        let friendAvatarHtml = '<i class="fas fa-user text-white"></i>';
+        const friendItem = document.querySelector(`.friend-item[data-id="${friendId}"]`);
+        if (friendItem) {
+            const avatarElement = friendItem.querySelector('.friend-avatar img');
+            if (avatarElement) {
+                const avatarUrl = (avatarElement as HTMLImageElement).src;
+                friendAvatarHtml = createAvatarHTML({
+                    id: friendId,
+                    avatar_url: avatarUrl,
+                    username: friendUsername,
+                    has_avatar_data: true
+                }, 'medium');
+            }
+        }
+        
         // Add simplified header with friend info
         const chatHeader = document.createElement('div');
         chatHeader.className = 'sticky top-0 bg-dark-800 border-b border-dark-600 p-3 mb-2 z-10';
         chatHeader.innerHTML = `
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-3 flex items-center justify-center">
-                        <i class="fas fa-user text-white"></i>
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-3 flex items-center justify-center overflow-hidden">
+                        ${friendAvatarHtml}
                     </div>
                     <div>
                         <h3 class="font-medium text-white">${friendUsername}</h3>

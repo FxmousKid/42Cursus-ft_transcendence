@@ -23,6 +23,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
                   username: { type: 'string' },
                   status: { type: 'string' },
                   avatar_url: { type: ['string', 'null'] },
+                  has_avatar_data: { type: 'boolean' },
                   friendship_status: { type: 'string' }
                 }
               }
@@ -50,12 +51,12 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             {
               model: User,
               as: 'user',
-              attributes: ['id', 'username', 'status', 'avatar_url']
+              attributes: ['id', 'username', 'status', 'avatar_url', 'avatar_data']
             },
             {
               model: User,
               as: 'friend',
-              attributes: ['id', 'username', 'status', 'avatar_url']
+              attributes: ['id', 'username', 'status', 'avatar_url', 'avatar_data']
             }
           ]
         });
@@ -72,6 +73,7 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             username: friend.username,
             status: friend.status,
             avatar_url: friend.avatar_url,
+            has_avatar_data: !!friend.avatar_data,
             friendship_status: friendship.status
           };
         });
@@ -180,7 +182,8 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
                       id: { type: 'number' },
                       username: { type: 'string' },
                       status: { type: 'string' },
-                      avatar_url: { type: ['string', 'null'] }
+                      avatar_url: { type: ['string', 'null'] },
+                      has_avatar_data: { type: 'boolean' }
                     }
                   },
                   status: { type: 'string' },
@@ -210,19 +213,36 @@ export function registerFriendshipRoutes(fastify: FastifyInstance) {
             {
               model: User,
               as: 'user',
-              attributes: ['id', 'username', 'status', 'avatar_url']
+              attributes: ['id', 'username', 'status', 'avatar_url', 'avatar_data']
             }
           ]
         });
         
         fastify.log.info(`Found ${pendingRequests.length} pending requests for user ${userId}`);
         
-        // Log de debugging - visualiser la structure des données
-        if (pendingRequests.length > 0) {
-          fastify.log.info(`Sample request structure: ${JSON.stringify(pendingRequests[0].toJSON())}`);
+        // Format the response to include has_avatar_data
+        const formattedRequests = pendingRequests.map(request => {
+          const requestData = request.toJSON() as any;
+          return {
+            id: requestData.id,
+            user: {
+              id: requestData.user.id,
+              username: requestData.user.username,
+              status: requestData.user.status,
+              avatar_url: requestData.user.avatar_url,
+              has_avatar_data: !!requestData.user.avatar_data
+            },
+            status: requestData.status,
+            created_at: requestData.created_at
+          };
+        });
+        
+        // Log de debugging - visualiser la structure des données formatées
+        if (formattedRequests.length > 0) {
+          fastify.log.info(`Sample formatted request structure: ${JSON.stringify(formattedRequests[0])}`);
         }
         
-        return { success: true, data: pendingRequests };
+        return { success: true, data: formattedRequests };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });
