@@ -5,6 +5,7 @@ export interface Friend {
   id: number;
   username: string;
   avatar_url: string | null;
+  has_avatar_data?: boolean;
   status: string;
 }
 
@@ -14,6 +15,7 @@ export interface PendingRequest {
     id: number;
     username: string;
     avatar_url: string | null;
+    has_avatar_data?: boolean;
   };
 }
 
@@ -237,7 +239,8 @@ class FriendshipService {
             user: {
               id: userData.id,
               username: userData.username,
-              avatar_url: userData.avatar_url
+              avatar_url: userData.avatar_url,
+              has_avatar_data: userData.has_avatar_data || false
             }
           };
         });

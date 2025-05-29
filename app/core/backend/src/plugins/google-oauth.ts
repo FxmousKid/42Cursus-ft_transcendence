@@ -4,7 +4,7 @@ import cookie from '@fastify/cookie';
 import session from '@fastify/session';
 import * as dotenv from 'dotenv';
 import crypto from 'crypto';
-import { FastifyRequest } from 'fastify';
+import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 
 // Explicitly load environment variables
 dotenv.config();
@@ -68,17 +68,16 @@ export const configureGoogleOAuthPlugin = fp(async (fastify, options) => {
       
       return state;
     },
-    checkStateFunction: (request: FastifyRequest, callback: (error: Error | null, result: boolean) => void) => {
-      // @ts-ignore - We know it's there
-      const state = request.query.state;
+    checkStateFunction: function(this: FastifyInstance, request: FastifyRequest): boolean {
+      const state = (request.query as any).state as string;
+      const storedState = stateStore.get(state);
       
-      if (!state || !stateStore.has(state)) {
-        return callback(new Error('Invalid state'), false);
+      if (storedState) {
+        stateStore.delete(state);
+        return true; // State is valid
+      } else {
+        return false; // Invalid state
       }
-      
-      // Clean up used state
-      stateStore.delete(state);
-      return callback(null, true);
     }
   });
   

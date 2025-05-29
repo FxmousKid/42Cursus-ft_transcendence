@@ -1,17 +1,33 @@
 import { Server, Socket } from 'socket.io';
+import { DefaultEventsMap } from 'socket.io/dist/typed-events';
+import { Op } from 'sequelize';
+import { ChatMessage } from '../models/chat_message.model';
+import { UserBlock } from '../models/user_block.model';
+import { Tournament } from '../models/tournament.model';
+import { MatchTournament } from '../models/match_tournament.model';
 import { User } from '../models/user.model';
 import { Friendship } from '../models/friendship.model';
 import * as jwt from 'jsonwebtoken';
 import { Sequelize } from 'sequelize-typescript';
-import { Op } from 'sequelize';
-import { Tournament } from 'src/models/tournament.model';
-import { MatchTournament } from 'src/models/match_tournament.model';
+import { Match } from '../models/match.model';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
-interface UserSocket extends Socket {
+// Map of userId -> socketId
+const onlineUsers = new Map<number, string>();
+
+// Map of socketId -> userId
+const socketUserMap = new Map<string, number>();
+
+interface UserSocket extends Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap> {
   userId?: number;
   username?: string;
+}
+
+interface ChatMessageData {
+  receiver_id: number;
+  content: string;
+  type?: 'text' | 'game_invite' | 'tournament_notification';
 }
 
 interface DB {
@@ -19,17 +35,26 @@ interface DB {
   models: {
     User: typeof User;
     Friendship: typeof Friendship;
-    Match: any;
     Tournament: typeof Tournament;
     MatchTournament: typeof MatchTournament;
+    Match: typeof Match;
+    ChatMessage: typeof ChatMessage;
+    UserBlock: typeof UserBlock;
   };
   Sequelize?: typeof Sequelize;
 }
 
-// Map of online users: userId -> socketId
-const onlineUsers = new Map<number, string>();
-// Map of socketId -> userId
-const socketUserMap = new Map<string, number>();
+async function isUserBlocked(db: DB, userId: number, otherUserId: number): Promise<boolean> {
+  const block = await db.models.UserBlock.findOne({
+    where: {
+      [Op.or]: [
+        { blocker_id: userId, blocked_id: otherUserId },
+        { blocker_id: otherUserId, blocked_id: userId }
+      ]
+    }
+  });
+  return !!block;
+}
 
 export function setupWebSocket(io: Server, db: DB) {
   // Authentication middleware for Socket.IO
@@ -437,6 +462,136 @@ export function setupWebSocket(io: Server, db: DB) {
       }
     });
     
+    // Handle user blocking
+    socket.on('user-block', async (data: { blockedUserId: number }) => {
+      try {
+        console.log('[WebSocket] User block request received:', data);
+        const { blockedUserId } = data;
+        
+        if (!userId) {
+          socket.emit('error', { type: 'error', message: 'You are not authenticated' });
+          return;
+        }
+        
+        if (userId === blockedUserId) {
+          socket.emit('error', { type: 'error', message: 'Cannot block yourself' });
+          return;
+        }
+        
+        // Check if user exists
+        const userToBlock = await db.models.User.findByPk(blockedUserId);
+        if (!userToBlock) {
+          socket.emit('error', { type: 'error', message: 'User not found' });
+          return;
+        }
+        
+        // Create or find existing block
+        const [block, created] = await db.models.UserBlock.findOrCreate({
+          where: {
+            blocker_id: userId,
+            blocked_id: blockedUserId
+          }
+        });
+        
+        if (created) {
+          console.log(`[WebSocket] User ${userId} blocked user ${blockedUserId}`);
+          
+          // Get blocker user info
+          const blockerUser = await db.models.User.findByPk(userId);
+          if (!blockerUser) {
+            throw new Error('Blocker user not found');
+          }
+          
+          // Notify the blocked user if they're online (no message, just status update)
+          const blockedUserSocketId = onlineUsers.get(blockedUserId);
+          if (blockedUserSocketId) {
+            io.to(blockedUserSocketId).emit('user-blocked-by', {
+              type: 'user-blocked-by',
+              blocker_id: userId,
+              blocker_username: blockerUser.username
+            });
+          }
+          
+          // Confirm block to the blocker (no message)
+          socket.emit('user-block-success', {
+            type: 'user-block-success',
+            blocked_id: blockedUserId,
+            blocked_username: userToBlock.username
+          });
+        } else {
+          // User was already blocked
+          socket.emit('user-block-success', {
+            type: 'user-block-success',
+            blocked_id: blockedUserId,
+            blocked_username: userToBlock.username
+          });
+        }
+      } catch (error) {
+        console.error('[WebSocket] Error blocking user:', error);
+        socket.emit('error', { type: 'error', message: 'Failed to block user: ' + error.message });
+      }
+    });
+
+    // Handle user unblocking
+    socket.on('user-unblock', async (data: { unblockedUserId: number }) => {
+      try {
+        console.log('[WebSocket] User unblock request received:', data);
+        const { unblockedUserId } = data;
+        
+        if (!userId) {
+          socket.emit('error', { type: 'error', message: 'You are not authenticated' });
+          return;
+        }
+        
+        // Find the block
+        const block = await db.models.UserBlock.findOne({
+          where: {
+            blocker_id: userId,
+            blocked_id: unblockedUserId
+          }
+        });
+        
+        if (!block) {
+          socket.emit('error', { type: 'error', message: 'Block not found' });
+          return;
+        }
+        
+        // Get user info before removing block
+        const unblockedUser = await db.models.User.findByPk(unblockedUserId);
+        const unblockerUser = await db.models.User.findByPk(userId);
+        
+        if (!unblockedUser || !unblockerUser) {
+          socket.emit('error', { type: 'error', message: 'User not found' });
+          return;
+        }
+        
+        // Remove the block
+        await block.destroy();
+        
+        console.log(`[WebSocket] User ${userId} unblocked user ${unblockedUserId}`);
+        
+        // Notify the unblocked user if they're online (no message, just status update)
+        const unblockedUserSocketId = onlineUsers.get(unblockedUserId);
+        if (unblockedUserSocketId) {
+          io.to(unblockedUserSocketId).emit('user-unblocked-by', {
+            type: 'user-unblocked-by',
+            unblocker_id: userId,
+            unblocker_username: unblockerUser.username
+          });
+        }
+        
+        // Confirm unblock to the unblocker (no message)
+        socket.emit('user-unblock-success', {
+          type: 'user-unblock-success',
+          unblocked_id: unblockedUserId,
+          unblocked_username: unblockedUser.username
+        });
+      } catch (error) {
+        console.error('[WebSocket] Error unblocking user:', error);
+        socket.emit('error', { type: 'error', message: 'Failed to unblock user: ' + error.message });
+      }
+    });
+    
     // Handle disconnection
     socket.on('disconnect', async () => {
       console.log(`[WebSocket] User disconnected: ${username} (${userId})`);
@@ -459,6 +614,186 @@ export function setupWebSocket(io: Server, db: DB) {
         } catch (error) {
           console.error('[WebSocket] Error updating user status:', error);
         }
+      }
+    });
+
+    socket.on('chat-message', async (data: ChatMessageData) => {
+      try {
+        const { receiver_id, content, type = 'text' } = data;
+        
+        if (!userId) {
+          socket.emit('error', { type: 'error', message: 'You are not authenticated' });
+          return;
+        }
+
+        // Check if either user has blocked the other
+        const isBlocked = await isUserBlocked(db, userId, receiver_id);
+        if (isBlocked) {
+          socket.emit('error', { type: 'error', message: 'Cannot send message due to user block' });
+          return;
+        }
+
+        // Create and save the message
+        const message = await db.models.ChatMessage.create({
+          sender_id: userId,
+          receiver_id,
+          content,
+          type,
+          read: false
+        });
+
+        // Send the message to the receiver if they're online
+        const receiverSocketId = onlineUsers.get(receiver_id);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit('chat-message-received', {
+            id: message.id,
+            sender_id: userId,
+            content,
+            type,
+            created_at: message.createdAt
+          });
+        }
+
+        // Confirm message sent to sender
+        socket.emit('chat-message-sent', {
+          id: message.id,
+          receiver_id,
+          content,
+          type,
+          created_at: message.createdAt
+        });
+      } catch (error) {
+        console.error('[WebSocket] Error sending chat message:', error);
+        socket.emit('error', { type: 'error', message: 'Failed to send message: ' + error.message });
+      }
+    });
+
+    socket.on('game-invite', async (data: { friendId: number }) => {
+      try {
+        const { friendId } = data;
+        
+        if (!userId) {
+          socket.emit('error', { type: 'error', message: 'You are not authenticated' });
+          return;
+        }
+
+        // Check if either user has blocked the other
+        const isBlocked = await isUserBlocked(db, userId, friendId);
+        if (isBlocked) {
+          socket.emit('error', { type: 'error', message: 'Cannot send game invitation due to user block' });
+          return;
+        }
+
+        // Create game invitation message
+        const message = await db.models.ChatMessage.create({
+          sender_id: userId,
+          receiver_id: friendId,
+          content: 'Game invitation',
+          type: 'game_invite',
+          read: false
+        });
+
+        // Send invitation to friend if online
+        const friendSocketId = onlineUsers.get(friendId);
+        if (friendSocketId) {
+          io.to(friendSocketId).emit('game-invite-received', {
+            id: message.id,
+            sender_id: userId,
+            created_at: message.createdAt
+          });
+        }
+
+        // Confirm invitation sent to sender
+        socket.emit('game-invite-sent', {
+          id: message.id,
+          receiver_id: friendId,
+          created_at: message.createdAt
+        });
+      } catch (error) {
+        console.error('[WebSocket] Error sending game invitation:', error);
+        socket.emit('error', { type: 'error', message: 'Failed to send game invitation: ' + error.message });
+      }
+    });
+
+    // Add tournament notification handler
+    socket.on('tournament-notification', async (data: { user_ids: number[], message: string }) => {
+      try {
+        const { user_ids, message } = data;
+        
+        if (!userId) {
+          socket.emit('error', { type: 'error', message: 'You are not authenticated' });
+          return;
+        }
+
+        // Send notification to each user
+        for (const receiverId of user_ids) {
+          // Skip if user has blocked or is blocked
+          const isBlocked = await isUserBlocked(db, userId, receiverId);
+          if (isBlocked) continue;
+
+          // Create notification message
+          const notification = await db.models.ChatMessage.create({
+            sender_id: userId,
+            receiver_id: receiverId,
+            content: message,
+            type: 'tournament_notification',
+            read: false
+          });
+
+          // Send to user if online
+          const receiverSocketId = onlineUsers.get(receiverId);
+          if (receiverSocketId) {
+            io.to(receiverSocketId).emit('tournament-notification-received', {
+              id: notification.id,
+              sender_id: userId,
+              content: message,
+              created_at: notification.createdAt
+            });
+          }
+        }
+
+        socket.emit('tournament-notifications-sent', {
+          success: true,
+          message: 'Tournament notifications sent successfully'
+        });
+      } catch (error) {
+        console.error('[WebSocket] Error sending tournament notifications:', error);
+        socket.emit('error', { type: 'error', message: 'Failed to send tournament notifications: ' + error.message });
+      }
+    });
+
+    // Add message read receipt handler
+    socket.on('mark-messages-read', async (data: { sender_id: number }) => {
+      try {
+        const { sender_id } = data;
+        
+        if (!userId) {
+          socket.emit('error', { type: 'error', message: 'You are not authenticated' });
+          return;
+        }
+
+        // Mark messages as read
+        await db.models.ChatMessage.update(
+          { read: true },
+          {
+            where: {
+              sender_id,
+              receiver_id: userId,
+              read: false
+            }
+          }
+        );
+
+        // Notify sender that messages were read if they're online
+        const senderSocketId = onlineUsers.get(sender_id);
+        if (senderSocketId) {
+          io.to(senderSocketId).emit('messages-read', {
+            reader_id: userId
+          });
+        }
+      } catch (error) {
+        console.error('[WebSocket] Error marking messages as read:', error);
+        socket.emit('error', { type: 'error', message: 'Failed to mark messages as read: ' + error.message });
       }
     });
   });

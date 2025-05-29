@@ -1,9 +1,57 @@
 // This file will be compiled to JS and included in the HTML directly
 // Global services and types will be available
 
-import { api } from './api';
+import { api, getAvatarUrl } from './api';
 import { websocketService } from './websocket';
 import { friendshipService, Friend, PendingRequest } from './friendship';
+import { chatManager } from './chat';
+
+// Utility function to create avatar HTML with consistent styling
+function createAvatarHTML(user: { id?: number; avatar_url?: string | null; username: string; has_avatar_data?: boolean }, size: 'small' | 'medium' | 'large' = 'medium'): string {
+    const sizeClasses = {
+        small: 'w-8 h-8 sm:w-10 sm:h-10',
+        medium: 'w-10 h-10 sm:w-12 sm:h-12', 
+        large: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24'
+    };
+    
+    const iconSizes = {
+        small: 'text-sm sm:text-lg',
+        medium: 'text-lg sm:text-xl',
+        large: 'text-2xl sm:text-3xl md:text-4xl'
+    };
+    
+    const sizeClass = sizeClasses[size];
+    const iconSize = iconSizes[size];
+    
+    // Debug: Log user data for avatar creation
+    console.log('createAvatarHTML called with:', {
+        id: user.id,
+        username: user.username,
+        avatar_url: user.avatar_url,
+        has_avatar_data: user.has_avatar_data,
+        size: size
+    });
+    
+    // Use getAvatarUrl to prioritize uploaded avatars over URLs
+    let avatarUrl = '';
+    if (user.id) {
+        avatarUrl = getAvatarUrl({
+            id: user.id,
+            has_avatar_data: user.has_avatar_data,
+            avatar_url: user.avatar_url || undefined
+        });
+        console.log('Generated avatar URL:', avatarUrl);
+    } else {
+        console.log('No user ID provided, using default icon');
+    }
+    
+    if (avatarUrl && avatarUrl.trim()) {
+        return `<img src="${avatarUrl}" alt="${user.username}" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <i class="fas fa-user text-white ${iconSize}" style="display: none;"></i>`;
+    } else {
+        return `<i class="fas fa-user text-white ${iconSize}"></i>`;
+    }
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Friends page loaded');
@@ -87,93 +135,96 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Register WebSocket event handlers if available
     if (websocketService && websocketService.on) {
-        console.log('Setting up WebSocket event handlers');
+        console.log('Setting up WebSocket event handlers for friends system');
         
-        // Écouteur pour recevoir une demande d'ami
-        websocketService.on('friend-request-received', (data: any) => {
-            console.log('Received friend request via WebSocket:', data);
+        // Check if friends WebSocket handlers are already setup to avoid conflicts
+        if ((window as any).friendsWebSocketSetup) {
+            console.log('🔌 Friends WebSocket handlers already setup, skipping');
+        } else {
+            console.log('🔌 Setting up friends WebSocket handlers');
             
-            // Correction du format des données - chercher le nom d'utilisateur au bon endroit
-            const username = data.from?.username || 'Quelqu\'un';
-            
-            // Recharger les demandes d'amitié en attente
-            loadFriendRequests();
-            
-            // Afficher une notification
-            showNotification(`Nouvelle demande d'ami de ${username}`);
-            
-            // Forcer le rechargement après un court délai pour s'assurer que les données sont à jour
-            setTimeout(() => {
+            // Écouteur pour recevoir une demande d'ami
+            websocketService.on('friend-request-received', (data: any) => {
+                console.log('Received friend request via WebSocket:', data);
+                
+                // Correction du format des données - chercher le nom d'utilisateur au bon endroit
+                const username = data.from?.username || 'Quelqu\'un';
+                
+                // Recharger les demandes d'amitié en attente
                 loadFriendRequests();
-            }, 500);
-        });
-        
-        // Écouteur pour les demandes envoyées
-        websocketService.on('friend-request-sent', (data: any) => {
-            console.log('Friend request sent via WebSocket:', data);
+                
+                // Afficher une notification
+                showNotification(`Nouvelle demande d'ami de ${username}`);
+                
+                // Forcer le rechargement après un court délai pour s'assurer que les données sont à jour
+                setTimeout(() => {
+                    loadFriendRequests();
+                }, 500);
+            });
             
-            // Trouver et mettre à jour le bouton d'ajout dans l'interface si présent
-            const searchResultItem = document.querySelector(`.search-result-item[data-id="${data.friend_id}"]`);
-            if (searchResultItem) {
-                const sendButton = searchResultItem.querySelector('.add-friend-button') as HTMLButtonElement;
-                if (sendButton) {
-                    sendButton.innerHTML = '<i class="fas fa-check mr-2"></i> Demande envoyée';
-                    sendButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                    sendButton.classList.add('bg-blue-600', 'cursor-not-allowed');
-                    sendButton.disabled = true;
+            // Écouteur pour les demandes envoyées
+            websocketService.on('friend-request-sent', (data: any) => {
+                console.log('Friend request sent via WebSocket:', data);
+                
+                // Trouver et mettre à jour le bouton d'ajout dans l'interface si présent
+                const searchResultItem = document.querySelector(`.search-result-item[data-id="${data.friend_id}"]`);
+                if (searchResultItem) {
+                    const sendButton = searchResultItem.querySelector('.add-friend-button') as HTMLButtonElement;
+                    if (sendButton) {
+                        sendButton.innerHTML = '<i class="fas fa-check mr-2"></i> Demande envoyée';
+                        sendButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        sendButton.classList.add('bg-blue-600', 'cursor-not-allowed');
+                        sendButton.disabled = true;
+                    }
                 }
-            }
+                
+                showNotification(`Demande d'ami envoyée à ${data.friend_username || 'un utilisateur'}`);
+            });
             
-            showNotification(`Demande d'ami envoyée à ${data.friend_username || 'un utilisateur'}`);
-        });
-        
-        // Écouteur quand une demande d'ami est acceptée
-        websocketService.on('friend-request-accepted', (data: any) => {
-            console.log('Friend request accepted via WebSocket:', data);
-            // Recharger la liste d'amis
-            loadFriends();
-            // Afficher une notification
-            showNotification(`${data.friend_username || 'Quelqu\'un'} a accepté votre demande d'ami`);
-        });
-        
-        // Écouteur pour la réponse (acceptation ou rejet) envoyée
-        websocketService.on('friend-request-response-sent', (data: any) => {
-            console.log('Friend request response sent via WebSocket:', data);
-            const action = data.accepted ? 'acceptée' : 'rejetée';
-            showNotification(`Demande d'ami ${action}`);
-            // Si c'est une acceptation, recharger la liste d'amis
-            if (data.accepted) {
+            // Écouteur quand une demande d'ami est acceptée
+            websocketService.on('friend-request-accepted', (data: any) => {
+                console.log('Friend request accepted via WebSocket:', data);
+                // Recharger la liste d'amis
                 loadFriends();
-            }
-        });
-        
-        // Écouteur pour la suppression d'amitié
-        websocketService.on('friend-removed', (data: any) => {
-            console.log('Friend removed via WebSocket:', data);
+                // Afficher une notification
+                showNotification(`${data.friend_username || 'Quelqu\'un'} a accepté votre demande d'ami`);
+            });
             
-            if (data.friend_id) {
-                // Si on est notifié qu'un ami nous a retiré
-                showNotification(`Un utilisateur vous a retiré de sa liste d'amis`, 'info');
-                loadFriends(); // Rafraîchir la liste d'amis
-            } else {
-                // Confirmation de notre suppression
-                showNotification(`Ami supprimé avec succès`, 'success');
-            }
-        });
-        
-        // Écouteur pour les changements de statut d'amis
-        websocketService.on('friend-status-change', (data: any) => {
-            console.log('Friend status changed via WebSocket:', data);
-            updateFriendStatus(data.friend_id, data.status);
-        });
-        
-        // Écoute des erreurs generales
-        websocketService.on('error', (data: any) => {
-            console.error('Error from WebSocket:', data);
-            if (data.message) {
-                showNotification(`Erreur: ${data.message}`, 'error');
-            }
-        });
+            // Écouteur pour la réponse (acceptation ou rejet) envoyée
+            websocketService.on('friend-request-response-sent', (data: any) => {
+                console.log('Friend request response sent via WebSocket:', data);
+                const action = data.accepted ? 'acceptée' : 'rejetée';
+                showNotification(`Demande d'ami ${action}`);
+                // Si c'est une acceptation, recharger la liste d'amis
+                if (data.accepted) {
+                    loadFriends();
+                }
+            });
+            
+            // Écouteur pour la suppression d'amitié
+            websocketService.on('friend-removed', (data: any) => {
+                console.log('Friend removed via WebSocket:', data);
+                
+                if (data.friend_id) {
+                    // Si on est notifié qu'un ami nous a retiré
+                    showNotification(`Un utilisateur vous a retiré de sa liste d'amis`, 'info');
+                    loadFriends(); // Rafraîchir la liste d'amis
+                } else {
+                    // Confirmation de notre suppression
+                    showNotification(`Ami supprimé avec succès`, 'success');
+                }
+            });
+            
+            // Écouteur pour les changements de statut d'amis
+            websocketService.on('friend-status-change', (data: any) => {
+                console.log('Friend status changed via WebSocket:', data);
+                updateFriendStatus(data.friend_id, data.status);
+            });
+            
+            // Mark as setup to avoid conflicts
+            (window as any).friendsWebSocketSetup = true;
+            console.log('✅ Friends WebSocket handlers setup complete');
+        }
     } else {
         console.warn('WebSocket service not available for event handling');
     }
@@ -262,16 +313,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         const avatar = friendElement.querySelector('.friend-avatar') as HTMLElement;
         const statusIndicator = friendElement.querySelector('.friend-status-indicator') as HTMLElement;
         const status = friendElement.querySelector('.friend-status') as HTMLElement;
-        const inviteButton = friendElement.querySelector('.invite-game-button') as HTMLButtonElement;
+        const chatButton = friendElement.querySelector('.chat-friend-button') as HTMLButtonElement;
         const removeButton = friendElement.querySelector('.remove-friend-button') as HTMLButtonElement;
         
         // Set username
         username.textContent = friend.username;
         
-        // Set avatar if available
-        if (friend.avatar_url) {
-            avatar.innerHTML = `<img src="${friend.avatar_url}" alt="${friend.username}" class="w-full h-full object-cover">`;
-        }
+        // Make username and avatar clickable for profile viewing
+        username.classList.add('cursor-pointer', 'hover:text-blue-400', 'transition-colors', 'duration-200');
+        avatar.classList.add('cursor-pointer', 'hover:ring-2', 'hover:ring-blue-400', 'transition-all', 'duration-200');
+        
+        // Add click event listeners for profile viewing
+        username.addEventListener('click', () => {
+            showUserProfile(friend.id, friend.username);
+        });
+        
+        avatar.addEventListener('click', () => {
+            showUserProfile(friend.id, friend.username);
+        });
+        
+        // Set avatar using consistent styling
+        avatar.innerHTML = createAvatarHTML(friend, 'medium');
         
         // Set status indicator color and text
         if (friend.status === 'online') {
@@ -380,6 +442,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 console.log('Removing friend via WebSocket');
                                 websocketService.send('friend-remove', { friendId: friend.id });
                                 
+                                // NOUVEAU: Fermer le chat si c'est l'ami actuellement en discussion
+                                const chatManager = (window as any).chatManager;
+                                if (chatManager && chatManager.getCurrentChatUserId() === friend.id) {
+                                    console.log('🔄 Closing current chat conversation after friend removal');
+                                    chatManager.closeChatConversation();
+                                }
+                                
                                 // Animer la disparition de l'ami
                                 friendItem.style.transition = 'all 0.3s ease-out';
                                 friendItem.style.transform = 'translateX(10px)';
@@ -403,6 +472,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 const response = await api.friendship.removeFriend(friend.id);
                                 
                                 if (response.success) {
+                                    // NOUVEAU: Fermer le chat si c'est l'ami actuellement en discussion
+                                    const chatManager = (window as any).chatManager;
+                                    if (chatManager && chatManager.getCurrentChatUserId() === friend.id) {
+                                        console.log('🔄 Closing current chat conversation after friend removal');
+                                        chatManager.closeChatConversation();
+                                    }
+                                    
                                     // Animer la disparition de l'ami
                                     friendItem.style.transition = 'all 0.3s ease-out';
                                     friendItem.style.transform = 'translateX(10px)';
@@ -439,55 +515,258 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
         
-        // Add event listener to invite button
-        inviteButton.addEventListener('click', () => {
-            // Montrer animation sur le bouton pour indiquer que l'invitation est envoyée
-            inviteButton.disabled = true;
-            inviteButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Envoi...';
-            inviteButton.classList.add('opacity-75');
-            
-            // Send game invitation via API
-            sendGameInvitation(friend.id, friend.username);
-            
-            // Rétablir le bouton après un court délai
-            setTimeout(() => {
-                inviteButton.disabled = false;
-                inviteButton.innerHTML = '<i class="fas fa-gamepad mr-1.5"></i> Jouer';
-                inviteButton.classList.remove('opacity-75');
-            }, 1500);
+        // Add event listeners
+        chatButton.addEventListener('click', () => {
+            // NOUVEAU: Toujours permettre l'ouverture du chat (même bloqué) pour voir l'interface
+            console.log(`💬 Opening chat with ${friend.username} (ID: ${friend.id}) - allowing blocked users`);
+            chatManager.openChatWithFriend(friend.id, friend.username);
         });
         
         // Add to container
         friendsContainer.appendChild(friendElement);
     }
     
-    // Function to send game invitation
-    function sendGameInvitation(friendId: number, friendUsername: string) {
-        // Check if websocket available
-        const websocketService = (window as any).websocketService;
+    // Function to show user profile in a modal
+    async function showUserProfile(friendId: number, friendUsername: string) {
+        console.log(`👤 Showing user profile for ${friendUsername} (ID: ${friendId})`);
         
-        if (websocketService && websocketService.send) {
-            // Send game invitation via WebSocket
-            websocketService.send('game-invite', { 
-                friendId: friendId, 
-                friendUsername: friendUsername 
+        // Remove existing profile modal if any
+        const existingModal = document.getElementById('user-profile-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Get friend data from the current friends list
+        const friendItem = document.querySelector(`.friend-item[data-id="${friendId}"]`);
+        let friendStatus = 'Hors ligne';
+        if (friendItem) {
+            const statusElement = friendItem.querySelector('.friend-status');
+            if (statusElement) {
+                friendStatus = statusElement.textContent || 'Hors ligne';
+            }
+        }
+        
+        // Create modal overlay
+        const modalOverlay = document.createElement('div');
+        modalOverlay.id = 'user-profile-modal';
+        modalOverlay.className = 'fixed inset-0 bg-dark-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+        
+        // Create modal content
+        const modalContent = document.createElement('div');
+        modalContent.className = 'bg-dark-800 border border-dark-600 rounded-xl p-0 max-w-sm w-full shadow-2xl transform transition-all duration-300 scale-95 opacity-0';
+        
+        // Show loading state initially
+        modalContent.innerHTML = `
+            <div class="relative">
+                <!-- Header with close button -->
+                <div class="flex items-center justify-end p-4">
+                    <button id="close-profile-modal" class="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-dark-700">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+                
+                <!-- Loading content -->
+                <div class="p-8 text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-indigo-600/20 rounded-full mx-auto mb-4 flex items-center justify-center border border-blue-500/30">
+                        <i class="fas fa-spinner fa-spin text-2xl text-blue-400"></i>
+                    </div>
+                    <p class="text-gray-400">Chargement du profil...</p>
+                </div>
+            </div>
+        `;
+        
+        modalOverlay.appendChild(modalContent);
+        document.body.appendChild(modalOverlay);
+        
+        // Animate modal appearance
+        setTimeout(() => {
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+        
+        // Add close event listener for loading state
+        const closeButton = modalContent.querySelector('#close-profile-modal');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => modalOverlay.remove(), 200);
+            });
+        }
+        
+        // Close modal when clicking outside
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => modalOverlay.remove(), 200);
+            }
+        });
+        
+        // Load real user profile data from API
+        try {
+            const authService = (window as any).authService;
+            const token = authService?.getToken();
+            
+            if (!token) {
+                throw new Error('No authentication token available');
+            }
+            
+            // Fetch user profile with real statistics
+            const response = await fetch(`${api.baseUrl}/users/${friendId}/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
             
-            showNotification(`Invitation envoyée à ${friendUsername}`, 'success');
-        } else {
-            // Fallback to API
-            api.game.sendInvitation(friendId)
-                .then((response: any) => {
-                    if (response.success) {
-                        showNotification(`Invitation envoyée à ${friendUsername}`, 'success');
-                    } else {
-                        showNotification(`Erreur: ${response.message}`, 'error');
-                    }
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to load profile');
+            }
+            
+            const profileData = data.data;
+            
+            // Format join date
+            const joinDate = profileData.created_at 
+                ? new Date(profileData.created_at).toLocaleDateString('fr-FR', { 
+                    year: 'numeric', 
+                    month: 'long' 
                 })
-                .catch((error: any) => {
-                    console.error('Error sending game invitation:', error);
-                    showNotification("Erreur lors de l'envoi de l'invitation", 'error');
+                : 'Non disponible';
+            
+            // Update modal content with real profile data
+            modalContent.innerHTML = `
+                <div class="relative">
+                    <!-- Header with close button -->
+                    <div class="flex items-center justify-end p-4">
+                        <button id="close-profile-modal" class="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-dark-700">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- User Info Section -->
+                    <div class="px-6 pb-6">
+                        <!-- Avatar and basic info -->
+                        <div class="text-center mb-6">
+                            <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg border-4 border-dark-700 overflow-hidden">
+                                ${createAvatarHTML(profileData, 'large')}
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-2">${profileData.username}</h3>
+                            <div class="flex items-center justify-center">
+                                <span class="status-indicator ${friendStatus === 'En ligne' ? 'bg-green-400' : friendStatus === 'En jeu' ? 'bg-blue-400' : 'bg-gray-500'} w-3 h-3 rounded-full mr-2"></span>
+                                <span class="text-sm ${friendStatus === 'En ligne' ? 'text-green-400' : friendStatus === 'En jeu' ? 'text-blue-400' : 'text-gray-400'}">${friendStatus}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- User Details -->
+                        <div class="space-y-4 mb-6">
+                            <div class="bg-dark-700/50 rounded-lg p-4 border border-dark-600/50">
+                                <div class="flex items-center mb-3">
+                                    <h4 class="text-white font-medium flex items-center">
+                                        <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+                                        Informations
+                                    </h4>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-400 text-sm flex items-center">
+                                            <i class="fas fa-envelope text-gray-500 mr-2 w-4"></i>
+                                            Email
+                                        </span>
+                                        <span class="text-white text-sm font-medium">${profileData.email}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-400 text-sm flex items-center">
+                                            <i class="fas fa-calendar text-gray-500 mr-2 w-4"></i>
+                                            Membre depuis
+                                        </span>
+                                        <span class="text-white text-sm font-medium">${joinDate}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Stats Section -->
+                            <div class="bg-dark-700/50 rounded-lg p-4 border border-dark-600/50">
+                                <div class="flex items-center mb-3">
+                                    <h4 class="text-white font-medium flex items-center">
+                                        <i class="fas fa-chart-bar text-purple-400 mr-2"></i>
+                                        Statistiques de jeu
+                                    </h4>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="text-center p-3 bg-dark-800/50 rounded-lg border border-dark-600/30">
+                                        <p class="text-2xl font-bold text-blue-400 mb-1">${profileData.statistics.games_played}</p>
+                                        <p class="text-gray-400 text-xs">Parties jouées</p>
+                                    </div>
+                                    <div class="text-center p-3 bg-dark-800/50 rounded-lg border border-dark-600/30">
+                                        <p class="text-2xl font-bold text-green-400 mb-1">${profileData.statistics.wins}</p>
+                                        <p class="text-gray-400 text-xs">Victoires</p>
+                                    </div>
+                                    <div class="text-center p-3 bg-dark-800/50 rounded-lg border border-dark-600/30">
+                                        <p class="text-2xl font-bold text-red-400 mb-1">${profileData.statistics.losses}</p>
+                                        <p class="text-gray-400 text-xs">Défaites</p>
+                                    </div>
+                                    <div class="text-center p-3 bg-dark-800/50 rounded-lg border border-dark-600/30">
+                                        <p class="text-2xl font-bold text-yellow-400 mb-1">${profileData.statistics.win_rate}%</p>
+                                        <p class="text-gray-400 text-xs">Taux de victoire</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Re-add close event listener
+            const newCloseButton = modalContent.querySelector('#close-profile-modal');
+            if (newCloseButton) {
+                newCloseButton.addEventListener('click', () => {
+                    modalContent.classList.remove('scale-100', 'opacity-100');
+                    modalContent.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => modalOverlay.remove(), 200);
                 });
+            }
+            
+        } catch (error) {
+            console.error('Error loading user profile:', error);
+            
+            // Show error state
+            modalContent.innerHTML = `
+                <div class="relative">
+                    <!-- Header with close button -->
+                    <div class="flex items-center justify-end p-4">
+                        <button id="close-profile-modal" class="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-dark-700">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Error content -->
+                    <div class="p-8 text-center">
+                        <div class="w-16 h-16 bg-red-500/20 rounded-full mx-auto mb-4 flex items-center justify-center border border-red-500/30">
+                            <i class="fas fa-exclamation-triangle text-2xl text-red-400"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-white mb-2">Erreur de chargement</h3>
+                        <p class="text-gray-400 text-sm">Impossible de récupérer les informations de ${friendUsername}</p>
+                        <p class="text-gray-500 text-xs mt-2">${error instanceof Error ? error.message : 'Erreur inconnue'}</p>
+                    </div>
+                </div>
+            `;
+            
+            // Re-add close event listener
+            const errorCloseButton = modalContent.querySelector('#close-profile-modal');
+            if (errorCloseButton) {
+                errorCloseButton.addEventListener('click', () => {
+                    modalContent.classList.remove('scale-100', 'opacity-100');
+                    modalContent.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => modalOverlay.remove(), 200);
+                });
+            }
         }
     }
     
@@ -536,6 +815,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Utiliser sender si user n'existe pas
         const userData = request.user || request.sender;
         
+        // Debug: Log user data to see what avatar information is available
+        console.log('Friend request user data:', {
+            id: userData.id,
+            username: userData.username,
+            avatar_url: userData.avatar_url,
+            has_avatar_data: userData.has_avatar_data
+        });
+        
         const requestElement = document.importNode(friendRequestTemplate.content, true);
         
         // Set request details
@@ -547,10 +834,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Set username
         username.textContent = userData.username;
         
-        // Set avatar if available
-        if (userData.avatar_url) {
-            avatar.innerHTML = `<img src="${userData.avatar_url}" alt="${userData.username}" class="w-full h-full object-cover">`;
-        }
+        // Set avatar using consistent styling - ensure all required properties are available
+        const avatarData = {
+            id: userData.id,
+            username: userData.username,
+            avatar_url: userData.avatar_url || null,
+            has_avatar_data: userData.has_avatar_data || false
+        };
+        
+        console.log('Creating avatar with data:', avatarData);
+        avatar.innerHTML = createAvatarHTML(avatarData, 'medium');
         
         // Add request ID as data attribute
         const requestItem = requestElement.querySelector('.friend-request-item') as HTMLElement;
@@ -773,8 +1066,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 resultElement.innerHTML = `
                     <div class="flex items-center">
-                        <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
-                            ${exactUser.avatar_url ? `<img src="${exactUser.avatar_url}" alt="${exactUser.username}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-gray-500 text-xl"></i>'}
+                        <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                            ${exactUser.avatar_url ? createAvatarHTML(exactUser, 'medium') : '<i class="fas fa-user text-white text-xl"></i>'}
                         </div>
                         <div>
                             <p class="font-medium text-white">${exactUser.username} <i class="fas fa-check-circle text-purple-400 ml-1"></i></p>
@@ -811,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <div class="flex items-center justify-between w-full">
                                 <div class="flex items-center">
                                     <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
-                                        ${exactUser.avatar_url ? `<img src="${exactUser.avatar_url}" alt="${exactUser.username}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-gray-500 text-xl"></i>'}
+                                        ${exactUser.avatar_url ? createAvatarHTML(exactUser, 'medium') : '<i class="fas fa-user text-white text-xl"></i>'}
                                     </div>
                                     <div>
                                         <p class="font-medium text-white">${exactUser.username}</p>
@@ -921,10 +1214,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
         }
         
-        // Set avatar if available
-        if (user.avatar_url) {
-            avatar.innerHTML = `<img src="${user.avatar_url}" alt="${user.username}" class="w-full h-full object-cover">`;
-        }
+        // Set avatar using consistent styling
+        avatar.innerHTML = createAvatarHTML(user, 'medium');
         
         // Add user ID as data attribute
         const resultItem = resultElement.querySelector('.search-result-item') as HTMLElement;
@@ -954,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     resultItem.innerHTML = `
                         <div class="flex items-center justify-between w-full">
                             <div class="flex items-center">
-                                <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                                <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
                                     ${avatar.innerHTML}
                                 </div>
                                 <div>
@@ -992,7 +1283,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         resultItem.innerHTML = `
                             <div class="flex items-center justify-between w-full">
                                 <div class="flex items-center">
-                                    <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
+                                    <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
                                         ${avatar.innerHTML}
                                     </div>
                                     <div>
@@ -1183,55 +1474,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 if (!token) {
                     console.error('No token available, auth service getToken returned null');
-                    // Essayer de forcer la restauration de session
-                    authService.restoreSession();
-                    const tokenAfterRestore = authService.getToken();
-                    console.log('Token after forced restore:', !!tokenAfterRestore);
-                    
-                    if (!tokenAfterRestore) {
-                        console.error('Still no token after restore, authentication may be invalid');
-                        showNotification('Problème d\'authentification, veuillez vous reconnecter', 'error');
-                        setTimeout(() => {
-                            window.location.href = '/login.html';
-                        }, 2000);
-                        return;
-                    }
+                    showNotification('Problème d\'authentification, veuillez vous reconnecter', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                    return;
                 }
                 
-                // Vérifier l'état de la connexion WebSocket
+                // Vérifier l'état de la connexion WebSocket une seule fois
                 const websocketService = (window as any).websocketService;
-                if (websocketService) {
-                    console.log('WebSocket service status on page load:', 
-                        websocketService.isConnected ? 
-                        (websocketService.isConnected() ? 'Connected' : 'Disconnected') : 
-                        'Function not available');
-                    
-                    // Forcer la connexion WebSocket
-                    console.log('Forcing WebSocket connection on page load');
+                if (websocketService && !websocketService.isConnected()) {
+                    console.log('WebSocket service not connected, initiating connection');
                     websocketService.connect();
-                    
-                    // Vérifier si la connexion a réussi après un court délai
-                    setTimeout(() => {
-                        console.log('WebSocket connection status after delay:', websocketService.isConnected());
-                        
-                        // Si toujours déconnecté après un délai, essayer à nouveau
-                        if (!websocketService.isConnected()) {
-                            console.log('Still disconnected, trying one more time...');
-                            websocketService.connect();
-                            
-                            // Vérifier à nouveau après un autre délai
-                            setTimeout(() => {
-                                const connected = websocketService.isConnected();
-                                console.log('WebSocket final connection status:', connected);
-                                
-                                if (!connected) {
-                                    console.warn('WebSocket connection failed after multiple attempts');
-                                    console.log('Switching to polling mode for friendship updates');
-                                    showNotification('Mode temps réel indisponible, passage en mode polling', 'info');
-                                }
-                            }, 1000);
-                        }
-                    }, 1000);
+                } else if (websocketService && websocketService.isConnected()) {
+                    console.log('WebSocket already connected');
+                } else {
+                    console.warn('WebSocket service not available');
                 }
             }
             
@@ -1246,7 +1504,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             setInterval(() => {
                 console.log('Refreshing friend requests...');
                 loadFriendRequests();
-            }, 5000); // Rafraîchir toutes les 5 secondes pour une mise à jour plus rapide
+            }, 30000); // Rafraîchir toutes les 30 secondes au lieu de 5 pour réduire le spam
             
             console.log('Friends page initialized successfully');
         } catch (error) {

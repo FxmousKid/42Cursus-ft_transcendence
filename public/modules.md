@@ -15,7 +15,7 @@
 - [ ] - Major module: Multiplayer (more than 2 players in the same game)
 - [ ] - Major module: Add another game with user history and matchmaking
 - [TODO] - Minor module: Game customization options @Genaro?
-- [TODO] - Major module: Live chat - @Joey
+- [INCOMING] - Major module: Live chat - @Joey
 
 ## AI-Algo
 - [ ] - Major module: Introduce an AI opponent
