@@ -1168,18 +1168,25 @@ export class ChatManager {
             : 'Vous ne pouvez pas envoyer de messages à cet utilisateur.';
         
         blockedDiv.innerHTML = `
-            <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-                <div class="flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mx-auto mb-4">
-                    <i class="fas fa-ban text-red-600 text-2xl"></i>
+            <div class="bg-dark-700 border border-dark-600 rounded-lg p-6 max-w-md">
+                <div class="flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mx-auto mb-4 border border-red-500/30">
+                    <i class="fas fa-ban text-red-400 text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-red-800 mb-2">${message}</h3>
-                <p class="text-red-600 mb-4">${description}</p>
+                <h3 class="text-lg font-semibold text-white mb-2">${message}</h3>
+                <p class="text-gray-400 mb-4">${description}</p>
                 ${iBlockedThem ? `
                     <button id="unblock-user-btn" 
                             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium">
                         <i class="fas fa-unlock mr-2"></i>Débloquer ${friendUsername}
                     </button>
-                ` : ''}
+                ` : `
+                    <div class="text-center">
+                        <div class="inline-flex items-center px-4 py-2 bg-gray-700/50 rounded-lg text-gray-400 text-sm">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Aucune action disponible
+                        </div>
+                    </div>
+                `}
             </div>
         `;
         
@@ -1213,8 +1220,8 @@ export class ChatManager {
                         
                         // Show error message
                         const errorDiv = document.createElement('div');
-                        errorDiv.className = 'mt-3 text-red-600 text-sm';
-                        errorDiv.textContent = 'Erreur lors du déblocage. Veuillez réessayer.';
+                        errorDiv.className = 'mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 text-sm text-center';
+                        errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Erreur lors du déblocage. Veuillez réessayer.';
                         unblockBtn.parentElement?.appendChild(errorDiv);
                         
                         // Remove error after 3 seconds
