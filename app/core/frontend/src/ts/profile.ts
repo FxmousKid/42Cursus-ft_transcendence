@@ -343,12 +343,32 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadProfileData() {
         try {
             console.log('Loading full profile data from API');
-            const response = await api.user.getProfile();
-            console.log('Profile API response:', response);
             
-            if (response.success && response.data) {
+            // Get current user's ID
+            const userId = authService.getUserId();
+            if (!userId) {
+                console.error('No user ID available');
+                return;
+            }
+            
+            // Use the profile endpoint with statistics (same as in friends modal)
+            const response = await fetch(`${api.baseUrl}/users/${userId}/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${authService.getToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('Profile API response with stats:', data);
+            
+            if (data.success && data.data) {
                 console.log('Successfully loaded profile data');
-                const profile = response.data;
+                const profile = data.data;
                 currentUserData = profile;
                 
                 // Afficher les informations du profil
@@ -359,6 +379,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Update avatar display using the unified function
                 updateAvatarDisplay(profile);
+                
+                // Update statistics if available
+                if (profile.statistics) {
+                    if (statsGamesPlayed) statsGamesPlayed.textContent = profile.statistics.games_played.toString();
+                    if (statsWins) statsWins.textContent = profile.statistics.wins.toString();
+                    if (statsLosses) statsLosses.textContent = profile.statistics.losses.toString();
+                    if (statsRatio) {
+                        const winRate = profile.statistics.win_rate / 100; // Convert percentage to ratio
+                        statsRatio.textContent = winRate.toFixed(2);
+                    }
+                }
                 
                 // Définir les valeurs du formulaire pour l'édition
                 if (editUsername) editUsername.value = profile.username;
@@ -375,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('avatar_url', profile.avatar_url);
                 }
             } else {
-                console.error('Failed to load profile data:', response.message);
+                console.error('Failed to load profile data:', data.message);
             }
         } catch (error) {
             console.error('Error loading profile data:', error);
@@ -384,86 +415,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadMatches() {
         try {
-          const matchesResponse = await api.user.getMatches();
-          
-          if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
-            const matches = matchesResponse.data as MatchData[];
+            const matchesResponse = await api.user.getMatches();
             
-            // Hide "no matches" message
-            if (noMatches) {
-              noMatches.classList.add('hidden');
-            }
-            
-            // Calculate stats
-            let wins = 0;
-            let losses = 0;
-            const userId = authService.getUserId();
-            
-            // Clear existing matches
-            if (matchesContainer) {
-              matchesContainer.innerHTML = '';
-            }
-            
-            // Display matches
-            if (matchesContainer && matchTemplate) {
-              matches.forEach((match: MatchData) => {
-                // Determine if current user is player1 or player2
-                const isPlayer1 = match.player1_id.toString() === userId;
-                const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
-                const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
-                const opponentUsername = isPlayer1 ? match.player2_username : match.player1_username;
+            if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
+                const matches = matchesResponse.data as MatchData[];
                 
-                // Determine if match was won or lost
-                const isWin = currentPlayerScore > opponentScore;
-                if (isWin) wins++;
-                else losses++;
-                
-                // Create match element from template
-                const matchElement = document.importNode(matchTemplate.content, true);
-                
-                // Set match details
-                const resultIndicator = matchElement.querySelector('.match-result-indicator');
-                const opponent = matchElement.querySelector('.match-opponent');
-                const date = matchElement.querySelector('.match-date');
-                const score = matchElement.querySelector('.match-score');
-                
-                if (resultIndicator) {
-                  resultIndicator.classList.add(isWin ? 'bg-green-500' : 'bg-red-500');
+                // Hide "no matches" message
+                if (noMatches) {
+                    noMatches.classList.add('hidden');
                 }
                 
-                if (opponent) opponent.textContent = opponentUsername || 'Unknown';
-                if (score) score.textContent = `${currentPlayerScore} - ${opponentScore}`;
+                const userId = authService.getUserId();
                 
-                // Format date
-                if (date && match.created_at) {
-                  const matchDate = new Date(match.created_at);
-                  date.textContent = matchDate.toLocaleDateString();
+                // Clear existing matches
+                if (matchesContainer) {
+                    matchesContainer.innerHTML = '';
                 }
                 
-                // Add match to container
-                matchesContainer.appendChild(matchElement);
-              });
+                // Display matches
+                if (matchesContainer && matchTemplate) {
+                    matches.forEach((match: MatchData) => {
+                        // Determine if current user is player1 or player2
+                        const isPlayer1 = match.player1_id.toString() === userId;
+                        const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
+                        const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
+                        const opponentUsername = isPlayer1 ? match.player2_username : match.player1_username;
+                        
+                        // Determine if match was won or lost based on score
+                        const isWin = currentPlayerScore > opponentScore;
+                        
+                        // Create match element from template
+                        const matchElement = document.importNode(matchTemplate.content, true);
+                        
+                        // Set match details
+                        const resultIndicator = matchElement.querySelector('.match-result-indicator');
+                        const opponent = matchElement.querySelector('.match-opponent');
+                        const date = matchElement.querySelector('.match-date');
+                        const score = matchElement.querySelector('.match-score');
+                        
+                        if (resultIndicator) {
+                            resultIndicator.classList.add(isWin ? 'bg-green-500' : 'bg-red-500');
+                        }
+                        
+                        if (opponent) opponent.textContent = opponentUsername || 'Unknown';
+                        if (score) score.textContent = `${currentPlayerScore} - ${opponentScore}`;
+                        
+                        // Format date
+                        if (date && match.created_at) {
+                            const matchDate = new Date(match.created_at);
+                            date.textContent = matchDate.toLocaleDateString();
+                        }
+                        
+                        // Add match to container
+                        matchesContainer.appendChild(matchElement);
+                    });
+                }
+                
+                // Note: Statistics are loaded from the server in loadProfileData()
+                // No need to calculate or update them here
+                
+            } else {
+                // Show "no matches" message if no matches found
+                if (noMatches) {
+                    noMatches.classList.remove('hidden');
+                }
             }
-            
-            // Update stats
-            const total = wins + losses;
-            if (statsGamesPlayed) statsGamesPlayed.textContent = total.toString();
-            if (statsWins) statsWins.textContent = wins.toString();
-            if (statsLosses) statsLosses.textContent = losses.toString();
-            if (statsRatio) statsRatio.textContent = total > 0 ? (wins / total).toFixed(2) : '0.00';
-          } else {
-            // Show "no matches" message if no matches found
-            if (noMatches) {
-              noMatches.classList.remove('hidden');
-            }
-          }
         } catch (error) {
-          console.error('Error loading matches:', error);
-          
-          // Show "no matches" message in case of error
-          if (noMatches) {
-            noMatches.classList.remove('hidden');
-          }
+            console.error('Error loading matches:', error);
+            
+            // Show "no matches" message in case of error
+            if (noMatches) {
+                noMatches.classList.remove('hidden');
+            }
         }
     }
     
