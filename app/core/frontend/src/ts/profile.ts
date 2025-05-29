@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, getAvatarUrl } from './api';
 
 // Interface pour les données de match
 interface MatchData {
@@ -13,7 +13,7 @@ interface MatchData {
     status?: string;
     created_at: string;
     updated_at: string;
-  }
+}
 
 /**
  * Script pour gérer la page de profil
@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Obtenir l'instance de l'API
     const api = (window as any).api;
+    const getAvatarUrl = (window as any).getAvatarUrl;
     if (!api || !api.user) {
         console.error('API not available');
         return;
@@ -59,7 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Profile elements
     const profileUsernameElement = document.getElementById('profile-username') as HTMLElement;
     const profileEmail = document.getElementById('profile-email') as HTMLElement;
+    const profileStatus = document.getElementById('profile-status') as HTMLElement;
     const profileAvatar = document.getElementById('profile-avatar') as HTMLElement;
+    const avatarUploadInput = document.getElementById('avatar-upload-input') as HTMLInputElement;
+    const removeAvatarButton = document.getElementById('remove-avatar-button') as HTMLButtonElement;
     
     // Stats elements
     const statsGamesPlayed = document.getElementById('stats-games-played') as HTMLElement;
@@ -91,6 +95,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteErrorMessage = document.getElementById('delete-error-message') as HTMLElement;
     const deleteErrorText = document.getElementById('delete-error-text') as HTMLElement;
     
+    // Upload status elements
+    const uploadStatus = document.getElementById('upload-status') as HTMLElement;
+    const uploadStatusText = document.getElementById('upload-status-text') as HTMLElement;
+    
+    // Current user data
+    let currentUserData: any = null;
+    
     // Utiliser les données du localStorage pour afficher des informations de base
     // même si le backend n'est pas disponible
     const username = localStorage.getItem('username');
@@ -100,6 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Afficher les informations de base depuis localStorage
     if (username) {
         profileUsernameElement.textContent = username;
+        profileStatus.textContent = 'offline';
+        profileStatus.classList.add('text-gray-600');
         
         // Pré-remplir les champs du formulaire
         editUsername.value = username;
@@ -108,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Afficher l'avatar si disponible
         if (avatarUrl) {
-            profileAvatar.innerHTML = `<img src="${avatarUrl}" alt="${username}" class="w-full h-full object-cover">`;
+            updateAvatarDisplay({ id: parseInt(userId), avatar_url: avatarUrl, has_avatar_data: false });
         }
     }
     
@@ -117,6 +130,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Charger les matchs
     loadMatches();
+    
+    // Gérer le clic sur l'avatar pour upload
+    if (profileAvatar && avatarUploadInput) {
+        profileAvatar.addEventListener('click', () => {
+            avatarUploadInput.click();
+        });
+        
+        // Gérer la sélection de fichier
+        avatarUploadInput.addEventListener('change', handleAvatarUpload);
+    }
+    
+    // Gérer le bouton de suppression d'avatar
+    if (removeAvatarButton) {
+        removeAvatarButton.addEventListener('click', handleRemoveAvatar);
+    }
     
     // Gérer le bouton d'édition de profil
     if (editProfileButton && editProfileModal) {
@@ -163,6 +191,136 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // Fonction pour mettre à jour l'affichage de l'avatar
+    function updateAvatarDisplay(userData: { id: number; avatar_url?: string; has_avatar_data?: boolean }) {
+        if (!profileAvatar) return;
+        
+        const avatarUrl = getAvatarUrl ? getAvatarUrl(userData) : '';
+        
+        if (avatarUrl) {
+            profileAvatar.innerHTML = `
+                <img src="${avatarUrl}" alt="${username}" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 transition-opacity duration-200 flex items-center justify-center cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white opacity-0 hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </div>
+            `;
+        } else {
+            // Default avatar with upload icon
+            profileAvatar.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                </svg>
+                <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 transition-opacity duration-200 flex items-center justify-center cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white opacity-0 hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </div>
+            `;
+        }
+        
+        // Show/hide remove button based on whether user has uploaded avatar
+        if (removeAvatarButton) {
+            if (userData.has_avatar_data) {
+                removeAvatarButton.classList.remove('hidden');
+            } else {
+                removeAvatarButton.classList.add('hidden');
+            }
+        }
+    }
+    
+    // Fonction pour gérer l'upload d'avatar
+    async function handleAvatarUpload(event: Event) {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        
+        if (!file) return;
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            showUploadStatus('Type de fichier non supporté. Utilisez JPEG, PNG, GIF ou WebP.', false);
+            return;
+        }
+        
+        // Validate file size (2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            showUploadStatus('Le fichier est trop volumineux. Taille maximale: 2MB.', false);
+            return;
+        }
+        
+        // Show loading state
+        showUploadStatus('Téléchargement en cours...', true, true);
+        
+        try {
+            const response = await api.user.uploadAvatar(file);
+            
+            if (response.success) {
+                showUploadStatus('Avatar mis à jour avec succès!', true);
+                // Reload profile data to get updated avatar info
+                await loadProfileData();
+            } else {
+                showUploadStatus(response.message || 'Erreur lors du téléchargement', false);
+            }
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            showUploadStatus('Erreur de connexion au serveur', false);
+        }
+        
+        // Clear the input
+        input.value = '';
+    }
+    
+    // Fonction pour supprimer l'avatar
+    async function handleRemoveAvatar() {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer votre avatar?')) {
+            return;
+        }
+        
+        showUploadStatus('Suppression en cours...', true, true);
+        
+        try {
+            const response = await api.user.deleteAvatar();
+            
+            if (response.success) {
+                showUploadStatus('Avatar supprimé avec succès!', true);
+                // Reload profile data
+                await loadProfileData();
+            } else {
+                showUploadStatus(response.message || 'Erreur lors de la suppression', false);
+            }
+        } catch (error) {
+            console.error('Error removing avatar:', error);
+            showUploadStatus('Erreur de connexion au serveur', false);
+        }
+    }
+    
+    // Fonction pour afficher le statut d'upload
+    function showUploadStatus(message: string, isSuccess: boolean, isLoading: boolean = false) {
+        if (!uploadStatus || !uploadStatusText) return;
+        
+        uploadStatusText.textContent = message;
+        uploadStatus.classList.remove('hidden', 'bg-green-900/30', 'bg-red-900/30', 'border-green-500', 'border-red-500', 'text-green-300', 'text-red-300');
+        
+        if (isLoading) {
+            uploadStatus.classList.add('bg-blue-900/30', 'border-blue-500', 'text-blue-300');
+        } else if (isSuccess) {
+            uploadStatus.classList.add('bg-green-900/30', 'border-green-500', 'text-green-300');
+        } else {
+            uploadStatus.classList.add('bg-red-900/30', 'border-red-500', 'text-red-300');
+        }
+        
+        // Auto-hide after 3 seconds if not loading
+        if (!isLoading) {
+            setTimeout(() => {
+                uploadStatus.classList.add('hidden');
+            }, 3000);
+        }
+    }
+    
     // Fonction asynchrone pour charger les données du profil
     async function loadProfileData() {
         try {
@@ -173,6 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.success && response.data) {
                 console.log('Successfully loaded profile data');
                 const profile = response.data;
+                currentUserData = profile;
                 
                 // Afficher les informations du profil
                 profileUsernameElement.textContent = profile.username;
@@ -180,12 +339,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     profileEmail.textContent = profile.email || '';
                 }
                 
-                // Afficher l'avatar si disponible
-                if (profile.avatar_url && profileAvatar) {
-                    profileAvatar.innerHTML = `<img src="${profile.avatar_url}" alt="${profile.username}" class="w-full h-full object-cover">`;
-                    // Stocker l'URL de l'avatar dans localStorage
-                    localStorage.setItem('avatar_url', profile.avatar_url);
+                if (profileStatus) {
+                    profileStatus.textContent = profile.status || 'offline';
+                    
+                    // Définir la couleur du statut
+                    profileStatus.classList.remove('text-green-600', 'text-blue-600', 'text-gray-600');
+                    if (profile.status === 'online') {
+                        profileStatus.classList.add('text-green-600');
+                    } else if (profile.status === 'in_game') {
+                        profileStatus.classList.add('text-blue-600');
+                    } else {
+                        profileStatus.classList.add('text-gray-600');
+                    }
                 }
+                
+                // Update avatar display
+                updateAvatarDisplay(profile);
                 
                 // Définir les valeurs du formulaire pour l'édition
                 if (editUsername) editUsername.value = profile.username;
@@ -287,7 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
             noMatches.classList.remove('hidden');
           }
         }
-      }
+    }
     
     // Fonction pour soumettre les modifications du profil
     async function submitProfileEdit() {
@@ -386,4 +555,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-}); 
+});

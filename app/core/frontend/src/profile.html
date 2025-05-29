@@ -18,28 +18,49 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Section profil -->
             <div class="card col-span-1">
-                <div class="flex flex-col items-center mb-8">
-                    <div id="profile-avatar" class="w-32 h-32 bg-dark-700 rounded-full mb-4 flex items-center justify-center overflow-hidden border-2 border-primary-600 shadow-md">
+                <div class="flex flex-col items-center mb-6">
+                    <!-- Avatar with upload functionality -->
+                    <div id="profile-avatar" class="relative w-32 h-32 bg-dark-700 rounded-full mb-4 flex items-center justify-center overflow-hidden border-2 border-primary-600 shadow-md cursor-pointer hover:border-primary-500 transition-colors">
                         <!-- L'avatar sera inséré ici via JavaScript -->
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                         </svg>
                     </div>
-                    <h2 id="profile-username" class="text-xl font-semibold text-white"></h2>
-                    <p id="profile-email" class="text-gray-400 mt-1"></p>
-                </div>
-                
-                <div class="flex flex-col space-y-4">
-                    <button id="edit-profile-button" class="py-3 px-4 rounded-lg font-medium transition-all duration-200 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-blue-500/25 flex items-center justify-center">
-                        <i class="fas fa-user-edit mr-2"></i>
-                        Modifier le profil
+                    
+                    <!-- Hidden file input for avatar upload -->
+                    <input type="file" id="avatar-upload-input" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden">
+                    
+                    <!-- Remove avatar button -->
+                    <button id="remove-avatar-button" class="hidden text-sm text-red-400 hover:text-red-300 mb-3 transition-colors">
+                        Supprimer l'avatar
                     </button>
                     
-                    <button id="delete-account-button" class="py-3 px-4 rounded-lg font-medium transition-all duration-200 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white shadow-lg hover:shadow-red-500/25 flex items-center justify-center">
-                        <i class="fas fa-trash-alt mr-2"></i>
-                        Supprimer mon compte
-                    </button>
+                    <h2 id="profile-username" class="text-xl font-semibold text-white"></h2>
+                    <p id="profile-email" class="text-gray-400"></p>
                 </div>
+                
+                <!-- Upload status message -->
+                <div id="upload-status" class="hidden mb-4 p-3 border-l-4 rounded-lg">
+                    <span id="upload-status-text"></span>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3 text-white">Informations</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Statut:</span>
+                            <span id="profile-status" class="font-medium text-primary-400"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="edit-profile-button" class="btn-primary w-full py-2.5 px-4 mb-4">
+                    Modifier le profil
+                </button>
+                
+                <button id="delete-account-button" class="bg-red-600 hover:bg-red-700 text-white font-medium rounded-md py-2.5 px-4 w-full transition-colors">
+                    Supprimer mon compte
+                </button>
             </div>
             
             <!-- Section statistiques et historique -->
@@ -89,24 +110,25 @@
                 <form id="edit-profile-form" class="space-y-5">
                     <div>
                         <label for="edit-username" class="block text-gray-300 mb-2">Nom d'utilisateur</label>
-                        <input type="text" id="edit-username" name="username" class="input-field w-full" autocomplete="off">
+                        <input type="text" id="edit-username" name="username" class="input-field w-full">
                     </div>
                     
                     <div>
                         <label for="edit-email" class="block text-gray-300 mb-2">Email</label>
-                        <input type="email" id="edit-email" name="email" class="input-field w-full" autocomplete="off">
+                        <input type="email" id="edit-email" name="email" class="input-field w-full">
                     </div>
                     
                     <div>
-                        <label for="edit-avatar" class="block text-gray-300 mb-2">URL de l'avatar</label>
-                        <input type="url" id="edit-avatar" name="avatar_url" class="input-field w-full" autocomplete="off">
+                        <label for="edit-avatar" class="block text-gray-300 mb-2">URL de l'avatar (externe)</label>
+                        <input type="url" id="edit-avatar" name="avatar_url" class="input-field w-full" placeholder="https://example.com/avatar.jpg">
+                        <p class="text-sm text-gray-500 mt-1">Pour télécharger une image, cliquez sur votre avatar dans le profil</p>
                     </div>
                     
                     <div class="flex justify-end space-x-3 pt-4">
-                        <button type="button" id="cancel-edit" class="py-2 px-4 bg-dark-600 hover:bg-dark-500 text-gray-300 rounded-lg transition-colors">
+                        <button type="button" id="cancel-edit" class="btn-secondary">
                             Annuler
                         </button>
-                        <button type="submit" class="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                        <button type="submit" class="btn-primary">
                             Enregistrer
                         </button>
                     </div>
@@ -126,11 +148,10 @@
                 <p class="text-gray-300 mb-6">Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et entraînera la suppression de toutes vos données.</p>
                 
                 <div class="flex justify-end space-x-3 pt-4">
-                    <button type="button" id="cancel-delete" class="py-2 px-4 bg-dark-600 hover:bg-dark-500 text-gray-300 rounded-lg transition-colors">
+                    <button type="button" id="cancel-delete" class="btn-secondary">
                         Annuler
                     </button>
-                    <button type="button" id="confirm-delete" class="py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <button type="button" id="confirm-delete" class="bg-red-600 hover:bg-red-700 text-white font-medium rounded-md py-2 px-4 transition-colors">
                         Confirmer la suppression
                     </button>
                 </div>
@@ -183,4 +204,4 @@
     <!-- Page-specific script (load this last) -->
     <script src="js/profile.js"></script>
 </body>
-</html> 
+</html>

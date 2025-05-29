@@ -9,6 +9,7 @@ export interface UserProfile {
   username: string;
   email: string;
   avatar_url?: string;
+  has_avatar_data?: boolean;
   status?: string;
   created_at: string;
   updated_at: string;
@@ -51,13 +52,19 @@ async function request(
       console.log(`[API] Got token from localStorage: ${!!token}`);
     }
     
-    // Prepare headers
-    const headers = {
-      'Content-Type': 'application/json',
+    // Prepare headers - don't set Content-Type for FormData
+    const headers: Record<string, string> = {
       'Accept': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` }),
-      ...options.headers,
     };
+    
+    // Only set Content-Type if not FormData
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
+    // Add custom headers
+    Object.assign(headers, options.headers || {});
     
     // Add a timeout to the fetch request
     const controller = new AbortController();
@@ -164,6 +171,20 @@ async function request(
   }
 }
 
+// Helper function to get avatar URL
+export function getAvatarUrl(user: { id: number; has_avatar_data?: boolean; avatar_url?: string }): string {
+  // Prioritize uploaded avatar data over URL
+  if (user.has_avatar_data) {
+    return `${API_URL}/users/avatar/${user.id}`;
+  }
+  // Fall back to avatar URL if available
+  if (user.avatar_url) {
+    return user.avatar_url;
+  }
+  // Return empty string - let the UI handle the default
+  return '';
+}
+
 // Create and export API object
 export const api = {
   baseUrl: API_URL,
@@ -221,9 +242,26 @@ export const api = {
     async searchUsers(username: string) {
       return request(`/users/search?username=${encodeURIComponent(username)}`);
     },
-    
+
     async checkUsername(username: string) {
       return request(`/users/check-username?username=${encodeURIComponent(username)}`);
+    },
+    
+    // New avatar methods
+    async uploadAvatar(file: File): Promise<{ success: boolean; message?: string; data?: any }> {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      return request('/users/profile/avatar', {
+        method: 'POST',
+        body: formData
+      });
+    },
+    
+    async deleteAvatar(): Promise<{ success: boolean; message?: string; data?: any }> {
+      return request('/users/profile/avatar', {
+        method: 'DELETE'
+      });
     }
   },
   
@@ -283,4 +321,5 @@ export const api = {
 // Pour la rétrocompatibilité, on expose aussi API globalement
 if (typeof window !== 'undefined') {
   (window as any).api = api;
-} 
+  (window as any).getAvatarUrl = getAvatarUrl;
+}

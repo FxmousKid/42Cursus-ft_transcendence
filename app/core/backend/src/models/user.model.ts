@@ -19,6 +19,8 @@ interface UserAttributes {
   status?: string;
   avatar_url?: string;
   google_id?: string;
+  avatar_data?: Buffer | null;
+  avatar_mime_type?: string | null;
 }
 
 @Table({
@@ -53,7 +55,15 @@ export class User extends Model<UserAttributes> {
   @Column(DataType.STRING(255))
   declare google_id: string;
 
-  // Relationships will be defined once we create the other models
+  @AllowNull(true)
+  @Column(DataType.BLOB('long'))
+  declare avatar_data: Buffer | null;  // FIXED: Added | null
+
+  @AllowNull(true)
+  @Column(DataType.STRING(50))
+  declare avatar_mime_type: string | null;  // FIXED: Added | null
+
+  // Relationships
   @HasMany(() => Friendship, 'user_id')
   declare sent_friendships: Friendship[];
 
@@ -65,4 +75,4 @@ export class User extends Model<UserAttributes> {
 
   @HasMany(() => Match, 'player2_id')
   declare matches_as_player2: Match[];
-} 
+}
