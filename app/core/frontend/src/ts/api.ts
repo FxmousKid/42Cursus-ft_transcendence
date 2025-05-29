@@ -1,7 +1,8 @@
-// API URL configuration
+// // API URL configuration
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'https://localhost/api'  
-  : window.location.origin;  // Use the same origin in production
+  ? 'http://localhost:3000/'
+  : 'https://localhost/api/';  // Use the same origin in production
+
 
 // Types for API responses
 export interface UserProfile {

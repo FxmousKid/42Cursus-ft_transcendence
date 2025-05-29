@@ -29,8 +29,9 @@ async function setup() {
     // Register CORS first
 
 	const allowedOrigins =
-	process.env.NODE_ENV === 'development'
-    ? [
+	process.env.NODE_ENV === 'production'
+	? ['https://localhost']
+	: [
         'http://localhost:5173',
         'http://127.0.0.1:5173',
         'http://localhost:3000',
@@ -38,8 +39,7 @@ async function setup() {
         'http://0.0.0.0:5173',
 		'https://localhost',
         true
-      ]
-    : ['https://localhost'];
+	  ];
 	
     await server.register(cors, {
       origin: allowedOrigins,
