@@ -11,6 +11,8 @@ declare module 'fastify' {
       isMatchVerified: (tournamentId: number, matchId: number) => Promise<boolean>;
       isAvailable: () => boolean;
       getWalletAddress: () => string | null;
+      getBalance: () => Promise<string>;
+      getNetworkInfo: () => Promise<{ name: string | null; chainId: bigint }>;
     };
   }
 }
@@ -71,6 +73,20 @@ async function blockchainPlugin(fastify: FastifyInstance) {
      */
     getWalletAddress: (): string | null => {
       return blockchainService.getWalletAddress();
+    },
+
+    /**
+     * Récupère le solde du wallet
+     */
+    getBalance: async (): Promise<string> => {
+      return blockchainService.getBalance();
+    },
+
+    /**
+     * Récupère les informations de la blockchain
+     */
+    getNetworkInfo: async (): Promise<{ name: string | null; chainId: bigint }> => {
+      return blockchainService.getNetworkInfo();
     }
   });
 

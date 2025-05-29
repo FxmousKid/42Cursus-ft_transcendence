@@ -283,47 +283,35 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 					return reply.status(404).send({ success: false, message: 'MatchTournament not found' });
 				}
 
+				// Sauvegarder le match en SQLite IMMÉDIATEMENT
 				match.player1_score = player1_score;
 				match.player2_score = player2_score;
 				match.winner_name = winner_name;
 				match.status = 'completed';
 				await match.save();
 
-				let blockchainTxHash: string | null = null;
-				
-				try {
-					if (fastify.blockchain && fastify.blockchain.isAvailable()) {
-						fastify.log.info(`Attempting to record match ${match.id} on blockchain`);
-						
-						blockchainTxHash = await fastify.blockchain.recordMatch({
-							id: match.id,
-							tournament_id: match.tournament_id,
-							player1_name: match.player1_name,
-							player2_name: match.player2_name,
-							player1_score: match.player1_score,
-							player2_score: match.player2_score,
-							winner_name: match.winner_name
-						});
-
-						if (blockchainTxHash) {
-							fastify.log.info(`Match ${match.id} recorded on blockchain: ${blockchainTxHash}`);
-							
-							// 🔗 STOCKER LA PREUVE BLOCKCHAIN EN DB
-							match.blockchain_tx_hash = blockchainTxHash;
-							match.blockchain_verified = true;
-							match.blockchain_recorded_at = new Date();
-							await match.save();
-							
-							fastify.log.info(`Blockchain proof stored in database for match ${match.id}`);
-						}
-					} else {
-						fastify.log.warn('Blockchain service not available, skipping blockchain recording');
-					}
-				} catch (blockchainError) {
-					fastify.log.error('Blockchain recording failed, but match saved in database:', blockchainError);
+				// 🚀 ENREGISTREMENT BLOCKCHAIN ASYNCHRONE (ne pas attendre)
+				if (fastify.blockchain && fastify.blockchain.isAvailable()) {
+					fastify.log.info(`Starting async blockchain recording for match ${match.id}`);
+					
+					// Lancer l'enregistrement blockchain en arrière-plan
+					fastify.blockchain.recordMatch({
+						id: match.id,
+						tournament_id: match.tournament_id,
+						player1_name: match.player1_name,
+						player2_name: match.player2_name,
+						player1_score: match.player1_score,
+						player2_score: match.player2_score,
+						winner_name: match.winner_name
+					}).catch(error => {
+						fastify.log.error(`Async blockchain recording failed for match ${match.id}:`, error);
+					});
+				} else {
+					fastify.log.warn('Blockchain service not available, skipping blockchain recording');
 				}
 
-				const responseData: any = {
+				// 📤 RÉPONSE IMMÉDIATE AU FRONTEND
+				const responseData = {
 					id: match.id,
 					tournament_id: match.tournament_id,
 					player1_name: match.player1_name,
@@ -333,16 +321,8 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 					winner_name: match.winner_name,
 					status: match.status,
 					blockchain_verified: match.blockchain_verified || false,
+					blockchain_status: 'pending' // Indique que l'enregistrement blockchain est en cours
 				};
-
-				if (blockchainTxHash) {
-					responseData.blockchain_tx = blockchainTxHash;
-					responseData.blockchain_proof = {
-						tx_hash: blockchainTxHash,
-						verified: true,
-						recorded_at: match.blockchain_recorded_at
-					};
-				}
 
 				return {
 					success: true,
@@ -494,6 +474,97 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 				return reply.status(500).send({
 					success: false,
 					message: 'Failed to retrieve blockchain proofs'
+				});
+			}
+		}
+	});
+
+	// 📋 ROUTE POUR RÉCUPÉRER LES MATCHES D'UN TOURNOI
+	fastify.get<{ Params: { tournamentId: string } }>('/tournaments/:tournamentId/matches', {
+		schema: {
+			params: {
+				type: 'object',
+				properties: {
+					tournamentId: { type: 'string' }
+				},
+				required: ['tournamentId']
+			}
+		},
+		handler: async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
+			try {
+				const tournamentId = parseInt(request.params.tournamentId);
+
+				const matches = await MatchTournament.findAll({
+					where: { tournament_id: tournamentId },
+					order: [['createdAt', 'ASC']]
+				});
+
+				return matches.map(match => ({
+					id: match.id,
+					tournament_id: match.tournament_id,
+					player1_name: match.player1_name,
+					player2_name: match.player2_name,
+					player1_score: match.player1_score || 0,
+					player2_score: match.player2_score || 0,
+					winner_name: match.winner_name || null,
+					status: match.status,
+					blockchain_verified: match.blockchain_verified || false,
+					blockchain_tx_hash: match.blockchain_tx_hash || null,
+					blockchain_recorded_at: match.blockchain_recorded_at || null,
+					createdAt: match.createdAt,
+					updatedAt: match.updatedAt
+				}));
+
+			} catch (error) {
+				fastify.log.error(error);
+				return reply.status(500).send({
+					success: false,
+					message: 'Failed to retrieve tournament matches'
+				});
+			}
+		}
+	});
+
+	// 🌐 ROUTE DE SANTÉ BLOCKCHAIN
+	fastify.get('/health/blockchain', {
+		handler: async (request: FastifyRequest, reply: FastifyReply) => {
+			try {
+				if (!fastify.blockchain || !fastify.blockchain.isAvailable()) {
+					return {
+						status: 'unavailable',
+						message: 'Blockchain service not initialized'
+					};
+				}
+
+				// Récupérer les informations blockchain
+				const walletAddress = fastify.blockchain.getWalletAddress();
+				const balance = await fastify.blockchain.getBalance();
+				const network = await fastify.blockchain.getNetworkInfo();
+				
+				// Compter les matches sur la blockchain
+				let blockchainMatches = 0;
+				try {
+					const matches = await fastify.blockchain.getTournamentMatches(1); // Tournoi par défaut
+					blockchainMatches = matches.length;
+				} catch (error) {
+					fastify.log.warn('Could not retrieve blockchain matches count:', error.message);
+				}
+
+				return {
+					status: 'available',
+					network: network.name || `Chain ID: ${network.chainId}`,
+					wallet_address: walletAddress,
+					balance: balance,
+					blockchain_matches: blockchainMatches,
+					timestamp: new Date().toISOString()
+				};
+
+			} catch (error) {
+				fastify.log.error('Blockchain health check failed:', error);
+				return reply.status(500).send({
+					status: 'error',
+					message: 'Blockchain health check failed',
+					error: error.message
 				});
 			}
 		}

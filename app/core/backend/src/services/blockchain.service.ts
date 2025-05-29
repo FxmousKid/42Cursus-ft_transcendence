@@ -225,30 +225,50 @@ export class BlockchainService {
   }
 
   /**
-   * Enregistre un match sur la blockchain
+   * Enregistre un match sur la blockchain de manière ASYNCHRONE
+   * Retourne immédiatement, l'enregistrement se fait en arrière-plan
    */
   async recordMatchOnBlockchain(matchData: MatchData): Promise<string | null> {
-    if (!this.contract || !this.wallet) {
-      this.fastify.log.warn('Blockchain not initialized, skipping blockchain recording');
+    if (!this.isAvailable()) {
+      this.fastify.log.warn('Blockchain service not available, skipping blockchain recording');
       return null;
     }
 
     try {
-      this.fastify.log.info(`Recording match ${matchData.id} for tournament ${matchData.tournament_id} on blockchain`);
+      this.fastify.log.info(`Attempting to record match ${matchData.id} on blockchain`);
 
-      // Vérifier si le match n'est pas déjà enregistré
-      const alreadyRecorded = await this.contract.isMatchRecorded(
-        matchData.tournament_id, 
+      // Vérifier si le match est déjà enregistré
+      const isAlreadyRecorded = await this.contract!.isMatchRecorded(
+        matchData.tournament_id,
         matchData.id
       );
 
-      if (alreadyRecorded) {
-        this.fastify.log.warn(`Match ${matchData.id} already recorded on blockchain`);
-        return null;
+      if (isAlreadyRecorded) {
+        this.fastify.log.info(`Match ${matchData.id} already recorded on blockchain`);
+        return 'already_recorded';
       }
 
-      // Enregistrer sur la blockchain
-      const tx = await this.contract.recordMatch(
+      this.fastify.log.info(`Recording match ${matchData.id} for tournament ${matchData.tournament_id} on blockchain`);
+
+      // 🚀 ENREGISTREMENT ASYNCHRONE - Ne pas attendre la confirmation
+      this.recordMatchAsync(matchData);
+
+      // Retourner immédiatement un statut "pending"
+      return 'pending';
+
+    } catch (error) {
+      this.fastify.log.error('Failed to record match on blockchain:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Enregistrement asynchrone en arrière-plan
+   */
+  private async recordMatchAsync(matchData: MatchData): Promise<void> {
+    try {
+      // Envoyer la transaction
+      const tx = await this.contract!.recordMatch(
         matchData.tournament_id,
         matchData.id,
         matchData.player1_name,
@@ -259,16 +279,44 @@ export class BlockchainService {
       );
 
       this.fastify.log.info(`Transaction sent: ${tx.hash}`);
-      
-      // Attendre la confirmation
-      const receipt = await tx.wait();
-      this.fastify.log.info(`Match recorded on blockchain. Block: ${receipt.blockNumber}`);
 
-      return tx.hash;
+      // Attendre la confirmation en arrière-plan
+      const receipt = await tx.wait();
+      this.fastify.log.info(`Match recorded on blockchain. Block: ${receipt?.blockNumber}`);
+
+      // Mettre à jour la base de données avec la preuve blockchain
+      await this.updateMatchWithBlockchainProof(matchData.id, tx.hash);
 
     } catch (error) {
-      this.fastify.log.error('Failed to record match on blockchain:', error);
-      return null;
+      this.fastify.log.error(`Failed to record match ${matchData.id} on blockchain:`, error);
+      // Optionnel : marquer le match comme "blockchain_failed" dans la DB
+    }
+  }
+
+  /**
+   * Met à jour le match avec la preuve blockchain
+   */
+  private async updateMatchWithBlockchainProof(matchId: number, txHash: string): Promise<void> {
+    try {
+      // Utiliser Sequelize pour mettre à jour
+      const { MatchTournament } = this.fastify.db.models;
+      
+      await MatchTournament.update(
+        {
+          blockchain_tx_hash: txHash,
+          blockchain_verified: true,
+          blockchain_recorded_at: new Date()
+        },
+        {
+          where: { id: matchId }
+        }
+      );
+
+      this.fastify.log.info(`Match ${matchId} recorded on blockchain: ${txHash}`);
+      this.fastify.log.info(`Blockchain proof stored in database for match ${matchId}`);
+
+    } catch (error) {
+      this.fastify.log.error(`Failed to update match ${matchId} with blockchain proof:`, error);
     }
   }
 
@@ -330,5 +378,32 @@ export class BlockchainService {
    */
   getWalletAddress(): string | null {
     return this.wallet?.address || null;
+  }
+
+  /**
+   * Récupère le solde du wallet
+   */
+  async getBalance(): Promise<string> {
+    if (!this.provider || !this.wallet) {
+      throw new Error('Blockchain service not initialized');
+    }
+    
+    const balance = await this.provider.getBalance(this.wallet.address);
+    return ethers.formatEther(balance);
+  }
+
+  /**
+   * Récupère les informations du réseau
+   */
+  async getNetworkInfo(): Promise<{ name: string | null; chainId: bigint }> {
+    if (!this.provider) {
+      throw new Error('Blockchain service not initialized');
+    }
+    
+    const network = await this.provider.getNetwork();
+    return {
+      name: network.name,
+      chainId: network.chainId
+    };
   }
 } 
