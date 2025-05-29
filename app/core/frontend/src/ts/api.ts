@@ -1,6 +1,6 @@
 // API URL configuration
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'http://localhost:3000'  
+  ? 'https://localhost/api'  
   : window.location.origin;  // Use the same origin in production
 
 // Types for API responses

@@ -17,8 +17,8 @@ server {
     ssl_certificate_key /etc/nginx/conf/server.key;
 
     # ── Security headers (optional hardening) ─────────────────────────────────────
-    # add_header X-Frame-Options SAMEORIGIN always;
-    # add_header X-Content-Type-Options nosniff   always;
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header X-Content-Type-Options nosniff   always;
 
     # ── Enable ModSecurity ────────────────────────────────────────────────────────
     modsecurity           on;
@@ -34,7 +34,7 @@ server {
 	
     # ── API ─────────────────────────────────────
     location /api/ {
-        proxy_pass         	http://backend:3000/api/; # ← env BACKEND=http://backend:3000
+        proxy_pass         	http://backend:3000/; # ← env BACKEND=http://backend:3000
         proxy_set_header   	Host              	$host;
         proxy_set_header   	X-Real-IP         	$remote_addr;
         proxy_set_header   	X-Forwarded-Proto 	$scheme;
