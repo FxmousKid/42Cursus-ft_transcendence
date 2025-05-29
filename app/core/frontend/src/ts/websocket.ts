@@ -1,7 +1,10 @@
 // WebSocket URL configuration
-const WS_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'http://localhost:3000'  
-  : window.location.origin;  // Use the same origin in production
+const WS_URL = ( 
+  window.location.hostname === 'localhost' &&
+  window.location.port === '5173'
+)
+  ? 'http://localhost:3000'
+  : '/api';
 
 // Log the WebSocket URL for debugging
 console.log('[Socket.io] Using WebSocket URL:', WS_URL);

@@ -1,12 +1,9 @@
-
-
 # include the compsoe of every provided type of service
-
 include:
-  - ./core/docker-compose.core.yml                    # Core services
-  - ./infra/vault/docker-compose.vault.yml            # Hashicorp Vault services
-  - ./infra/logging/docker-compose.logging.yml        # ELK stack services
-  - ./infra/monitoring/docker-compose.monitoring.yml  # Monitoring services
+  - path: ./core/docker-compose.core.yml              # Core services (e.g., database, cache)
+  - path: ./infra/vault/docker-compose.vault.yml            # Hashicorp Vault services
+  - path: ./infra/logging/docker-compose.logging.yml        # ELK stack services
+  - path: ./infra/monitoring/docker-compose.monitoring.yml  # Monitoring services
 
 
 # Global network
@@ -21,3 +18,4 @@ volumes:
   esdata01:
   filebeatdata01:
   kibanadata:
+  nginx_certs:

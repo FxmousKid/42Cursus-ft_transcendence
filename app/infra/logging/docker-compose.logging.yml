@@ -134,9 +134,15 @@ services:
       co.elastic.logs/module: kibana
     restart: unless-stopped
     container_name: logging-kibana
+
+    # TODO: Uncomment when enabling reverse proxy
     ports:
       - 5601:5601
+    # expose: ["5601"]
     environment:
+      # TODO: Uncomment when enabling reverse proxy
+      # - SERVER_BASEPATH=/kibana
+      # - SERVER_REWRITEBASEPATH=true
       - TZ=Europe/Paris
       - SERVER_NAME=kibana
       - ELASTICSEARCH_HOSTS=https://es01:9200
@@ -155,15 +161,6 @@ services:
     mem_limit: 2g
     networks:
       - transcendence-network
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
-        ]
-      interval: 10s
-      timeout: 10s
-      retries: 120
     depends_on:
       es01:
         condition: service_healthy
@@ -187,8 +184,6 @@ services:
       - transcendence-network
     depends_on:
       es01:
-        condition: service_healthy
-      kibana:
         condition: service_healthy
     command: >
       bash -c '

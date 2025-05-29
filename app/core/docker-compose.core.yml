@@ -5,8 +5,9 @@ services:
       context: ./frontend
       dockerfile: docker/Dockerfile
     container_name: frontend
-    ports:
-      - "5173:5173"
+    # ports:
+    #   - "5173:5173"
+    expose: ["5173"]
     volumes:
       - ./frontend:/app
       - ../infra/vault/agent/env/:/app/env:rw
@@ -14,9 +15,7 @@ services:
     networks:
       - transcendence-network
     depends_on:
-      kibana:
-        condition: service_healthy
-      modsec-nginx:
+      vault-agent:
         condition: service_healthy
     command: >
       zsh -c '
@@ -39,27 +38,19 @@ services:
       dockerfile: ./docker/Dockerfile
     container_name: backend
     depends_on:
-      # filebeat:
-        # condition: service_healthy
-      kibana:
+      vault-agent:
         condition: service_healthy
-
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    expose: ["3000"]
     networks:
       - transcendence-network
     volumes:
       - ./backend/data:/app/data
       - ../infra/vault/agent/env/:/app/env:rw
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl 'http://localhost:3000/api-docs'"
-        ]
+      test: ["CMD-SHELL", "curl 'http://localhost:3000/api-docs'"]
       interval: 10s
-      timeout: 3s
+      timeout: 2s
       retries: 50
     command: >
       sh -c '
@@ -85,7 +76,6 @@ services:
     restart: unless-stopped
     user: root
     ports:
-      # - "80:80"
       - "443:8443"
     networks:
       - transcendence-network
@@ -93,14 +83,15 @@ services:
       backend:
         condition: service_healthy
     volumes:
-      - ./modsec-nginx/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - ./modsec-nginx/certs/:/etc/nginx/conf:ro
+      - ./modsec-nginx/nginx/default.conf.template:/etc/nginx/templates/conf.d/default.conf.template:ro
+      - nginx_certs:/etc/nginx/conf/certs/
       - ./modsec-nginx/logs/nginx/:/var/log/nginx/:rw
     environment:
       - PORT=8080
       - SSL_PORT=8443
       - SERVER_NAME=localhost
       - BACKEND=http://backend:3000
+      - FRONTEND=http://frontend:5173
       - MODSEC_AUDIT_ENGINE=on
       - MODSEC_AUDIT_LOG=/var/log/modsec_audit.log
       - LOGLEVEL=warn
@@ -114,3 +105,16 @@ services:
       - ALLOWED_REQUEST_CONTENT_TYPE=text/xml|application/xml|text/plain|application/json
       - ALLOWED_REQUEST_CONTENT_TYPE_CHARSET=utf-8|iso-8859-1
       - ALLOWED_HTTP_VERSIONS=HTTP/1.1 HTTP/2 HTTP/2.0
+    command: >
+      sh -c '
+        if [ ! -f /etc/nginx/conf/certs/server.crt ]; then
+          echo "Generating self-signed certificates..."
+          mkdir -p /etc/nginx/conf/certs
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+          -keyout /etc/nginx/conf/certs/server.key \
+          -out /etc/nginx/conf/certs/server.crt \
+          -subj "/C=FR/ST=France/L=Paris/O=Transcendence/OU=Transcendence/CN=localhost" \
+          -addext "subjectAltName=DNS:localhost"
+        fi
+        exec /docker-entrypoint.sh nginx -g "daemon off;"
+      '
