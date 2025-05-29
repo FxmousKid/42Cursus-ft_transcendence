@@ -1,8 +1,8 @@
 // Chat functionality - Système de chat modulaire simplifié et robuste
-import { api } from './api';
+import { api, getAvatarUrl } from './api';
 
 // Utility function to create avatar HTML with consistent styling
-function createAvatarHTML(avatarUrl: string | null | undefined, username: string, size: 'small' | 'medium' | 'large' = 'medium'): string {
+function createAvatarHTML(user: { id?: number; avatar_url?: string | null; username: string; has_avatar_data?: boolean }, size: 'small' | 'medium' | 'large' = 'medium'): string {
     const sizeClasses = {
         small: 'w-8 h-8',
         medium: 'w-10 h-10', 
@@ -18,8 +18,18 @@ function createAvatarHTML(avatarUrl: string | null | undefined, username: string
     const sizeClass = sizeClasses[size];
     const iconSize = iconSizes[size];
     
+    // Use getAvatarUrl to prioritize uploaded avatars over URLs
+    let avatarUrl = '';
+    if (user.id) {
+        avatarUrl = getAvatarUrl({
+            id: user.id,
+            has_avatar_data: user.has_avatar_data,
+            avatar_url: user.avatar_url || undefined
+        });
+    }
+    
     if (avatarUrl && avatarUrl.trim()) {
-        return `<img src="${avatarUrl}" alt="${username}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        return `<img src="${avatarUrl}" alt="${user.username}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <i class="fas fa-user text-white ${iconSize}" style="display: none;"></i>`;
     } else {
         return `<i class="fas fa-user text-white ${iconSize}"></i>`;
@@ -380,7 +390,12 @@ export class ChatManager {
             const avatarElement = friendItem.querySelector('.friend-avatar img');
             if (avatarElement) {
                 const avatarUrl = (avatarElement as HTMLImageElement).src;
-                friendAvatarHtml = createAvatarHTML(avatarUrl, friendUsername, 'medium');
+                friendAvatarHtml = createAvatarHTML({
+                    id: friendId,
+                    avatar_url: avatarUrl,
+                    username: friendUsername,
+                    has_avatar_data: true
+                }, 'medium');
             }
         }
         

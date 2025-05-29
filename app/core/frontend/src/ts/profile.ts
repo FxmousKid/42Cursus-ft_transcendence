@@ -20,7 +20,7 @@ interface MatchData {
  */
 
 // Utility function to create avatar HTML with consistent styling
-function createAvatarHTML(avatarUrl: string | null | undefined, username: string, size: 'small' | 'medium' | 'large' = 'large'): string {
+function createAvatarHTML(user: { id?: number; avatar_url?: string | null; username: string; has_avatar_data?: boolean }, size: 'small' | 'medium' | 'large' = 'large'): string {
     const sizeClasses = {
         small: 'w-8 h-8',
         medium: 'w-12 h-12', 
@@ -36,8 +36,18 @@ function createAvatarHTML(avatarUrl: string | null | undefined, username: string
     const sizeClass = sizeClasses[size];
     const iconSize = iconSizes[size];
     
+    // Use getAvatarUrl to prioritize uploaded avatars over URLs
+    let avatarUrl = '';
+    if (user.id) {
+        avatarUrl = getAvatarUrl({
+            id: user.id,
+            has_avatar_data: user.has_avatar_data,
+            avatar_url: user.avatar_url || undefined
+        });
+    }
+    
     if (avatarUrl && avatarUrl.trim()) {
-        return `<img src="${avatarUrl}" alt="${username}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        return `<img src="${avatarUrl}" alt="${user.username}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <i class="fas fa-user text-white ${iconSize}" style="display: none;"></i>`;
     } else {
         return `<i class="fas fa-user text-white ${iconSize}"></i>`;
@@ -146,7 +156,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Afficher l'avatar si disponible
         if (avatarUrl) {
-            profileAvatar.innerHTML = createAvatarHTML(avatarUrl, username);
+            // Pour l'affichage initial depuis localStorage, on utilise directement l'URL
+            // L'avatar sera mis à jour correctement quand loadProfileData() sera appelé
+            profileAvatar.innerHTML = `<img src="${avatarUrl}" alt="${username}" class="w-full h-full object-cover">`;
         }
     }
     
@@ -272,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Validate file size (2MB)
-        if (file.size > 2 * 1024 * 1024) {
+        if (file.size > 2 * 1024 * 1024 * 1024) {
             showUploadStatus('Le fichier est trop volumineux. Taille maximale: 2MB.', false);
             return;
         }
@@ -366,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Afficher l'avatar si disponible
                 if (profile.avatar_url && profileAvatar) {
-                    profileAvatar.innerHTML = createAvatarHTML(profile.avatar_url, profile.username);
+                    profileAvatar.innerHTML = createAvatarHTML(profile, 'large');
                     // Stocker l'URL de l'avatar dans localStorage
                     localStorage.setItem('avatar_url', profile.avatar_url);
                 }

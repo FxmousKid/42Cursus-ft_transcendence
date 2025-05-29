@@ -219,12 +219,21 @@ export function registerChatRoutes(fastify: FastifyInstance) {
             {
               model: User,
               as: 'blocked',
-              attributes: ['id', 'username', 'avatar_url'],
+              attributes: ['id', 'username', 'avatar_url', 'avatar_data'],
             },
           ],
         });
 
-        return { success: true, data: blocks };
+        // Add has_avatar_data flag to each blocked user
+        const blocksWithAvatarFlag = blocks.map(block => ({
+          ...block.toJSON(),
+          blocked: {
+            ...block.blocked.toJSON(),
+            has_avatar_data: !!block.blocked.avatar_data
+          }
+        }));
+
+        return { success: true, data: blocksWithAvatarFlag };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(500).send({ success: false, message: error.message });

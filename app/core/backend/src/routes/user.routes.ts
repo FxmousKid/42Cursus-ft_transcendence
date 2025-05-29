@@ -18,7 +18,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
   // Register multipart support for this plugin
   fastify.register(multipart, {
     limits: {
-      fileSize: 2 * 1024 * 1024, // 2MB limit
+      fileSize: 2 * 1024 * 1024 * 1024, // 2MB limit
     }
   });
 
@@ -52,7 +52,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const users = await fastify.db.models.User.findAll({
-          attributes: ['id', 'username', 'email', 'status', 'avatar_url']
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data']
         });
         
         // Add has_avatar_data flag without sending the actual data
@@ -193,7 +193,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
 
         // Check file size (2MB limit already enforced by multipart config, but double-check)
         const buffer = await data.toBuffer();
-        if (buffer.length > 2 * 1024 * 1024) {
+        if (buffer.length > 2 * 1024 * 1024 * 1024) {
           return reply.status(400).send({ 
             success: false, 
             message: 'File too large. Maximum size is 2MB.' 
@@ -551,7 +551,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
               [Op.ne]: currentUserId // Exclude the current user
             }
           },
-          attributes: ['id', 'username', 'email', 'status', 'avatar_url']
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data']
         });
         
         // Then similar usernames
@@ -565,14 +565,20 @@ export function registerUserRoutes(fastify: FastifyInstance) {
               [Op.ne]: currentUserId // Exclude the current user
             }
           },
-          attributes: ['id', 'username', 'email', 'status', 'avatar_url'],
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data'],
           limit: 9 // Limit to 9 similar users (total 10 with exact match)
         });
         
         // Combine exact match with similar users, exact match first
         const users = exactMatch ? [exactMatch, ...similarUsers] : similarUsers;
         
-        return { success: true, data: users };
+        // Add has_avatar_data flag to each user
+        const usersWithAvatarFlag = users.map(user => ({
+          ...user.toJSON(),
+          has_avatar_data: !!user.avatar_data
+        }));
+        
+        return { success: true, data: usersWithAvatarFlag };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });
