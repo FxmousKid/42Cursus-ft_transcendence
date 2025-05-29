@@ -1,7 +1,7 @@
-// Chat functionality - Système de chat modulaire
+// Chat functionality - Système de chat modulaire simplifié et robuste
 import { api } from './api';
 
-// Blocking system manager - Fixed with consistent WebSocket support
+// Blocking system manager - Version simplifiée et fiable
 class BlockingManager {
     private blockedUsers: Set<number> = new Set();
     private blockedByUsers: Set<number> = new Set();
@@ -19,15 +19,10 @@ class BlockingManager {
             return;
         }
 
-        // FIXED: Listen for successful block confirmation
+        // Listen for successful block confirmation
         websocketService.on('user-block-success', (data: any) => {
             console.log('✅ Block confirmed via WebSocket:', data);
-            
-            // Update state immediately and consistently
             this.blockedUsers.add(data.blocked_id);
-            
-            // Update UI immediately without delays
-            this.updateAllFriendsUI();
             
             // Update chat interface if currently viewing this user
             const chatManager = (window as any).chatManager;
@@ -37,41 +32,24 @@ class BlockingManager {
             }
         });
 
-        // FIXED: Listen for successful unblock confirmation
+        // Listen for successful unblock confirmation
         websocketService.on('user-unblock-success', (data: any) => {
             console.log('✅ Unblock confirmed via WebSocket:', data);
-            
-            // Update state immediately and consistently
             this.blockedUsers.delete(data.unblocked_id);
             
-            // Update UI immediately without delays
-            this.updateAllFriendsUI();
-            
-            // FIXED: Force immediate chat interface refresh
+            // Force immediate chat interface refresh
             const chatManager = (window as any).chatManager;
             if (chatManager && chatManager.getCurrentChatUserId() === data.unblocked_id) {
-                console.log('🔄 Force refreshing chat interface after unblock');
-                
-                // Clear any existing blocked interface
-                const chatMessages = document.getElementById('chat-messages') as HTMLElement;
-                if (chatMessages) {
-                    chatMessages.innerHTML = '';
-                }
-                
-                // Immediately open normal chat
-                chatManager.openChatWithFriend(data.unblocked_id, data.unblocked_username);
+                console.log('🔄 Refreshing chat interface after unblock');
+                // Clear the blocked interface and reload chat properly
+                chatManager.forceRefreshChat(data.unblocked_id, data.unblocked_username);
             }
         });
 
-        // FIXED: Listen for being blocked by someone
+        // Listen for being blocked by someone
         websocketService.on('user-blocked-by', (data: any) => {
             console.log('🚫 Blocked by user via WebSocket:', data);
-            
-            // Update state immediately
             this.blockedByUsers.add(data.blocker_id);
-            
-            // Update UI immediately
-            this.updateAllFriendsUI();
             
             // If currently chatting with this user, show blocked interface
             const chatManager = (window as any).chatManager;
@@ -80,21 +58,16 @@ class BlockingManager {
             }
         });
 
-        // FIXED: Listen for being unblocked by someone
+        // Listen for being unblocked by someone
         websocketService.on('user-unblocked-by', (data: any) => {
             console.log('✅ Unblocked by user via WebSocket:', data);
-            
-            // Update state immediately
             this.blockedByUsers.delete(data.unblocker_id);
-            
-            // Update UI immediately
-            this.updateAllFriendsUI();
             
             // If currently viewing this user's chat, refresh it immediately
             const chatManager = (window as any).chatManager;
             if (chatManager && chatManager.getCurrentChatUserId() === data.unblocker_id) {
                 console.log('🔄 Refreshing chat interface after being unblocked');
-                chatManager.openChatWithFriend(data.unblocker_id, data.unblocker_username);
+                chatManager.forceRefreshChat(data.unblocker_id, data.unblocker_username);
             }
         });
     }
@@ -136,41 +109,31 @@ class BlockingManager {
         try {
             const websocketService = (window as any).websocketService;
             
-            // FIXED: Immediate optimistic update to prevent visual lag
-            this.blockedUsers.add(userId);
-            this.updateAllFriendsUI();
-            
-            // Try WebSocket first
+            // Try WebSocket first - NO optimistic updates
             if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
                 console.log(`🚫 Blocking user ${userId} via WebSocket`);
                 websocketService.send('user-block', { blockedUserId: userId });
-                return true; // WebSocket will handle the response
+                return true;
             } else {
                 // Fallback to REST API
-                console.log(`🚫 Blocking user ${userId} via REST API (WebSocket unavailable)`);
+                console.log(`🚫 Blocking user ${userId} via REST API`);
                 const response = await api.chat.blockUser(userId);
                 if (response.success) {
+                    // Only update state after successful API response
+                    this.blockedUsers.add(userId);
                     console.log(`✅ User ${userId} blocked via REST API`);
                     return true;
                 } else {
-                    // Revert optimistic update on failure
-                    this.blockedUsers.delete(userId);
-                    this.updateAllFriendsUI();
                     return false;
                 }
             }
         } catch (error) {
             console.error('❌ Error blocking user:', error);
-            // Revert optimistic update on error
-            this.blockedUsers.delete(userId);
-            this.updateAllFriendsUI();
             return false;
         }
     }
     
-    // FIXED: Simplified unblock method without optimistic updates
     async unblockUser(userId: number): Promise<boolean> {
-        // Check if user is actually blocked
         if (!this.isBlocked(userId)) {
             console.log(`ℹ️ User ${userId} is not blocked, skipping unblock`);
             return true;
@@ -179,19 +142,18 @@ class BlockingManager {
         try {
             const websocketService = (window as any).websocketService;
             
-            // Try WebSocket first
+            // Try WebSocket first - NO optimistic updates
             if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
                 console.log(`✅ Unblocking user ${userId} via WebSocket`);
                 websocketService.send('user-unblock', { unblockedUserId: userId });
-                return true; // WebSocket will handle the response and state updates
+                return true;
             } else {
                 // Fallback to REST API
-                console.log(`✅ Unblocking user ${userId} via REST API (WebSocket unavailable)`);
+                console.log(`✅ Unblocking user ${userId} via REST API`);
                 const response = await api.chat.unblockUser(userId);
                 if (response.success) {
                     // Only update state after successful API response
                     this.blockedUsers.delete(userId);
-                    this.updateAllFriendsUI();
                     console.log(`✅ User ${userId} unblocked via REST API`);
                     return true;
                 } else {
@@ -215,55 +177,6 @@ class BlockingManager {
     
     canChat(userId: number): boolean {
         return !this.isBlocked(userId) && !this.isBlockedBy(userId);
-    }
-    
-    // FIXED: Simplified UI update with consistent visual feedback
-    updateFriendUI(friendElement: HTMLElement, friendId: number) {
-        // Remove existing badges and reset styles
-        const existingBadge = friendElement.querySelector('.block-badge');
-        if (existingBadge) existingBadge.remove();
-        
-        // Reset all blocking-related styles
-        friendElement.classList.remove('opacity-50', 'opacity-60', 'grayscale', 'pointer-events-none');
-        friendElement.style.filter = '';
-        
-        if (this.isBlocked(friendId)) {
-            // User is blocked by me - Red badge + grayed out
-            const badge = document.createElement('div');
-            badge.className = 'block-badge absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center z-10';
-            badge.innerHTML = '<i class="fas fa-ban text-white text-xs"></i>';
-            badge.title = 'Utilisateur bloqué';
-            friendElement.style.position = 'relative';
-            friendElement.appendChild(badge);
-            
-            // Apply visual effects for blocked user
-            friendElement.classList.add('opacity-60');
-            friendElement.style.filter = 'grayscale(70%)';
-            
-        } else if (this.isBlockedBy(friendId)) {
-            // I am blocked by this user - Gray badge + grayed out
-            const badge = document.createElement('div');
-            badge.className = 'block-badge absolute -top-1 -right-1 w-5 h-5 bg-gray-500 rounded-full flex items-center justify-center z-10';
-            badge.innerHTML = '<i class="fas fa-eye-slash text-white text-xs"></i>';
-            badge.title = 'Vous êtes bloqué par cet utilisateur';
-            friendElement.style.position = 'relative';
-            friendElement.appendChild(badge);
-            
-            // Apply visual effects for being blocked
-            friendElement.classList.add('opacity-50');
-            friendElement.style.filter = 'grayscale(80%)';
-        }
-    }
-    
-    // FIXED: Update all friends UI consistently
-    updateAllFriendsUI() {
-        const friendItems = document.querySelectorAll('.friend-item');
-        friendItems.forEach((item) => {
-            const friendId = parseInt(item.getAttribute('data-id') || '0');
-            if (friendId) {
-                this.updateFriendUI(item as HTMLElement, friendId);
-            }
-        });
     }
     
     private getCurrentUserId(): number | null {
@@ -315,7 +228,7 @@ export class ChatManager {
     async openChatWithFriend(friendId: number, friendUsername: string) {
         console.log(`💬 Opening chat with ${friendUsername} (ID: ${friendId})`);
         
-        // FIXED: Ensure blocking system is loaded before checking permissions
+        // Ensure blocking system is loaded before checking permissions
         try {
             await this.blockingManager.loadBlockedUsers();
             console.log('✅ Blocking system refreshed before opening chat');
@@ -323,7 +236,7 @@ export class ChatManager {
             console.warn('⚠️ Could not refresh blocking system:', error);
         }
         
-        // FIXED: Check if chat is allowed AFTER ensuring data is loaded
+        // Check if chat is allowed AFTER ensuring data is loaded
         if (!this.blockingManager.canChat(friendId)) {
             console.log(`🚫 Chat not allowed with ${friendUsername}`);
             
@@ -699,7 +612,7 @@ export class ChatManager {
     }
     
     private async loadChatHistory(friendId: number) {
-        // FIXED: Refresh blocking system before checking permissions
+        // Refresh blocking system before checking permissions
         try {
             await this.blockingManager.loadBlockedUsers();
             console.log('✅ Blocking system refreshed before loading chat history');
@@ -707,10 +620,10 @@ export class ChatManager {
             console.warn('⚠️ Could not refresh blocking system:', error);
         }
         
-        // FIXED: Verify chat is still allowed and we're in the right conversation
+        // Verify chat is still allowed and we're in the right conversation
         if (!this.blockingManager.canChat(friendId)) {
             console.log('🚫 Chat history loading blocked - user restrictions');
-            // Don't show error - just maintain the blocked interface
+            // Show blocked interface instead of error
             if (this.currentChatUserId === friendId) {
                 this.showBlockedInterface(friendId, this.currentChatUsername || 'Utilisateur', 
                     this.blockingManager.isBlocked(friendId));
@@ -765,7 +678,7 @@ export class ChatManager {
         try {
             const response = await api.chat.getMessages(friendId);
             
-            // FIXED: Check we're still in the right conversation and it's allowed
+            // Check we're still in the right conversation and it's allowed
             if (this.currentChatUserId !== friendId) {
                 console.log('⚠️ Chat history response ignored - conversation changed');
                 return;
@@ -808,15 +721,43 @@ export class ChatManager {
             } else {
                 console.error('❌ Failed to load chat history:', response);
                 
-                // FIXED: Check if it's a blocking-related error
-                if (response.error && (
-                    response.error.includes('blocked') || 
-                    response.error.includes('access') ||
-                    response.error.includes('forbidden') ||
+                // Check if it's a blocking-related error - check both message and error fields
+                const errorMessage = response.error || response.message || '';
+                const isBlockingError = (
+                    errorMessage.includes('blocked') || 
+                    errorMessage.includes('access') ||
+                    errorMessage.includes('forbidden') ||
+                    errorMessage.includes('Cannot access') ||
                     response.status === 403
-                )) {
-                    console.log('🚫 Chat access denied - user has blocked you');
-                    this.showBlockedInterface(friendId, this.currentChatUsername || 'Cet utilisateur', false);
+                );
+                
+                if (isBlockingError) {
+                    console.log('🚫 Chat access denied - refreshing blocking status and showing blocked interface');
+                    
+                    // Force refresh blocking status from server since there's a mismatch
+                    try {
+                        await this.blockingManager.loadBlockedUsers();
+                        console.log('✅ Blocking status refreshed after 403 error');
+                    } catch (error) {
+                        console.warn('⚠️ Could not refresh blocking status:', error);
+                    }
+                    
+                    // Determine who blocked whom based on the current blocking state
+                    const iBlockedThem = this.blockingManager.isBlocked(friendId);
+                    const theyBlockedMe = this.blockingManager.isBlockedBy(friendId);
+                    
+                    // Show appropriate blocked interface
+                    if (iBlockedThem) {
+                        console.log('📛 I have blocked this user');
+                        this.showBlockedInterface(friendId, this.currentChatUsername || 'Cet utilisateur', true);
+                    } else if (theyBlockedMe) {
+                        console.log('🚫 This user has blocked me');
+                        this.showBlockedInterface(friendId, this.currentChatUsername || 'Cet utilisateur', false);
+                    } else {
+                        // If blocking status is still unclear, assume they blocked me (since we got 403)
+                        console.log('🚫 403 error but unclear blocking status - assuming they blocked me');
+                        this.showBlockedInterface(friendId, this.currentChatUsername || 'Cet utilisateur', false);
+                    }
                 } else {
                     // Only show error for non-blocking related issues
                     this.showChatError('Impossible de charger l\'historique');
@@ -838,16 +779,44 @@ export class ChatManager {
             const loading = document.getElementById('chat-loading');
             if (loading) loading.remove();
             
-            // FIXED: Check if it's a blocking-related error
-            if (error.message && (
-                error.message.includes('blocked') || 
-                error.message.includes('403') || 
-                error.message.includes('access') ||
-                error.message.includes('forbidden') ||
+            // Check if it's a blocking-related error
+            const errorMessage = error.message || error.toString() || '';
+            const isBlockingError = (
+                errorMessage.includes('blocked') || 
+                errorMessage.includes('403') || 
+                errorMessage.includes('access') ||
+                errorMessage.includes('forbidden') ||
+                errorMessage.includes('Cannot access') ||
                 error.status === 403
-            )) {
-                console.log('🚫 Chat access denied - user has blocked you');
-                this.showBlockedInterface(friendId, this.currentChatUsername || 'Cet utilisateur', false);
+            );
+            
+            if (isBlockingError) {
+                console.log('🚫 Chat access denied - refreshing blocking status and showing blocked interface');
+                
+                // Force refresh blocking status from server since there's a mismatch
+                try {
+                    await this.blockingManager.loadBlockedUsers();
+                    console.log('✅ Blocking status refreshed after error');
+                } catch (refreshError) {
+                    console.warn('⚠️ Could not refresh blocking status:', refreshError);
+                }
+                
+                // Determine who blocked whom based on the current blocking state
+                const iBlockedThem = this.blockingManager.isBlocked(friendId);
+                const theyBlockedMe = this.blockingManager.isBlockedBy(friendId);
+                
+                // Show appropriate blocked interface
+                if (iBlockedThem) {
+                    console.log('📛 I have blocked this user');
+                    this.showBlockedInterface(friendId, this.currentChatUsername || 'Cet utilisateur', true);
+                } else if (theyBlockedMe) {
+                    console.log('🚫 This user has blocked me');
+                    this.showBlockedInterface(friendId, this.currentChatUsername || 'Cet utilisateur', false);
+                } else {
+                    // If blocking status is still unclear, assume they blocked me (since we got 403)
+                    console.log('🚫 403 error but unclear blocking status - assuming they blocked me');
+                    this.showBlockedInterface(friendId, this.currentChatUsername || 'Cet utilisateur', false);
+                }
             } else {
                 // Only show error for non-blocking related issues
                 this.showChatError('Erreur de connexion');
@@ -1158,9 +1127,6 @@ export class ChatManager {
             if (success) {
                 console.log(`✅ User ${username} blocked successfully`);
                 
-                // Update UI immediately
-                this.updateAllFriendsUI();
-                
                 // If currently chatting with this user, show blocked interface
                 if (this.currentChatUserId === userId) {
                     this.showBlockedInterface(userId, username, true);
@@ -1173,126 +1139,94 @@ export class ChatManager {
         }
     }
     
-    // Update all friends UI (delegated to BlockingManager)
-    private updateAllFriendsUI() {
-        // This is now handled by BlockingManager
-        this.blockingManager.updateAllFriendsUI();
-    }
-    
     // FIXED: Simple and reliable blocked interface
-    showBlockedInterface(userId: number, username: string, isBlocking: boolean = false) {
-        console.log(`🚫 Showing blocked interface for ${username} (blocking: ${isBlocking})`);
-        
-        // Ensure we're in the chat tab
-        this.switchToChatTab();
+    showBlockedInterface(friendId: number, friendUsername: string, iBlockedThem: boolean) {
+        console.log(`🚫 Showing blocked interface for ${friendUsername} (I blocked them: ${iBlockedThem})`);
         
         const chatMessages = document.getElementById('chat-messages') as HTMLElement;
         const chatInput = document.getElementById('chat-input') as HTMLElement;
         const noChatSelected = document.getElementById('no-chat-selected') as HTMLElement;
         
-        if (!chatMessages || !chatInput) {
-            console.error('❌ Chat elements not found');
-            return;
-        }
+        if (!chatMessages) return;
         
-        // Hide elements
+        // Hide chat input and no-chat-selected
+        if (chatInput) chatInput.classList.add('hidden');
         if (noChatSelected) noChatSelected.classList.add('hidden');
-        chatInput.classList.add('hidden');
         
-        // Set current chat state
-        this.currentChatUserId = userId;
-        this.currentChatUsername = username;
-        
-        // Clear and create blocked interface
+        // Clear messages and show blocked interface
         chatMessages.innerHTML = '';
         
         const blockedDiv = document.createElement('div');
-        blockedDiv.className = 'flex flex-col items-center justify-center h-full py-16 px-6 text-center';
-        blockedDiv.id = 'blocked-interface';
+        blockedDiv.className = 'flex flex-col items-center justify-center h-full text-center p-8';
         
-        if (isBlocking || this.blockingManager.isBlocked(userId)) {
-            // I blocked this user - Show simple unblock button
-            blockedDiv.innerHTML = `
-                <div class="w-20 h-20 bg-red-500/20 rounded-full mb-6 flex items-center justify-center border border-red-500/30">
-                    <i class="fas fa-ban text-3xl text-red-400"></i>
+        const message = iBlockedThem 
+            ? `Vous avez bloqué ${friendUsername}` 
+            : `${friendUsername} vous a bloqué`;
+        
+        const description = iBlockedThem 
+            ? 'Vous ne pouvez pas envoyer ou recevoir de messages.'
+            : 'Vous ne pouvez pas envoyer de messages à cet utilisateur.';
+        
+        blockedDiv.innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+                <div class="flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mx-auto mb-4">
+                    <i class="fas fa-ban text-red-600 text-2xl"></i>
                 </div>
-                <h2 class="text-xl font-semibold text-white mb-3">Chat indisponible</h2>
-                <p class="text-gray-400 text-sm mb-6 max-w-md leading-relaxed">
-                    Vous avez bloqué ${username}. Le chat est désactivé.
-                </p>
-                <button id="simple-unblock-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors font-medium">
-                    <i class="fas fa-unlock mr-2"></i>
-                    Débloquer
-                </button>
-            `;
-        } else {
-            // I am blocked by this user - No actions available
-            blockedDiv.innerHTML = `
-                <div class="w-20 h-20 bg-gray-500/20 rounded-full mb-6 flex items-center justify-center border border-gray-500/30">
-                    <i class="fas fa-ban text-3xl text-gray-400"></i>
-                </div>
-                <h2 class="text-xl font-semibold text-white mb-3">Chat indisponible</h2>
-                <p class="text-gray-400 text-sm mb-6 max-w-md leading-relaxed">
-                    ${username} vous a bloqué. Le chat est désactivé.
-                </p>
-                <div class="text-xs text-gray-500 mt-4">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Vous ne pouvez pas envoyer de messages à cet utilisateur
-                </div>
-            `;
-        }
+                <h3 class="text-lg font-semibold text-red-800 mb-2">${message}</h3>
+                <p class="text-red-600 mb-4">${description}</p>
+                ${iBlockedThem ? `
+                    <button id="unblock-user-btn" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium">
+                        <i class="fas fa-unlock mr-2"></i>Débloquer ${friendUsername}
+                    </button>
+                ` : ''}
+            </div>
+        `;
         
         chatMessages.appendChild(blockedDiv);
         
-        // FIXED: Simple unblock button with immediate state refresh
-        const unblockBtn = blockedDiv.querySelector('#simple-unblock-btn');
-        if (unblockBtn) {
-            unblockBtn.addEventListener('click', async () => {
-                console.log(`🔄 Unblocking user ${userId}...`);
-                
-                // Simple loading state
-                unblockBtn.textContent = 'Déblocage...';
-                unblockBtn.setAttribute('disabled', 'true');
-                
-                try {
-                    // Call unblock method
-                    const success = await this.blockingManager.unblockUser(userId);
+        // Add unblock functionality if I blocked them
+        if (iBlockedThem) {
+            const unblockBtn = document.getElementById('unblock-user-btn') as HTMLButtonElement;
+            if (unblockBtn) {
+                unblockBtn.addEventListener('click', async () => {
+                    console.log(`🔓 Attempting to unblock ${friendUsername}`);
                     
-                    if (success) {
-                        console.log('✅ Unblock successful - refreshing chat immediately');
+                    // Disable button immediately to prevent double-clicks
+                    unblockBtn.disabled = true;
+                    unblockBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Déblocage...';
+                    
+                    try {
+                        // Unblock the user
+                        await this.blockingManager.unblockUser(friendId);
+                        console.log(`✅ Successfully unblocked ${friendUsername}`);
                         
-                        // FIXED: Force immediate refresh of chat interface
+                        // Force refresh the chat to ensure clean state
+                        this.forceRefreshChat(friendId, friendUsername);
+                        
+                    } catch (error) {
+                        console.error(`❌ Failed to unblock ${friendUsername}:`, error);
+                        
+                        // Re-enable button and show error
+                        unblockBtn.disabled = false;
+                        unblockBtn.innerHTML = '<i class="fas fa-unlock mr-2"></i>Débloquer ' + friendUsername;
+                        
+                        // Show error message
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'mt-3 text-red-600 text-sm';
+                        errorDiv.textContent = 'Erreur lors du déblocage. Veuillez réessayer.';
+                        unblockBtn.parentElement?.appendChild(errorDiv);
+                        
+                        // Remove error after 3 seconds
                         setTimeout(() => {
-                            // Check if user is still blocked
-                            if (!this.blockingManager.isBlocked(userId)) {
-                                console.log('🔄 User successfully unblocked, opening normal chat');
-                                this.openChatWithFriend(userId, username);
-                            } else {
-                                console.log('⚠️ User still appears blocked, refreshing blocking data');
-                                this.blockingManager.loadBlockedUsers().then(() => {
-                                    if (!this.blockingManager.isBlocked(userId)) {
-                                        this.openChatWithFriend(userId, username);
-                                    }
-                                });
+                            if (errorDiv.parentElement) {
+                                errorDiv.remove();
                             }
-                        }, 200);
-                        
-                    } else {
-                        console.error('❌ Unblock failed');
-                        // Reset button
-                        unblockBtn.innerHTML = '<i class="fas fa-unlock mr-2"></i>Débloquer';
-                        unblockBtn.removeAttribute('disabled');
+                        }, 3000);
                     }
-                } catch (error) {
-                    console.error('❌ Unblock error:', error);
-                    // Reset button
-                    unblockBtn.innerHTML = '<i class="fas fa-unlock mr-2"></i>Débloquer';
-                    unblockBtn.removeAttribute('disabled');
-                }
-            });
+                });
+            }
         }
-        
-        console.log(`✅ Blocked interface displayed for ${username}`);
     }
     
     // Public methods to access blocking system
@@ -1308,12 +1242,42 @@ export class ChatManager {
         return this.blockingManager.canChat(userId);
     }
     
-    updateFriendBlockingUI(friendItem: HTMLElement, friendId: number) {
-        this.blockingManager.updateFriendUI(friendItem, friendId);
-    }
-    
     async refreshBlockedUsers() {
         await this.blockingManager.loadBlockedUsers();
+    }
+
+    // NEW: Force refresh chat after unblock - clears everything and reloads properly
+    forceRefreshChat(friendId: number, friendUsername: string) {
+        console.log(`🔄 Force refreshing chat with ${friendUsername} (ID: ${friendId})`);
+        
+        // Clear current state completely
+        this.currentChatUserId = null;
+        this.currentChatUsername = null;
+        
+        // Clear chat history cache for this user
+        this.chatHistory.delete(friendId);
+        
+        // Clear the interface
+        const chatMessages = document.getElementById('chat-messages') as HTMLElement;
+        const chatInput = document.getElementById('chat-input') as HTMLElement;
+        const noChatSelected = document.getElementById('no-chat-selected') as HTMLElement;
+        
+        if (chatMessages) {
+            chatMessages.innerHTML = '';
+        }
+        
+        if (chatInput) {
+            chatInput.classList.add('hidden');
+        }
+        
+        if (noChatSelected) {
+            noChatSelected.classList.remove('hidden');
+        }
+        
+        // Wait a bit then reopen the chat properly
+        setTimeout(() => {
+            this.openChatWithFriend(friendId, friendUsername);
+        }, 100);
     }
 }
 
