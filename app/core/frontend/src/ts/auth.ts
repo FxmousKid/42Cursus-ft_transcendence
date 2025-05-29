@@ -219,6 +219,15 @@ export class AuthService {
   }
 
   /**
+   * Set authentication state for Google OAuth (public method)
+   * This is used by the Google auth handler to set the auth state after successful OAuth
+   */
+  public setGoogleAuthState(authData: any, rememberMe: boolean = true): void {
+    console.log('Auth: Setting Google auth state');
+    this.setAuthState(authData, rememberMe);
+  }
+
+  /**
    * Clear session data (exposed for API module)
    */
   public clearSession(): void {

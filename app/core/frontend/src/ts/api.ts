@@ -1,7 +1,11 @@
 // API URL configuration
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'http://localhost:3000'  
-  : window.location.origin;  // Use the same origin in production
+// Force localhost:3000 for debugging
+const API_URL = 'http://localhost:3000';
+
+// Debug logging to help identify the issue
+console.log('[API] Debug - Forced API_URL to:', API_URL);
+console.log('[API] Debug - window.location.hostname:', window.location.hostname);
+console.log('[API] Debug - window.location.origin:', window.location.origin);
 
 // Types for API responses
 export interface UserProfile {

@@ -14,6 +14,7 @@ module.exports = {
     login: './src/ts/login.ts',
     register: './src/ts/register.ts',
     game: './src/ts/game.ts',
+    'google-auth-handler': './src/ts/google-auth-handler.ts',
   },
   module: {
     rules: [
