@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Winner - ft_transcendence</title>
+    <link rel="stylesheet" href="css/output.css">
+    <link rel="stylesheet" href="css/tournament-winner.css">
+    <meta name="description" content="ft_transcendence - Tournament Winner">
+</head>
+<body class="flex flex-col min-h-screen bg-dark-800 relative overflow-hidden">
+
+    <!-- En-tête -->
+    <div id="header-container"></div>
+
+    <!-- Confetti Background -->
+    <div class="fixed inset-0 pointer-events-none z-0">
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div> 
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+    </div>
+
+    <!-- Contenu principal -->
+    <main class="flex-grow flex items-center justify-center p-4 relative z-10">
+        <div class="text-center relative">
+
+            <!-- Trophy -->
+            <div class="trophy text-8xl mb-6 inline-block">🏆</div>
+            
+            <!-- Winner Text -->
+            <h1 class="text-6xl md:text-8xl font-bold text-green-400 winner-glow mb-8">
+                WINNER
+            </h1>
+            
+            <!-- Winner Name -->
+            <div class="mb-12">
+                <p class="text-4xl md:text-6xl font-semibold text-gray-200 mb-4">
+                    <span id="winner-name">Player Name</span>
+                </p>
+                <p class="text-xl text-gray-400">
+                    Congratulations! 
+                </p>
+            </div>
+
+            <!-- Back Button -->
+            <button id="back-button" type="button" class="bg-blue-800 hover:bg-blue-600 text-white py-4 px-8 rounded-lg text-xl font-bold transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Back to Menu
+            </button>
+        </div>
+    </main>
+
+    <!-- Pied de page -->
+    <div id="footer-container" class="relative z-10"></div>
+
+    <!-- Scripts -->
+    <script src="js/header-loader.js"></script>
+    <script src="js/route-guard.js"></script>
+    <script type="module" src="js/tournament_finish.js"></script>
+</body>
+</html>
