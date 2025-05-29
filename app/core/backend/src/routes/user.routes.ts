@@ -293,12 +293,19 @@ export function registerUserRoutes(fastify: FastifyInstance) {
   });
 
   // Get user matches
-  fastify.get('/users/matches', {
+  fastify.get('/users/matches/:userId', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          userId: { type: 'number' }
+        }
+      }
+    },
     preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Params: { userId: number } }>, reply: FastifyReply) => {
       try {
-        const userId = request.user!.id;
-        
+        const userId = request.params.userId;
         // Query matches where the user is either player1 or player2
         const matches = await fastify.db.models.Match.findAll({
           where: {

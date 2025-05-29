@@ -10,9 +10,9 @@ interface MatchData {
     player1_score: number;
     player2_score: number;
     winner_id?: number;
-    status?: string;
-    created_at: string;
-    updated_at: string;
+    status: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 /**
@@ -342,6 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fonction asynchrone pour charger les données du profil
     async function loadProfileData() {
         try {
+            
             console.log('Loading full profile data from API');
             
             // Get current user's ID
@@ -350,6 +351,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('No user ID available');
                 return;
             }
+
+            const res = await api.game.createMatch(userId, userId - 1);
+            await api.game.updateMatch(res.data.id, 5, 3, 'completed');
             
             // Use the profile endpoint with statistics (same as in friends modal)
             const response = await fetch(`${api.baseUrl}/users/${userId}/profile`, {
@@ -415,8 +419,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadMatches() {
         try {
-            const matchesResponse = await api.user.getMatches();
-            
+
+            const userId = authService.getUserId();
+            if (!userId) {
+                console.error('No user ID available');
+                return;
+            }
+            console.log('UserId: ', Number(userId));
+
+            console.log('Matches before');
+            const matchesResponse = await api.user.getMatches(Number(userId));
+            console.log('Matches response:', matchesResponse);
+
             if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
                 const matches = matchesResponse.data as MatchData[];
                 

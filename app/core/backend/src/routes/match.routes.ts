@@ -74,13 +74,16 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
                 type: 'object',
                 properties: {
                   id: { type: 'number' },
-                  user1_id: { type: 'number' },
-                  user2_id: { type: 'number' },
-                  user1_score: { type: 'number' },
-                  user2_score: { type: 'number' },
+                  player1_id: { type: 'number' },
+                  player2_id: { type: 'number' },
+                  player1_score: { type: 'number' },
+                  player2_score: { type: 'number' },
+                  player1_username: { type: 'string' },
+                  player2_username: { type: 'string' },
+                  winner_id: { type: 'number' },
                   status: { type: 'string' },
                   created_at: { type: 'string' },
-                  updated_at: { type: 'string' },
+                  updated_at: { type: 'string' }
                 }
               }
             }
@@ -99,9 +102,40 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
               { player2_id: userId }
             ]
           },
+          include: [
+            {
+              model: fastify.db.models.User,
+              as: 'player1',
+              attributes: ['username']
+            },
+            {
+              model: fastify.db.models.User,
+              as: 'player2',
+              attributes: ['username']
+            }
+          ],
           order: [['created_at', 'DESC']]
         });
-        return { success: true, data: matches };
+
+        // Transform matches to include usernames
+        const transformedMatches = matches.map((match: any) => {
+          const m = match.toJSON();
+          return {
+            id: m.id,
+            player1_id: m.player1_id,
+            player2_id: m.player2_id,
+            player1_score: m.player1_score,
+            player2_score: m.player2_score,
+            player1_username: m.player1?.username || 'Unknown',
+            player2_username: m.player2?.username || 'Unknown',
+            winner_id: m.winner_id,
+            status: m.status,
+            created_at: m.created_at,
+            updated_at: m.updated_at
+          };
+        });
+
+        return { success: true, data: transformedMatches };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });
@@ -303,6 +337,8 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
         if (updateData.player1_score !== undefined) match.player1_score = updateData.player1_score;
         if (updateData.player2_score !== undefined) match.player2_score = updateData.player2_score;
         if (updateData.status) match.status = updateData.status;
+
+        if (updateData.player1_score !== undefined && updateData.player2_score !== undefined) match.winner_id = (match.player1_score >= match.player2_score) ? match.player1_id : match.player2_id;
         
         await match.save();
         
