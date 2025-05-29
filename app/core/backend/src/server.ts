@@ -96,15 +96,15 @@ async function setup() {
     const io = new Server(server.server, {
       cors: {
 		origin:
-			process.env.NODE_ENV === 'development'
-			? [
+			process.env.NODE_ENV === 'production'
+			? ['https://localhost']
+			: [
 				'http://localhost:5173',
 				'https://localhost',
             	'http://127.0.0.1:5173',
             	'http://frontend:5173',
-            	true
-			]
-			: ['https://localhost'],
+            	true,
+			],
         methods: ['GET', 'POST'],
         credentials: true,
       },
