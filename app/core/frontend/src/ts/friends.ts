@@ -272,6 +272,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Set username
         username.textContent = friend.username;
         
+        // Make username and avatar clickable for profile viewing
+        username.classList.add('cursor-pointer', 'hover:text-blue-400', 'transition-colors', 'duration-200');
+        avatar.classList.add('cursor-pointer', 'hover:ring-2', 'hover:ring-blue-400', 'transition-all', 'duration-200');
+        
+        // Add click event listeners for profile viewing
+        username.addEventListener('click', () => {
+            showUserProfile(friend.id, friend.username);
+        });
+        
+        avatar.addEventListener('click', () => {
+            showUserProfile(friend.id, friend.username);
+        });
+        
         // Set avatar if available
         if (friend.avatar_url) {
             avatar.innerHTML = `<img src="${friend.avatar_url}" alt="${friend.username}" class="w-full h-full object-cover">`;
@@ -466,6 +479,253 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Add to container
         friendsContainer.appendChild(friendElement);
+    }
+    
+    // Function to show user profile in a modal
+    async function showUserProfile(friendId: number, friendUsername: string) {
+        console.log(`👤 Showing user profile for ${friendUsername} (ID: ${friendId})`);
+        
+        // Remove existing profile modal if any
+        const existingModal = document.getElementById('user-profile-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Get friend data from the current friends list
+        const friendItem = document.querySelector(`.friend-item[data-id="${friendId}"]`);
+        let friendStatus = 'Hors ligne';
+        if (friendItem) {
+            const statusElement = friendItem.querySelector('.friend-status');
+            if (statusElement) {
+                friendStatus = statusElement.textContent || 'Hors ligne';
+            }
+        }
+        
+        // Create modal overlay
+        const modalOverlay = document.createElement('div');
+        modalOverlay.id = 'user-profile-modal';
+        modalOverlay.className = 'fixed inset-0 bg-dark-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+        
+        // Create modal content
+        const modalContent = document.createElement('div');
+        modalContent.className = 'bg-dark-800 border border-dark-600 rounded-xl p-0 max-w-sm w-full shadow-2xl transform transition-all duration-300 scale-95 opacity-0';
+        
+        // Show loading state initially
+        modalContent.innerHTML = `
+            <div class="relative">
+                <!-- Header with close button -->
+                <div class="flex items-center justify-end p-4">
+                    <button id="close-profile-modal" class="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-dark-700">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+                
+                <!-- Loading content -->
+                <div class="p-8 text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-indigo-600/20 rounded-full mx-auto mb-4 flex items-center justify-center border border-blue-500/30">
+                        <i class="fas fa-spinner fa-spin text-2xl text-blue-400"></i>
+                    </div>
+                    <p class="text-gray-400">Chargement du profil...</p>
+                </div>
+            </div>
+        `;
+        
+        modalOverlay.appendChild(modalContent);
+        document.body.appendChild(modalOverlay);
+        
+        // Animate modal appearance
+        setTimeout(() => {
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+        
+        // Add close event listener for loading state
+        const closeButton = modalContent.querySelector('#close-profile-modal');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => modalOverlay.remove(), 200);
+            });
+        }
+        
+        // Close modal when clicking outside
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => modalOverlay.remove(), 200);
+            }
+        });
+        
+        // Load real user profile data from API
+        try {
+            const authService = (window as any).authService;
+            const token = authService?.getToken();
+            
+            if (!token) {
+                throw new Error('No authentication token available');
+            }
+            
+            // Fetch user profile with real statistics
+            const response = await fetch(`${api.baseUrl}/users/${friendId}/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to load profile');
+            }
+            
+            const profileData = data.data;
+            
+            // Format join date
+            const joinDate = profileData.created_at 
+                ? new Date(profileData.created_at).toLocaleDateString('fr-FR', { 
+                    year: 'numeric', 
+                    month: 'long' 
+                })
+                : 'Non disponible';
+            
+            // Update modal content with real profile data
+            modalContent.innerHTML = `
+                <div class="relative">
+                    <!-- Header with close button -->
+                    <div class="flex items-center justify-end p-4">
+                        <button id="close-profile-modal" class="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-dark-700">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- User Info Section -->
+                    <div class="px-6 pb-6">
+                        <!-- Avatar and basic info -->
+                        <div class="text-center mb-6">
+                            <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg border-4 border-dark-700 overflow-hidden">
+                                ${profileData.avatar_url 
+                                    ? `<img src="${profileData.avatar_url}" alt="${profileData.username}" class="w-full h-full object-cover">`
+                                    : '<i class="fas fa-user text-white text-3xl"></i>'
+                                }
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-2">${profileData.username}</h3>
+                            <div class="flex items-center justify-center">
+                                <span class="status-indicator ${friendStatus === 'En ligne' ? 'bg-green-400' : friendStatus === 'En jeu' ? 'bg-blue-400' : 'bg-gray-500'} w-3 h-3 rounded-full mr-2"></span>
+                                <span class="text-sm ${friendStatus === 'En ligne' ? 'text-green-400' : friendStatus === 'En jeu' ? 'text-blue-400' : 'text-gray-400'}">${friendStatus}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- User Details -->
+                        <div class="space-y-4 mb-6">
+                            <div class="bg-dark-700/50 rounded-lg p-4 border border-dark-600/50">
+                                <div class="flex items-center mb-3">
+                                    <h4 class="text-white font-medium flex items-center">
+                                        <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+                                        Informations
+                                    </h4>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-400 text-sm flex items-center">
+                                            <i class="fas fa-envelope text-gray-500 mr-2 w-4"></i>
+                                            Email
+                                        </span>
+                                        <span class="text-white text-sm font-medium">${profileData.email}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-400 text-sm flex items-center">
+                                            <i class="fas fa-calendar text-gray-500 mr-2 w-4"></i>
+                                            Membre depuis
+                                        </span>
+                                        <span class="text-white text-sm font-medium">${joinDate}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Stats Section -->
+                            <div class="bg-dark-700/50 rounded-lg p-4 border border-dark-600/50">
+                                <div class="flex items-center mb-3">
+                                    <h4 class="text-white font-medium flex items-center">
+                                        <i class="fas fa-chart-bar text-purple-400 mr-2"></i>
+                                        Statistiques de jeu
+                                    </h4>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="text-center p-3 bg-dark-800/50 rounded-lg border border-dark-600/30">
+                                        <p class="text-2xl font-bold text-blue-400 mb-1">${profileData.statistics.games_played}</p>
+                                        <p class="text-gray-400 text-xs">Parties jouées</p>
+                                    </div>
+                                    <div class="text-center p-3 bg-dark-800/50 rounded-lg border border-dark-600/30">
+                                        <p class="text-2xl font-bold text-green-400 mb-1">${profileData.statistics.wins}</p>
+                                        <p class="text-gray-400 text-xs">Victoires</p>
+                                    </div>
+                                    <div class="text-center p-3 bg-dark-800/50 rounded-lg border border-dark-600/30">
+                                        <p class="text-2xl font-bold text-red-400 mb-1">${profileData.statistics.losses}</p>
+                                        <p class="text-gray-400 text-xs">Défaites</p>
+                                    </div>
+                                    <div class="text-center p-3 bg-dark-800/50 rounded-lg border border-dark-600/30">
+                                        <p class="text-2xl font-bold text-yellow-400 mb-1">${profileData.statistics.win_rate}%</p>
+                                        <p class="text-gray-400 text-xs">Taux de victoire</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Re-add close event listener
+            const newCloseButton = modalContent.querySelector('#close-profile-modal');
+            if (newCloseButton) {
+                newCloseButton.addEventListener('click', () => {
+                    modalContent.classList.remove('scale-100', 'opacity-100');
+                    modalContent.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => modalOverlay.remove(), 200);
+                });
+            }
+            
+        } catch (error) {
+            console.error('Error loading user profile:', error);
+            
+            // Show error state
+            modalContent.innerHTML = `
+                <div class="relative">
+                    <!-- Header with close button -->
+                    <div class="flex items-center justify-end p-4">
+                        <button id="close-profile-modal" class="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-dark-700">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Error content -->
+                    <div class="p-8 text-center">
+                        <div class="w-16 h-16 bg-red-500/20 rounded-full mx-auto mb-4 flex items-center justify-center border border-red-500/30">
+                            <i class="fas fa-exclamation-triangle text-2xl text-red-400"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-white mb-2">Erreur de chargement</h3>
+                        <p class="text-gray-400 text-sm">Impossible de récupérer les informations de ${friendUsername}</p>
+                        <p class="text-gray-500 text-xs mt-2">${error instanceof Error ? error.message : 'Erreur inconnue'}</p>
+                    </div>
+                </div>
+            `;
+            
+            // Re-add close event listener
+            const errorCloseButton = modalContent.querySelector('#close-profile-modal');
+            if (errorCloseButton) {
+                errorCloseButton.addEventListener('click', () => {
+                    modalContent.classList.remove('scale-100', 'opacity-100');
+                    modalContent.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => modalOverlay.remove(), 200);
+                });
+            }
+        }
     }
     
     // Function to load friend requests

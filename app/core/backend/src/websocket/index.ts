@@ -1,6 +1,5 @@
 import { Server, Socket } from 'socket.io';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
-import { DB } from '../db';
 import { Op } from 'sequelize';
 import { ChatMessage } from '../models/chat_message.model';
 import { UserBlock } from '../models/user_block.model';
@@ -32,6 +31,7 @@ interface ChatMessageData {
 }
 
 interface DB {
+  sequelize: Sequelize;
   models: {
     User: typeof User;
     Friendship: typeof Friendship;
@@ -41,7 +41,7 @@ interface DB {
     ChatMessage: typeof ChatMessage;
     UserBlock: typeof UserBlock;
   };
-  Sequelize: typeof Sequelize;
+  Sequelize?: typeof Sequelize;
 }
 
 async function isUserBlocked(db: DB, userId: number, otherUserId: number): Promise<boolean> {
@@ -650,7 +650,7 @@ export function setupWebSocket(io: Server, db: DB) {
             sender_id: userId,
             content,
             type,
-            created_at: message.created_at
+            created_at: message.createdAt
           });
         }
 
@@ -660,7 +660,7 @@ export function setupWebSocket(io: Server, db: DB) {
           receiver_id,
           content,
           type,
-          created_at: message.created_at
+          created_at: message.createdAt
         });
       } catch (error) {
         console.error('[WebSocket] Error sending chat message:', error);
@@ -699,7 +699,7 @@ export function setupWebSocket(io: Server, db: DB) {
           io.to(friendSocketId).emit('game-invite-received', {
             id: message.id,
             sender_id: userId,
-            created_at: message.created_at
+            created_at: message.createdAt
           });
         }
 
@@ -707,7 +707,7 @@ export function setupWebSocket(io: Server, db: DB) {
         socket.emit('game-invite-sent', {
           id: message.id,
           receiver_id: friendId,
-          created_at: message.created_at
+          created_at: message.createdAt
         });
       } catch (error) {
         console.error('[WebSocket] Error sending game invitation:', error);
@@ -747,7 +747,7 @@ export function setupWebSocket(io: Server, db: DB) {
               id: notification.id,
               sender_id: userId,
               content: message,
-              created_at: notification.created_at
+              created_at: notification.createdAt
             });
           }
         }
