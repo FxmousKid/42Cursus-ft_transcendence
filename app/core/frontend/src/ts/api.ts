@@ -236,8 +236,8 @@ export const api = {
       });
     },
 
-    async getMatches(id: number): Promise<{ success: boolean; data?: MatchData[]; message?: string }> {
-      return request(`/users/matches/${id}`);
+    async getMatches(): Promise<{ success: boolean; data?: MatchData[]; message?: string }> {
+      return request('/matches/user');  // Changed from '/users/matches' to '/matches/user'
     },
     
     async getAll() {
