@@ -41,13 +41,14 @@ server {
     }
 
 
-    # ── Kibana ─────────────────────────────────────
-	location /kibana/ {
-		proxy_pass			http://kibana:5601/kibana/;
-		proxy_set_header	Host				$host;
-		proxy_set_header	X-Real-IP			$remote_addr;	
-        proxy_set_header   	X-Forwarded-Proto 	$scheme;
-	}
+      # TODO: Uncomment when enabling reverse proxy
+ #    # ── Kibana ─────────────────────────────────────
+	# location /kibana/ {
+	# 	proxy_pass			http://kibana:5601/kibana/;
+	# 	proxy_set_header	Host				$host;
+	# 	proxy_set_header	X-Real-IP			$remote_addr;	
+ #        proxy_set_header   	X-Forwarded-Proto 	$scheme;
+	# }
 
 
     # ── Websocket ─────────────────────────────────────
