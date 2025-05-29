@@ -238,7 +238,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 	});
 
 
-	fastify.patch<{ Body: ScoreUpdateBody }>('/match_tournaments/score', {
+	fastify.patch<{ Body: ScoreUpdateBody }>('/match_tournaments/scores', {
 		schema: {
 			body: {
 				type: 'object',
@@ -285,6 +285,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 				match.player1_score = player1_score;
 				match.player2_score = player2_score;
 				match.winner_name = winner_name;
+				match.status = 'completed';
 				await match.save();
 
 				return {
@@ -359,7 +360,15 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 				// Return user info and token
 				return reply.status(201).send({
 					success: true,
-					data: { newMatch }
+					data: { id: newMatch.id,
+							tournament_id: newMatch.tournament_id,
+							player1_name: newMatch.player1_name,
+							player2_name: newMatch.player2_name,
+							player1_score: newMatch.player1_score,
+							player2_score: newMatch.player2_score,
+							winner_name: newMatch.winner_name,
+							status: newMatch.status, 
+						}
 				});
 			} catch (error) {
 				fastify.log.error(error);
