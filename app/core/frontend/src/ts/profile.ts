@@ -123,24 +123,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // Current user data
     let currentUserData: any = null;
     
+    // Initially hide the remove button until we confirm there's an avatar
+    if (removeAvatarBtn) {
+        removeAvatarBtn.classList.add('hidden');
+    }
+    
     // Utiliser les données du localStorage pour afficher des informations de base
     const username = localStorage.getItem('username');
     const email = localStorage.getItem('email') || '';
     const avatarUrl = localStorage.getItem('avatar_url');
+    const userId = localStorage.getItem('userId') || localStorage.getItem('user_id');
     
     // Afficher les informations de base depuis localStorage
     if (username) {
         profileUsernameElement.textContent = username;
-        profileStatus.textContent = 'offline';
-        profileStatus.classList.add('text-gray-600');
+        if (profileStatus) {
+            profileStatus.textContent = 'offline';
+            profileStatus.classList.add('text-gray-600');
+        }
         
         // Pré-remplir les champs du formulaire
         if (editUsername) editUsername.value = username;
         if (editEmail) editEmail.value = email;
         if (editAvatar) editAvatar.value = avatarUrl || '';
         
-        // Afficher l'avatar si disponible
-        if (avatarUrl) {
+        // Afficher l'avatar si disponible et userId est défini
+        if (avatarUrl && avatarUrl.trim() !== '' && userId) {
             updateAvatarDisplay({ id: parseInt(userId), avatar_url: avatarUrl, has_avatar_data: false });
         }
     }
@@ -154,23 +162,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // EVENT LISTENERS SIMPLIFIÉS
     
     // Clic sur l'avatar pour choisir une nouvelle photo
-    profileAvatar?.addEventListener('click', (e) => {
-        console.log('Avatar clicked!');
-        e.preventDefault();
-        e.stopPropagation();
-        avatarUploadInput?.click();
-    });
+    if (profileAvatar && avatarUploadInput) {
+        profileAvatar.addEventListener('click', (e) => {
+            console.log('Avatar clicked!');
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+                avatarUploadInput.click();
+            } catch (error) {
+                console.error('Error triggering file input:', error);
+            }
+        });
+    } else {
+        console.warn('Profile avatar or upload input not found');
+    }
     
     // Bouton supprimer avatar
-    removeAvatarBtn?.addEventListener('click', (e) => {
-        console.log('Remove button clicked!');
-        e.preventDefault();
-        e.stopPropagation();
-        handleRemoveAvatar();
-    });
+    if (removeAvatarBtn) {
+        removeAvatarBtn.addEventListener('click', (e) => {
+            console.log('Remove button clicked!');
+            e.preventDefault();
+            e.stopPropagation();
+            handleRemoveAvatar();
+        });
+    }
     
     // Handle avatar upload
-    avatarUploadInput?.addEventListener('change', handleAvatarUpload);
+    if (avatarUploadInput) {
+        avatarUploadInput.addEventListener('change', handleAvatarUpload);
+    }
     
     // Gérer le bouton d'édition de profil
     if (editProfileButton && editProfileModal) {
@@ -219,32 +239,44 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Fonction pour mettre à jour l'affichage de l'avatar
     function updateAvatarDisplay(userData: { id: number; username?: string; avatar_url?: string; has_avatar_data?: boolean }) {
-        if (!profileAvatar) return;
-        
-        const avatarUrl = getAvatarUrl ? getAvatarUrl(userData) : '';
-        
-        if (avatarUrl) {
-            // Add cache-busting parameter to force reload of uploaded avatars
-            const finalAvatarUrl = userData.has_avatar_data ? 
-                `${avatarUrl}?t=${Date.now()}` : avatarUrl;
-            
-            // When there's an avatar, show the image and hide the default icon
-            profileAvatar.innerHTML = `
-                <img src="${finalAvatarUrl}" alt="${userData.username || username}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <i class="fas fa-user text-white text-5xl" style="display: none;"></i>
-            `;
-        } else {
-            // When there's no avatar, show only the default icon - the container keeps its gradient background
-            profileAvatar.innerHTML = `<i class="fas fa-user text-white text-5xl"></i>`;
+        if (!profileAvatar) {
+            console.warn('Profile avatar element not found');
+            return;
         }
         
-        // Show/hide remove button based on whether user has uploaded avatar or avatar_url
-        if (removeAvatarBtn) {
-            if (userData.has_avatar_data || userData.avatar_url) {
-                removeAvatarBtn.classList.remove('hidden');
+        try {
+            const avatarUrl = getAvatarUrl ? getAvatarUrl(userData) : '';
+            
+            if (avatarUrl) {
+                // Add cache-busting parameter to force reload of uploaded avatars
+                const finalAvatarUrl = userData.has_avatar_data ? 
+                    `${avatarUrl}?t=${Date.now()}` : avatarUrl;
+                
+                // When there's an avatar, show the image and hide the default icon
+                profileAvatar.innerHTML = `
+                    <img src="${finalAvatarUrl}" alt="${userData.username || username}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <i class="fas fa-user text-white text-5xl" style="display: none;"></i>
+                `;
             } else {
-                removeAvatarBtn.classList.add('hidden');
+                // When there's no avatar, show only the default icon - the container keeps its gradient background
+                profileAvatar.innerHTML = `<i class="fas fa-user text-white text-5xl"></i>`;
             }
+            
+            // Show/hide remove button based on whether user has uploaded avatar or avatar_url
+            if (removeAvatarBtn) {
+                // Only show remove button if there's actually an avatar to remove
+                // This means either uploaded avatar data OR a valid avatar_url that produces an image
+                const hasUploadedAvatar = userData.has_avatar_data;
+                const hasValidAvatarUrl = userData.avatar_url && userData.avatar_url.trim() !== '';
+                
+                if (hasUploadedAvatar || hasValidAvatarUrl) {
+                    removeAvatarBtn.classList.remove('hidden');
+                } else {
+                    removeAvatarBtn.classList.add('hidden');
+                }
+            }
+        } catch (error) {
+            console.error('Error updating avatar display:', error);
         }
     }
     
@@ -326,9 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 // Update avatar display using the unified function
-                updateAvatarDisplay(profile);
-                
-                // Update avatar display
                 updateAvatarDisplay(profile);
                 
                 // Définir les valeurs du formulaire pour l'édition
