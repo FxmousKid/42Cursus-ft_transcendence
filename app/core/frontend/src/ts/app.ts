@@ -1,3 +1,4 @@
+import { presenceService } from './presence';
 // This file will be compiled to JS and included in the HTML directly
 // It initializes the app and connects global services
 
@@ -34,6 +35,7 @@ function initApp() {
       
       if (isAuthenticated) {
         console.log('Authenticated as:', authService.getUsername());
+        presenceService.start(); // Start presence globally if authenticated
       }
     }
   }

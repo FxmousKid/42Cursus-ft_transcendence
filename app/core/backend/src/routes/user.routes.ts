@@ -703,4 +703,88 @@ export function registerUserRoutes(fastify: FastifyInstance) {
       }
     }
   });
+
+  // Get a user's status
+  fastify.get('/users/:id/status', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            status: { type: 'string' }
+          }
+        }
+      }
+    },
+    preHandler: fastify.authenticate,
+    handler: async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const user = await fastify.db.models.User.findByPk(request.params.id, {
+          attributes: ['status']
+        });
+        if (!user) {
+          return reply.status(404).send({ success: false, message: 'User not found' });
+        }
+        return { success: true, status: user.status };
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(400).send({ success: false, message: error.message });
+      }
+    }
+  });
+
+  // Set a user's status (only self or admin)
+  fastify.post('/users/:id/status', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' }
+        }
+      },
+      body: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', enum: ['online', 'offline'] }
+        },
+        required: ['status']
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            status: { type: 'string' }
+          }
+        }
+      }
+    },
+    preHandler: fastify.authenticate,
+    handler: async (request: FastifyRequest<{ Params: { id: string }, Body: StatusUpdateBody }>, reply: FastifyReply) => {
+      try {
+        const userId = parseInt(request.params.id, 10);
+        if (request.user!.id !== userId /* && !request.user!.isAdmin */) {
+          return reply.status(403).send({ success: false, message: 'Forbidden' });
+        }
+        const user = await fastify.db.models.User.findByPk(userId);
+        if (!user) {
+          return reply.status(404).send({ success: false, message: 'User not found' });
+        }
+        const status = request.body.status === 'online' ? 'online' : 'offline';
+        user.status = status;
+        await user.save();
+        return { success: true, status };
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(400).send({ success: false, message: error.message });
+      }
+    }
+  });
 }
