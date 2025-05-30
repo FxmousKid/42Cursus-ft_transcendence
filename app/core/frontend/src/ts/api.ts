@@ -236,9 +236,10 @@ export const api = {
       });
     },
 
-    async disable2FA() {
+    async disable2FA(userID: any) {
       return request('/auth/2fa/disable', {
-        method: 'POST'
+        method: 'POST',
+		body: JSON.stringify({ userID })
       });
     },
   },

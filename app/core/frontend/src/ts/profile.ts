@@ -279,9 +279,17 @@ document.addEventListener('DOMContentLoaded', () => {
                             update2FAStatus(true);
                         }
                     } else {
+						// Disable 2FA
                         console.log('Disabling 2FA...');
-                        // Disable 2FA
-                        const disableResponse = await api.auth.disable2FA();
+
+						// Sending userID in the request body
+			            const userId = authService.getUserId();
+						if (!userId) {
+							console.error('No user ID available');
+							return;
+						}
+
+                        const disableResponse = await api.auth.disable2FA(userId);
                         console.log('Disable response:', disableResponse);
                         if (disableResponse.success) {
                             update2FAStatus(false);
@@ -398,7 +406,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error loading 2FA status:', error);
         }
     }
-
     // Load 2FA status
     load2FAStatus();
     

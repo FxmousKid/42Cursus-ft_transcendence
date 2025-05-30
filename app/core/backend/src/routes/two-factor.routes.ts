@@ -149,14 +149,15 @@ export function registerTwoFactorRoutes(fastify: FastifyInstance) {
   });
 
   // Disable 2FA
-  fastify.post<{ Body: Verify2FABody }>('/auth/2fa/disable', {
+  fastify.post<{ Body: {userID: number} }>('/auth/2fa/disable', {
     schema: {
       body: {
         type: 'object',
-        required: ['code'],
+        required: ['userID'],
         properties: {
-          code: { type: 'string' }
+          userID: { type: 'number' }
         }
+	  
       },
       response: {
         200: {
@@ -169,10 +170,10 @@ export function registerTwoFactorRoutes(fastify: FastifyInstance) {
       }
     },
     preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Body: Verify2FABody }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Body: {userID: number} }>, reply: FastifyReply) => {
       try {
-        const { code } = request.body;
-        const user = await fastify.db.models.User.findByPk(request.user!.id);
+        const { userID } = request.body;
+        const user = await fastify.db.models.User.findByPk(userID);
         
         if (!user) {
           return reply.status(404).send({ 
@@ -185,19 +186,6 @@ export function registerTwoFactorRoutes(fastify: FastifyInstance) {
           return reply.status(400).send({ 
             success: false, 
             message: '2FA is not enabled' 
-          });
-        }
-
-        // Verify the code
-        const isValid = authenticator.verify({
-          token: code,
-          secret: user.two_factor_secret
-        });
-
-        if (!isValid) {
-          return reply.status(400).send({ 
-            success: false, 
-            message: 'Invalid verification code' 
           });
         }
 
