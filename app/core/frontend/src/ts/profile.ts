@@ -120,6 +120,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const deleteErrorMessage = document.getElementById('delete-error-message') as HTMLElement;
     const deleteErrorText = document.getElementById('delete-error-text') as HTMLElement;
     
+    // 2FA elements
+    const toggle2FA = document.getElementById('toggle-2fa') as HTMLButtonElement;
+    const toggle2FAHandle = document.getElementById('2fa-toggle-handle') as HTMLSpanElement;
+    const setup2FAModal = document.getElementById('2fa-setup-modal') as HTMLDivElement;
+    const close2FASetup = document.getElementById('close-2fa-setup') as HTMLButtonElement;
+    const cancel2FASetup = document.getElementById('cancel-2fa-setup') as HTMLButtonElement;
+    const verify2FASetup = document.getElementById('verify-2fa-setup') as HTMLButtonElement;
+    const qrContainer = document.getElementById('2fa-qr-container') as HTMLDivElement;
+    const secretDisplay = document.getElementById('2fa-secret') as HTMLElement;
+    const verificationCode = document.getElementById('2fa-verification-code') as HTMLInputElement;
+    const setupError = document.getElementById('2fa-setup-error') as HTMLDivElement;
+    const setupErrorText = document.getElementById('2fa-setup-error-text') as HTMLSpanElement;
+    
     // Current user data
     let currentUserData: any = null;
     
@@ -236,6 +249,165 @@ document.addEventListener('DOMContentLoaded', async () => {
             deleteAccount();
         });
     }
+    
+    // Handle 2FA toggle
+    if (toggle2FA) {
+        toggle2FA.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('2FA toggle clicked');
+            try {
+                console.log('Getting user profile...');
+                const response = await api.user.getProfile();
+                console.log('Profile response:', response);
+                if (response.success && response.data) {
+                    const is2FAEnabled = response.data.two_factor_enabled;
+                    console.log('2FA enabled:', is2FAEnabled);
+                    
+                    if (!is2FAEnabled) {
+                        console.log('Starting 2FA setup...');
+                        // Show setup modal
+                        const setupResponse = await api.auth.setup2FA();
+                        console.log('Setup response:', setupResponse);
+                        console.log('QR Code data:', setupResponse.data?.qrCode);
+                        if (setupResponse.success && setupResponse.data) {
+                            // Display QR code
+                            qrContainer.innerHTML = `<img src="${setupResponse.data.qrCode}" alt="2FA QR Code">`;
+                            secretDisplay.textContent = setupResponse.data.secret;
+                            setup2FAModal.classList.remove('hidden');
+                            // Update UI to show pending state
+                            update2FAStatus(true);
+                        }
+                    } else {
+						// Disable 2FA
+                        console.log('Disabling 2FA...');
+
+						// Sending userID in the request body
+			            const userId = authService.getUserId();
+						if (!userId) {
+							console.error('No user ID available');
+							return;
+						}
+
+                        const disableResponse = await api.auth.disable2FA(userId);
+                        console.log('Disable response:', disableResponse);
+                        if (disableResponse.success) {
+                            update2FAStatus(false);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling 2FA:', error);
+            }
+        });
+    }
+
+    // Handle 2FA setup modal
+    if (close2FASetup) {
+        close2FASetup.addEventListener('click', () => {
+            setup2FAModal.classList.add('hidden');
+            reset2FASetup();
+            // Reset toggle state if setup was cancelled
+            update2FAStatus(false);
+        });
+    }
+
+    if (cancel2FASetup) {
+        cancel2FASetup.addEventListener('click', () => {
+            setup2FAModal.classList.add('hidden');
+            reset2FASetup();
+            // Reset toggle state if setup was cancelled
+            update2FAStatus(false);
+        });
+    }
+
+    if (verify2FASetup) {
+        verify2FASetup.addEventListener('click', async () => {
+            const code = verificationCode.value;
+            if (code.length !== 6) {
+                show2FAError('Le code doit contenir 6 chiffres');
+                return;
+            }
+
+            try {
+                const response = await api.auth.enable2FA(code);
+                if (response.success) {
+                    update2FAStatus(true);
+                    setup2FAModal.classList.add('hidden');
+                    reset2FASetup();
+                } else {
+                    show2FAError(response.message || 'Code invalide');
+                    // Reset toggle state if verification failed
+                    update2FAStatus(false);
+                }
+            } catch (error) {
+                console.error('Error enabling 2FA:', error);
+                show2FAError('Erreur lors de l\'activation de la 2FA');
+                // Reset toggle state if verification failed
+                update2FAStatus(false);
+            }
+        });
+    }
+
+    // Handle verification code input
+    if (verificationCode) {
+        verificationCode.addEventListener('input', () => {
+            verificationCode.value = verificationCode.value.replace(/[^0-9]/g, '');
+            if (verificationCode.value.length === 6) {
+                verify2FASetup.disabled = false;
+            } else {
+                verify2FASetup.disabled = true;
+            }
+        });
+    }
+
+    // Helper functions for 2FA
+    function update2FAStatus(enabled: boolean) {
+        if (toggle2FAHandle) {
+            if (enabled) {
+                toggle2FAHandle.classList.add('translate-x-5');
+                toggle2FAHandle.classList.remove('translate-x-0');
+                toggle2FA.classList.add('bg-primary-600');
+                toggle2FA.classList.remove('bg-dark-600');
+            } else {
+                toggle2FAHandle.classList.remove('translate-x-5');
+                toggle2FAHandle.classList.add('translate-x-0');
+                toggle2FA.classList.remove('bg-primary-600');
+                toggle2FA.classList.add('bg-dark-600');
+            }
+        }
+    }
+
+    function show2FAError(message: string) {
+        if (setupError && setupErrorText) {
+            setupErrorText.textContent = message;
+            setupError.classList.remove('hidden');
+        }
+    }
+
+    function reset2FASetup() {
+        if (qrContainer) qrContainer.innerHTML = '';
+        if (secretDisplay) secretDisplay.textContent = '';
+        if (verificationCode) verificationCode.value = '';
+        if (setupError) setupError.classList.add('hidden');
+    }
+
+    // Update 2FA status on page load
+    async function load2FAStatus() {
+        try {
+            console.log('Loading 2FA status...');
+            const response = await api.user.getProfile();
+            console.log('load2FAStatus - Profile response:', response);
+            if (response.success && response.data) {
+                console.log('load2FAStatus - two_factor_enabled:', response.data.two_factor_enabled);
+                update2FAStatus(response.data.two_factor_enabled);
+            }
+        } catch (error) {
+            console.error('Error loading 2FA status:', error);
+        }
+    }
+    // Load 2FA status
+    load2FAStatus();
     
     // Fonction pour mettre à jour l'affichage de l'avatar
     function updateAvatarDisplay(userData: { id: number; username?: string; avatar_url?: string; has_avatar_data?: boolean }) {

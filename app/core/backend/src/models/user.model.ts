@@ -21,6 +21,9 @@ interface UserAttributes {
   google_id?: string;
   avatar_data?: Buffer | null;
   avatar_mime_type?: string | null;
+  two_factor_enabled?: boolean;
+  two_factor_secret?: string;
+  two_factor_temp_secret?: string;
 }
 
 @Table({
@@ -62,6 +65,19 @@ export class User extends Model<UserAttributes> {
   @AllowNull(true)
   @Column(DataType.STRING(50))
   declare avatar_mime_type: string | null;  // FIXED: Added | null
+
+  @AllowNull(false)
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  declare two_factor_enabled: boolean;
+
+  @AllowNull(true)
+  @Column(DataType.STRING(255))
+  declare two_factor_secret: string | null;
+
+  @AllowNull(true)
+  @Column(DataType.STRING(255))
+  declare two_factor_temp_secret: string | null;
 
   // Relationships
   @HasMany(() => Friendship, 'user_id')
