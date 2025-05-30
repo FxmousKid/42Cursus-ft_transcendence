@@ -62,6 +62,9 @@ path "kv/+/google_oauth/*" {
 path "kv/+/session/*" {
 	capabilities = ["read", "list"]
 }
+path "kv/+/blockchain/*" {
+	capabilities = ["read", "list"]
+}
 
 EOF
 fi
@@ -115,6 +118,10 @@ if ! vault kv get -field=username kv/elk/elasticsearch >/dev/null 2>&1; then
 	# Session
 	vault kv put kv/session/secret secret='42-transcendence-session-secret-must-be-at-least-32-characters-long'
 
+	# Blockchain
+	vault kv put kv/blockchain/avalanche_rpc_url url='https://api.avax-test.network/ext/bc/C/rpc'
+	vault kv put kv/bloackchain/private_key key='0x53a4f506037958652d8cbc60caa9e1f31f96e8d6a4aec4ea5db88e5d40fd0849'
+	vault kv put kv/bloackchain/tournament_private_addr addr='0x604D4dF5F7BFD53529DF9A66c7aA7a56c7FDba46'
 
 
 
