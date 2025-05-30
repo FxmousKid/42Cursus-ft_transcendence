@@ -25,6 +25,11 @@ if [ -d /vault/.env ]; then
 fi
 set -e
 
+if [ -f /vault/env/.env ]; then
+	echo "Removing pre-existing .env to ensure up to date secrets..."
+	rm -f /vault/env/.env;
+fi
+
 vault agent -config=/vault/config/agent.hcl -log-level=debug &
 VAULT_PID=$!
 
