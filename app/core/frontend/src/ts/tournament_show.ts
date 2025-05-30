@@ -81,7 +81,6 @@ class TournamentResults {
 							Victoire de ${match.winner_name}
 						</h3>` : 
 						`<h3 class="text-xl font-semibold text-white flex items-center justify-center mb-3">
-							<i class="fas fa-gamepad mr-2 text-blue-400"></i>
 							Match
 						</h3>`
 					}
@@ -238,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	tournamentService.loadFromStorage();
 
 	tournamentResults.setMatches(tournamentService.matchs);
-	document.getElementById('nb-round')!.textContent = 'Round: ' + tournamentService.round;
+	document.getElementById('nb-round')!.textContent = 'Round ' + tournamentService.round;
     // Make it globally accessible if needed
     (window as any).tournamentResults = tournamentResults;
 });

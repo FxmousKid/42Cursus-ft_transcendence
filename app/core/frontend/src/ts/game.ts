@@ -133,10 +133,10 @@ class PongGame {
         this.player2 = player2Body.username;
 
         const avatar1 = document.getElementById('player1-avatar') as HTMLElement;
-        avatar1.innerHTML = createAvatarHTML(player1Body, "large");
+        avatar1.innerHTML = createAvatarHTML(player1Body, "medium");
 
         const avatar2 = document.getElementById('player2-avatar') as HTMLElement;
-        avatar2.innerHTML = createAvatarHTML(player2Body, "large");
+        avatar2.innerHTML = createAvatarHTML(player2Body, "medium");
     }
 
     private setNames() {
