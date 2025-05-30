@@ -71,3 +71,8 @@ GOOGLE_CALLBACK_URL={{ with secret "kv/data/google_oauth/callback_url" }}{{ .Dat
 
 # Session
 SESSION_SECRET={{ with secret "kv/data/session/secret" }}{{ .Data.data.secret }}{{ end }}
+
+# Blockchain
+AVALANCHE_RPC_URL={{ with secret "kv/data/blockchain/avalanche_rpc_url" }}{{ .Data.data.url }}{{ end }}
+BLOCKCHAIN_PRIVATE_KEY={{ with secret "kv/data/blockchain/private_key" }}{{ .Data.data.key }}{{ end }}
+TOURNAMENT_CONTRACT_ADDRESS={{ with secret "kv/data/blockchain/tournament_private_addr" }}{{ .Data.data.addr }}{{ end }}
