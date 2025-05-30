@@ -275,6 +275,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                             qrContainer.innerHTML = `<img src="${setupResponse.data.qrCode}" alt="2FA QR Code">`;
                             secretDisplay.textContent = setupResponse.data.secret;
                             setup2FAModal.classList.remove('hidden');
+                            
+                            // Focus automatique sur le champ de saisie après un délai
+                            setTimeout(() => {
+                                if (verificationCode) {
+                                    verificationCode.focus();
+                                }
+                            }, 100);
+                            
                             // Update UI to show pending state
                             update2FAStatus(true);
                         }
@@ -351,29 +359,69 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Handle verification code input
     if (verificationCode) {
-        verificationCode.addEventListener('input', () => {
-            verificationCode.value = verificationCode.value.replace(/[^0-9]/g, '');
-            if (verificationCode.value.length === 6) {
-                verify2FASetup.disabled = false;
-            } else {
-                verify2FASetup.disabled = true;
+        // Focus automatique sur le champ
+        verificationCode.addEventListener('focus', () => {
+            verificationCode.select();
+        });
+
+        // Gestion de la saisie
+        verificationCode.addEventListener('input', (e) => {
+            const target = e.target as HTMLInputElement;
+            // Ne garder que les chiffres
+            target.value = target.value.replace(/[^0-9]/g, '');
+            
+            // Activer/désactiver le bouton selon la longueur
+            const isValid = target.value.length === 6;
+            verify2FASetup.disabled = !isValid;
+            verify2FASetup.classList.toggle('opacity-50', !isValid);
+            
+            // Masquer l'erreur lors de la saisie
+            if (target.value.length > 0 && setupError) {
+                setupError.classList.add('hidden');
             }
+            
+            // Validation automatique quand 6 chiffres sont saisis
+            if (isValid) {
+                setTimeout(() => {
+                    verify2FASetup.click();
+                }, 300);
+            }
+        });
+
+        // Gestion de la touche Entrée
+        verificationCode.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && verificationCode.value.length === 6) {
+                e.preventDefault();
+                verify2FASetup.click();
+            }
+        });
+
+        // Gestion du collage
+        verificationCode.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const paste = (e.clipboardData || (window as any).clipboardData).getData('text');
+            const numbers = paste.replace(/[^0-9]/g, '').substring(0, 6);
+            verificationCode.value = numbers;
+            
+            // Déclencher l'événement input pour la validation
+            verificationCode.dispatchEvent(new Event('input'));
         });
     }
 
     // Helper functions for 2FA
     function update2FAStatus(enabled: boolean) {
-        if (toggle2FAHandle) {
+        if (toggle2FAHandle && toggle2FA) {
             if (enabled) {
                 toggle2FAHandle.classList.add('translate-x-5');
                 toggle2FAHandle.classList.remove('translate-x-0');
                 toggle2FA.classList.add('bg-primary-600');
-                toggle2FA.classList.remove('bg-dark-600');
+                toggle2FA.classList.remove('bg-dark-600', 'hover:bg-dark-500');
+                toggle2FA.classList.add('hover:bg-primary-700');
             } else {
                 toggle2FAHandle.classList.remove('translate-x-5');
                 toggle2FAHandle.classList.add('translate-x-0');
-                toggle2FA.classList.remove('bg-primary-600');
-                toggle2FA.classList.add('bg-dark-600');
+                toggle2FA.classList.remove('bg-primary-600', 'hover:bg-primary-700');
+                toggle2FA.classList.add('bg-dark-600', 'hover:bg-dark-500');
             }
         }
     }

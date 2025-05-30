@@ -133,12 +133,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Use the auth service instead of direct API call
-            const success = await authService.login(email, password, rememberMe);
-            console.log('Login success:', success);
+            const result = await authService.login(email, password, rememberMe);
+            console.log('Login result:', result);
             
-            if (success) {
-                // Redirect to original requested page or home page on successful login
-                window.location.href = redirectUrl;
+            if (result.success) {
+                if (result.requires2FA) {
+                    // 2FA is required, the auth service will handle the redirection
+                    console.log('2FA required, auth service will handle redirection');
+                    // Don't redirect here, let the auth service handle it
+                } else {
+                    // Normal login successful, redirect to original requested page
+                    console.log('Normal login successful, redirecting to:', redirectUrl);
+                    window.location.href = redirectUrl;
+                }
             } else {
                 // Show error message
                 showError('Email ou mot de passe incorrect. Veuillez réessayer.');

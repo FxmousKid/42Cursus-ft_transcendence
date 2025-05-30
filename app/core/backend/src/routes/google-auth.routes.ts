@@ -112,6 +112,7 @@ export function registerGoogleAuthRoutes(fastify: FastifyInstance) {
         }
         
         try {
+          // 2FA not enabled for Google auth for now, proceed with normal Google auth
           // Generate JWT token for the user
           const token = fastify.generateToken({ 
             id: user.id, 

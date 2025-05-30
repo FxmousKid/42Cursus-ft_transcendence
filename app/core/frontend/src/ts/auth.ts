@@ -53,7 +53,7 @@ export class AuthService {
   /**
    * Login user and store authentication data
    */
-  public async login(email: string, password: string, rememberMe: boolean): Promise<boolean> {
+  public async login(email: string, password: string, rememberMe: boolean): Promise<{success: boolean, requires2FA?: boolean}> {
     try {
       console.log('Auth: Attempting login for:', email);
       
@@ -61,24 +61,48 @@ export class AuthService {
       const api = (window as any).api;
       if (!api || !api.auth) {
         console.error('API not initialized');
-        return false;
+        return {success: false};
       }
 
       const response = await api.auth.login(email, password);
       console.log('Auth: Login response:', response);
       
       if (response.success && response.data) {
-        console.log('Auth: Login successful, setting auth state');
-        // Set auth state
-        this.setAuthState(response.data, rememberMe);
-        return true;
+        // Check if 2FA is required
+        if (response.data.requires2FA) {
+          console.log('Auth: 2FA required, storing pending user data');
+          
+          // Store pending user data for 2FA verification
+          const pendingUserData = {
+            id: response.data.id,
+            username: response.data.username,
+            email: response.data.email,
+            rememberMe: rememberMe,
+            redirectUrl: this.getRedirectUrl()
+          };
+          
+          console.log('Auth: Storing pending user data:', pendingUserData);
+          sessionStorage.setItem('pending_2fa_user', JSON.stringify(pendingUserData));
+          console.log('Auth: Data stored in sessionStorage');
+          console.log('Auth: Verification - stored data:', sessionStorage.getItem('pending_2fa_user'));
+          
+          // Redirect to 2FA verification page
+          console.log('Auth: Redirecting to /verify-2fa.html');
+          window.location.href = '/verify-2fa.html';
+          return {success: true, requires2FA: true}; // Indicate 2FA is required
+        } else {
+          console.log('Auth: Login successful, setting auth state');
+          // Set auth state for normal login (no 2FA)
+          this.setAuthState(response.data, rememberMe);
+          return {success: true, requires2FA: false};
+        }
       }
       
       console.log('Auth: Login failed:', response.message || 'Unknown error');
-      return false;
+      return {success: false};
     } catch (error) {
       console.error('Login error:', error);
-      return false;
+      return {success: false};
     }
   }
 
@@ -317,9 +341,10 @@ export class AuthService {
   }
 
   /**
-   * Set authentication state from login/register response
+   * Set authentication state from login/register response (public method)
+   * This is used by the 2FA verification to set the auth state after successful verification
    */
-  private setAuthState(authData: any, rememberMe: boolean): void {
+  public setAuthState(authData: any, rememberMe: boolean): void {
     console.log('Auth: Setting auth state with data:', {
       id: authData.id,
       username: authData.username,
@@ -454,6 +479,14 @@ export class AuthService {
         window.location.href = '/login.html';
       }
     }
+  }
+
+  /**
+   * Get redirect URL from current page or default
+   */
+  private getRedirectUrl(): string {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('redirect') || '/index.html';
   }
 }
 

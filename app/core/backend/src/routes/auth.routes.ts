@@ -127,7 +127,8 @@ export function registerAuthRoutes(fastify: FastifyInstance) {
                 id: { type: 'number' },
                 username: { type: 'string' },
                 email: { type: 'string' },
-                token: { type: 'string' }
+                token: { type: 'string' },
+                requires2FA: { type: 'boolean' }
               }
             }
           }
@@ -160,6 +161,21 @@ export function registerAuthRoutes(fastify: FastifyInstance) {
           });
         }
 
+        // Check if 2FA is enabled for this user
+        if (user.two_factor_enabled && user.two_factor_secret) {
+          // User has 2FA enabled, return user info without token and require 2FA verification
+          return {
+            success: true,
+            data: {
+              id: user.id,
+              username: user.username,
+              email: user.email,
+              requires2FA: true
+            }
+          };
+        }
+
+        // 2FA not enabled, proceed with normal login
         // Update user status to online
         user.status = 'online';
         await user.save();
@@ -177,7 +193,8 @@ export function registerAuthRoutes(fastify: FastifyInstance) {
             id: user.id,
             username: user.username,
             email: user.email,
-            token
+            token,
+            requires2FA: false
           }
         };
       } catch (error) {

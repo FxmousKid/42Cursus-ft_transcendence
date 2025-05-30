@@ -157,7 +157,6 @@ export function registerTwoFactorRoutes(fastify: FastifyInstance) {
         properties: {
           userID: { type: 'number' }
         }
-	  
       },
       response: {
         200: {
