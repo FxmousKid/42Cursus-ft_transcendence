@@ -211,7 +211,8 @@ export const api = {
     
     async logout() {
       return request('/auth/logout', {
-        method: 'POST'
+        method: 'POST',
+        body: JSON.stringify({})
       });
     },
     

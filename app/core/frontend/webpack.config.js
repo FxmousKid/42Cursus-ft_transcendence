@@ -15,6 +15,7 @@ module.exports = {
     register: './src/ts/register.ts',
     game: './src/ts/game.ts',
     'google-auth-handler': './src/ts/google-auth-handler.ts',
+    'verify-2fa-login': './src/ts/verify-2fa-login.ts',
     tournament: './src/ts/tournament.ts',
     tournament_round: './src/ts/tournament_round.ts',
     tournamentService: './src/ts/tournamentService.ts',

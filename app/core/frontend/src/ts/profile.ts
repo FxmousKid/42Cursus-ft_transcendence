@@ -17,7 +17,7 @@ interface MatchData {
     updated_at?: string;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('Profile page loaded');
     
     const authService = (window as any).authService;
@@ -63,31 +63,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteErrorMessage = document.getElementById('delete-error-message') as HTMLElement;
     const deleteErrorText = document.getElementById('delete-error-text') as HTMLElement;
     
-    // Initialize
-    init();
+    // 2FA elements
+    const toggle2FA = document.getElementById('toggle-2fa') as HTMLButtonElement;
+    const toggle2FAHandle = document.getElementById('2fa-toggle-handle') as HTMLSpanElement;
+    const setup2FAModal = document.getElementById('2fa-setup-modal') as HTMLDivElement;
+    const close2FASetup = document.getElementById('close-2fa-setup') as HTMLButtonElement;
+    const cancel2FASetup = document.getElementById('cancel-2fa-setup') as HTMLButtonElement;
+    const verify2FASetup = document.getElementById('verify-2fa-setup') as HTMLButtonElement;
+    const qrContainer = document.getElementById('2fa-qr-container') as HTMLDivElement;
+    const secretDisplay = document.getElementById('2fa-secret') as HTMLElement;
+    const verificationCode = document.getElementById('2fa-verification-code') as HTMLInputElement;
+    const setupError = document.getElementById('2fa-setup-error') as HTMLDivElement;
+    const setupErrorText = document.getElementById('2fa-setup-error-text') as HTMLSpanElement;
     
-    async function init() {
-        setupEventListeners();
-        await loadProfile();
-        await loadMatches();
-    }
-    
-    function setupEventListeners() {
-        // Avatar upload
-        profileAvatar?.addEventListener('click', () => avatarUploadInput?.click());
-        removeAvatarBtn?.addEventListener('click', handleRemoveAvatar);
-        avatarUploadInput?.addEventListener('change', handleAvatarUpload);
-        
-        // Edit profile modal
-        editProfileButton?.addEventListener('click', () => editProfileModal?.classList.remove('hidden'));
-        cancelEditButton?.addEventListener('click', () => editProfileModal?.classList.add('hidden'));
-        editProfileForm?.addEventListener('submit', handleProfileEdit);
-        
-        // Delete account modal
-        deleteAccountButton?.addEventListener('click', () => deleteAccountModal?.classList.remove('hidden'));
-        cancelDeleteButton?.addEventListener('click', () => deleteAccountModal?.classList.add('hidden'));
-        confirmDeleteButton?.addEventListener('click', handleDeleteAccount);
-    }
+    // Current user data
+    let currentUserData: any = null;
     
     async function loadProfile() {
         try {
@@ -105,27 +95,211 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.success && data.data) {
                 const profile = data.data;
+                currentUserData = profile;
                 
                 // Update UI
-                profileUsername.textContent = profile.username;
-                profileEmail.textContent = profile.email || '';
+                if (profileUsername) profileUsername.textContent = profile.username;
+                if (profileEmail) profileEmail.textContent = profile.email || '';
                 updateAvatarDisplay(profile);
                 
                 // Update form
-                editUsername.value = profile.username;
-                editEmail.value = profile.email || '';
-                editAvatar.value = profile.avatar_url || '';
+                if (editUsername) editUsername.value = profile.username;
+                if (editEmail) editEmail.value = profile.email || '';
+                if (editAvatar) editAvatar.value = profile.avatar_url || '';
                 
                 // Update statistics
                 if (profile.statistics) {
-                    statsGamesPlayed.textContent = profile.statistics.games_played.toString();
-                    statsWins.textContent = profile.statistics.wins.toString();
-                    statsLosses.textContent = profile.statistics.losses.toString();
-                    statsRatio.textContent = (profile.statistics.win_rate / 100).toFixed(2);
+                    if (statsGamesPlayed) statsGamesPlayed.textContent = profile.statistics.games_played.toString();
+                    if (statsWins) statsWins.textContent = profile.statistics.wins.toString();
+                    if (statsLosses) statsLosses.textContent = profile.statistics.losses.toString();
+                    if (statsRatio) statsRatio.textContent = (profile.statistics.win_rate / 100).toFixed(2);
                 }
             }
         } catch (error) {
             console.error('Error loading profile:', error);
+        }
+    }
+
+    function setupEventListeners() {
+        // Avatar upload
+        profileAvatar?.addEventListener('click', () => avatarUploadInput?.click());
+        removeAvatarBtn?.addEventListener('click', handleRemoveAvatar);
+        avatarUploadInput?.addEventListener('change', handleAvatarUpload);
+        
+        // Edit profile modal
+        editProfileButton?.addEventListener('click', () => editProfileModal?.classList.remove('hidden'));
+        cancelEditButton?.addEventListener('click', () => editProfileModal?.classList.add('hidden'));
+        editProfileForm?.addEventListener('submit', handleProfileEdit);
+        
+        // Delete account modal
+        deleteAccountButton?.addEventListener('click', () => deleteAccountModal?.classList.remove('hidden'));
+        cancelDeleteButton?.addEventListener('click', () => deleteAccountModal?.classList.add('hidden'));
+        confirmDeleteButton?.addEventListener('click', handleDeleteAccount);
+
+        // Handle 2FA toggle
+        if (toggle2FA) {
+            toggle2FA.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('2FA toggle clicked');
+                try {
+                    console.log('Getting user profile...');
+                    const response = await api.user.getProfile();
+                    console.log('Profile response:', response);
+                    if (response.success && response.data) {
+                        const is2FAEnabled = response.data.two_factor_enabled;
+                        
+                        if (is2FAEnabled) {
+                            // Disable 2FA
+                            const disableResponse = await api.user.disable2FA();
+                            if (disableResponse.success) {
+                                update2FAStatus(false);
+                            } else {
+                                console.error('Failed to disable 2FA:', disableResponse.message);
+                            }
+                        } else {
+                            // Enable 2FA - show setup modal
+                            if (setup2FAModal) {
+                                setup2FAModal.classList.remove('hidden');
+                                await setup2FA();
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error toggling 2FA:', error);
+                }
+            });
+        }
+
+        // 2FA setup modal handlers
+        if (close2FASetup) {
+            close2FASetup.addEventListener('click', () => {
+                if (setup2FAModal) setup2FAModal.classList.add('hidden');
+                reset2FASetup();
+            });
+        }
+
+        if (cancel2FASetup) {
+            cancel2FASetup.addEventListener('click', () => {
+                if (setup2FAModal) setup2FAModal.classList.add('hidden');
+                reset2FASetup();
+            });
+        }
+
+        if (verify2FASetup) {
+            verify2FASetup.addEventListener('click', async () => {
+                const code = verificationCode?.value?.trim();
+                if (!code) {
+                    show2FAError('Veuillez entrer le code de vérification');
+                    return;
+                }
+
+                try {
+                    const response = await api.user.verify2FASetup(code);
+                    if (response.success) {
+                        if (setup2FAModal) setup2FAModal.classList.add('hidden');
+                        reset2FASetup();
+                        update2FAStatus(true);
+                    } else {
+                        show2FAError(response.message || 'Code de vérification incorrect');
+                    }
+                } catch (error) {
+                    console.error('Error verifying 2FA setup:', error);
+                    show2FAError('Erreur lors de la vérification');
+                }
+            });
+        }
+    }
+
+    async function setup2FA() {
+        try {
+            const response = await api.user.setup2FA();
+            if (response.success) {
+                // Display QR code
+                if (qrContainer) {
+                    qrContainer.innerHTML = `<img src="${response.data.qr_code}" alt="QR Code" class="mx-auto">`;
+                }
+                
+                // Display secret
+                if (secretDisplay) {
+                    secretDisplay.textContent = response.data.secret;
+                }
+            } else {
+                show2FAError(response.message || 'Erreur lors de la configuration');
+            }
+        } catch (error) {
+            console.error('Error setting up 2FA:', error);
+            show2FAError('Erreur de connexion au serveur');
+        }
+    }
+
+    function update2FAStatus(enabled: boolean) {
+        if (toggle2FA && toggle2FAHandle) {
+            if (enabled) {
+                // Reset all classes first
+                toggle2FA.classList.remove('bg-gray-200', 'bg-dark-600', 'hover:bg-dark-500');
+                // Set active state
+                toggle2FA.classList.add('bg-primary-600', 'hover:bg-primary-700');
+                toggle2FAHandle.style.transform = 'translateX(1.25rem)';
+                toggle2FAHandle.classList.remove('bg-white');
+                toggle2FAHandle.classList.add('bg-white');
+            } else {
+                // Reset all classes first
+                toggle2FA.classList.remove('bg-primary-600', 'hover:bg-primary-700');
+                // Set inactive state
+                toggle2FA.classList.add('bg-dark-600', 'hover:bg-dark-500');
+                toggle2FAHandle.style.transform = 'translateX(0)';
+                toggle2FAHandle.classList.remove('bg-white');
+                toggle2FAHandle.classList.add('bg-white');
+            }
+        }
+    }
+
+    function show2FAError(message: string) {
+        if (setupError && setupErrorText) {
+            setupErrorText.textContent = message;
+            setupError.classList.remove('hidden');
+        }
+    }
+
+    function reset2FASetup() {
+        if (qrContainer) qrContainer.innerHTML = '';
+        if (secretDisplay) secretDisplay.textContent = '';
+        if (verificationCode) verificationCode.value = '';
+        if (setupError) setupError.classList.add('hidden');
+    }
+
+    // Update 2FA status on page load
+    async function load2FAStatus() {
+        try {
+            console.log('Loading 2FA status...');
+            const response = await api.user.getProfile();
+            console.log('load2FAStatus - Profile response:', response);
+            if (response.success && response.data) {
+                console.log('load2FAStatus - two_factor_enabled:', response.data.two_factor_enabled);
+                update2FAStatus(response.data.two_factor_enabled);
+            }
+        } catch (error) {
+            console.error('Error loading 2FA status:', error);
+        }
+    }
+    
+    function updateAvatarDisplay(userData: { id: number; username?: string; avatar_url?: string; has_avatar_data?: boolean }) {
+        if (!profileAvatar) return;
+        
+        const avatarUrl = getAvatarUrl ? getAvatarUrl(userData) : '';
+        
+        if (avatarUrl) {
+            const finalAvatarUrl = userData.has_avatar_data ? `${avatarUrl}?t=${Date.now()}` : avatarUrl;
+            profileAvatar.innerHTML = `
+                <img src="${finalAvatarUrl}" alt="${userData.username}" class="w-full h-full object-cover" 
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <i class="fas fa-user text-white text-5xl" style="display: none;"></i>
+            `;
+            removeAvatarBtn?.classList.remove('hidden');
+        } else {
+            profileAvatar.innerHTML = `<i class="fas fa-user text-white text-5xl"></i>`;
+            removeAvatarBtn?.classList.add('hidden');
         }
     }
     
@@ -150,13 +324,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             noMatches?.classList.add('hidden');
-            matchesContainer.innerHTML = '';
+            if (matchesContainer) matchesContainer.innerHTML = '';
             
             const userId = authService.getUserId();
             
             completedMatches.forEach((match: MatchData) => {
                 const matchElement = createMatchElement(match, userId);
-                matchesContainer.appendChild(matchElement);
+                if (matchesContainer) matchesContainer.appendChild(matchElement);
             });
             
         } catch (error) {
@@ -166,6 +340,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function createMatchElement(match: MatchData, userId: string): HTMLElement {
+        if (!matchTemplate) {
+            throw new Error('Match template not found');
+        }
+        
         const matchFragment = document.importNode(matchTemplate.content, true);
         const matchElement = matchFragment.querySelector('.match-item') as HTMLElement;
         
@@ -256,25 +434,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    function updateAvatarDisplay(userData: { id: number; username?: string; avatar_url?: string; has_avatar_data?: boolean }) {
-        if (!profileAvatar) return;
-        
-        const avatarUrl = getAvatarUrl ? getAvatarUrl(userData) : '';
-        
-        if (avatarUrl) {
-            const finalAvatarUrl = userData.has_avatar_data ? `${avatarUrl}?t=${Date.now()}` : avatarUrl;
-            profileAvatar.innerHTML = `
-                <img src="${finalAvatarUrl}" alt="${userData.username}" class="w-full h-full object-cover" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <i class="fas fa-user text-white text-5xl" style="display: none;"></i>
-            `;
-            removeAvatarBtn?.classList.remove('hidden');
-        } else {
-            profileAvatar.innerHTML = `<i class="fas fa-user text-white text-5xl"></i>`;
-            removeAvatarBtn?.classList.add('hidden');
-        }
-    }
-    
     async function handleAvatarUpload(event: Event) {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0];
@@ -324,6 +483,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleProfileEdit(e: Event) {
         e.preventDefault();
         
+        if (!editUsername || !editEmail || !editAvatar) return;
+        
         const updateData = {
             username: editUsername.value,
             email: editEmail.value,
@@ -345,7 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     authService.updateUsername(updateData.username);
                 }
                 
-                editProfileModal.classList.add('hidden');
+                if (editProfileModal) editProfileModal.classList.add('hidden');
                 await loadProfile();
                 window.location.reload(); // Refresh header
             } else {
@@ -358,6 +519,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function handleDeleteAccount() {
+        if (!confirmDeleteButton) return;
+        
         try {
             confirmDeleteButton.textContent = 'Suppression en cours...';
             confirmDeleteButton.disabled = true;
@@ -381,7 +544,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function showError(errorElement: HTMLElement, textElement: HTMLElement, message: string) {
-        textElement.textContent = message;
-        errorElement.classList.remove('hidden');
+        if (errorElement && textElement) {
+            textElement.textContent = message;
+            errorElement.classList.remove('hidden');
+        }
     }
+
+    // Initialize the profile page
+    setupEventListeners();
+    await loadProfile();
+    await loadMatches();
+    await load2FAStatus();
 });

@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     '',         // Page d'accueil (/, /index, /index.html)
     'index',    // Page d'accueil avec nom explicite
     'login',    // Page de connexion
-    'register'  // Page d'inscription
+    'register', // Page d'inscription
+    'verify-2fa' // Page de vérification 2FA
   ];
   
   // Obtenir le chemin actuel
