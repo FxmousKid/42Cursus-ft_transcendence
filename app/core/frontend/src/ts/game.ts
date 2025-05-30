@@ -69,7 +69,7 @@ class PongGame {
         rightCard: HTMLElement;
     };
     
-    constructor(canvasId: string, type: string) {
+    constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d')!;
         
@@ -81,7 +81,9 @@ class PongGame {
             leftCard: document.getElementById('player-left-card') as HTMLElement,
             rightCard: document.getElementById('player-right-card') as HTMLElement
         };
+    }
 
+    public setInit(type: string) {
         this.type = type;
         
         switch (type) {
@@ -216,6 +218,14 @@ class PongGame {
         this.gameState = 'playing';
         this.elements.startBtn.textContent = 'Pause';
         this.serveBall();
+    }
+
+    public async stopGame() {
+        switch (this.type) {
+            case 'tournament': api.tournament.updateStatusMatchTournament(this.id, 'cancelled'); break;
+            case 'friend': api.game.updateMatch(this.id, this.paddles.left.score, this.paddles.right.score, 'cancelled'); break;
+        }
+        this.type = 'local';
     }
     
     private pauseGame(): void {
@@ -530,6 +540,8 @@ class PongGame {
     }
 }
 
+let pongGame = new PongGame('game-canvas');
+
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('matchType');
@@ -538,7 +550,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = JSON.parse(saved); 
         type = data.type;
     }
-    new PongGame('game-canvas', type);
+    pongGame.setInit(type);
+});
+
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    // User left the page (switched tab or minimized)
+    pongGame.stopGame();
+  }
 });
 
 // Add CSS for scoring animation
