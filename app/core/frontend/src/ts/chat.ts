@@ -612,6 +612,10 @@ export class ChatManager {
         const messageDiv = document.createElement('div');
         messageDiv.className = `flex mb-3 px-4 ${isSentByMe ? 'justify-end' : 'justify-start'}`;
         
+        // Ajouter l'ID de l'invitation pour pouvoir la retrouver plus tard
+        messageDiv.setAttribute('data-invite-id', inviteData.id.toString());
+        console.log(`🏷️ Setting data-invite-id="${inviteData.id}" on message div`);
+        
         const messageContent = document.createElement('div');
         messageContent.className = `max-w-[70%] rounded-lg px-3 py-2 border ${
             isSentByMe 
@@ -631,35 +635,111 @@ export class ChatManager {
         
         // Add action buttons ONLY for received invitations
         if (!isSentByMe) {
+            console.log(`🎮 Creating action buttons for received invite ${inviteData.id}`);
             const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'flex space-x-2';
-            actionsDiv.innerHTML = `
-                <button class="accept-game-invite px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded">
-                    Accepter
-                </button>
-                <button class="reject-game-invite px-2 py-1 text-xs bg-gray-600 hover:bg-gray-700 text-white rounded">
-                    Refuser
-                </button>
-            `;
-            messageContent.appendChild(actionsDiv);
+            actionsDiv.className = 'flex space-x-2 game-invite-actions';
+            console.log(`🏷️ Actions div created with class "game-invite-actions"`);
             
-            // Add event listeners for buttons
-            const acceptBtn = actionsDiv.querySelector('.accept-game-invite') as HTMLButtonElement;
-            const rejectBtn = actionsDiv.querySelector('.reject-game-invite') as HTMLButtonElement;
+            // Vérifier le statut de l'invitation
+            const status = inviteData.status || 'pending';
+            console.log(`🔍 Invitation ${inviteData.id} has status: ${status}`);
             
-            if (acceptBtn) {
-                acceptBtn.addEventListener('click', () => {
-                    this.acceptGameInvitation(inviteData.id, inviteData.receiver_id, inviteData.sender_id);
-                    actionsDiv.innerHTML = `<span class="text-green-300 text-xs">✓ Acceptée</span>`;
-                });
+            if (status === 'pending') {
+                // Afficher les boutons seulement si en attente
+                console.log(`🎮 Showing action buttons for pending invite ${inviteData.id}`);
+                actionsDiv.innerHTML = `
+                    <button class="accept-game-invite px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded">
+                        Accepter
+                    </button>
+                    <button class="reject-game-invite px-2 py-1 text-xs bg-gray-600 hover:bg-gray-700 text-white rounded">
+                        Refuser
+                    </button>
+                `;
+                
+                messageContent.appendChild(actionsDiv);
+                
+                // Add event listeners for buttons
+                const acceptBtn = actionsDiv.querySelector('.accept-game-invite') as HTMLButtonElement;
+                const rejectBtn = actionsDiv.querySelector('.reject-game-invite') as HTMLButtonElement;
+                
+                if (acceptBtn) {
+                    acceptBtn.addEventListener('click', () => {
+                        console.log(`🎮 ACCEPT clicked for invite ${inviteData.id}`);
+                        this.acceptGameInvitation(inviteData.id, inviteData.receiver_id, inviteData.sender_id);
+                        console.log(`🎮 Setting visual feedback to "Acceptée" for invite ${inviteData.id}`);
+                        actionsDiv.innerHTML = `<span class="text-green-300 text-xs">✓ Acceptée</span>`;
+                        
+                        // Mettre à jour le cache côté receveur immédiatement
+                        if (this.currentChatUserId) {
+                            console.log(`💾 Updating cache: invite ${inviteData.id} -> accepted`);
+                            this.updateInviteStatusInCache(this.currentChatUserId, inviteData.id, 'accepted');
+                        }
+                    });
+                }
+                
+                if (rejectBtn) {
+                    rejectBtn.addEventListener('click', () => {
+                        console.log(`🎮 REJECT clicked for invite ${inviteData.id}`);
+                        this.rejectGameInvitation(inviteData.id);
+                        console.log(`🎮 Setting visual feedback to "Refusée" for invite ${inviteData.id}`);
+                        actionsDiv.innerHTML = `<span class="text-gray-300 text-xs">✗ Refusée</span>`;
+                        
+                        // Mettre à jour le cache côté receveur immédiatement
+                        if (this.currentChatUserId) {
+                            console.log(`💾 Updating cache: invite ${inviteData.id} -> rejected`);
+                            this.updateInviteStatusInCache(this.currentChatUserId, inviteData.id, 'rejected');
+                        }
+                    });
+                }
+            } else {
+                // Afficher le statut final pour les invitations déjà traitées
+                console.log(`🎮 Showing final status for invite ${inviteData.id}: ${status}`);
+                let statusText = '';
+                let statusClass = '';
+                
+                switch (status) {
+                    case 'accepted':
+                        statusText = '✓ Acceptée';
+                        statusClass = 'text-green-300';
+                        break;
+                    case 'rejected':
+                        statusText = '✗ Refusée';
+                        statusClass = 'text-red-300';
+                        break;
+                    default:
+                        statusText = `Statut: ${status}`;
+                        statusClass = 'text-gray-300';
+                }
+                
+                actionsDiv.innerHTML = `<span class="${statusClass} text-xs">${statusText}</span>`;
+                messageContent.appendChild(actionsDiv);
+            }
+        } else {
+            // Pour les invitations envoyées, afficher le statut
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'game-invite-actions mt-2';
+            
+            const status = inviteData.status || 'pending';
+            let statusText = '';
+            let statusClass = '';
+            
+            switch (status) {
+                case 'pending':
+                    statusText = 'En attente de réponse...';
+                    statusClass = 'text-gray-300';
+                    break;
+                case 'accepted':
+                    statusText = '✓ Acceptée';
+                    statusClass = 'text-green-300';
+                    break;
+                case 'rejected':
+                    statusText = '✗ Refusée';
+                    statusClass = 'text-red-300';
+                    break;
             }
             
-            if (rejectBtn) {
-                rejectBtn.addEventListener('click', () => {
-                    this.rejectGameInvitation(inviteData.id);
-                    actionsDiv.innerHTML = `<span class="text-gray-300 text-xs">✗ Refusée</span>`;
-                });
-            }
+            statusDiv.innerHTML = `<span class="${statusClass} text-xs">${statusText}</span>`;
+            messageContent.appendChild(statusDiv);
         }
         
         messageDiv.appendChild(messageContent);
@@ -670,7 +750,7 @@ export class ChatManager {
         // Scroll to bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
-        console.log(`🎮 Game invitation added - Sent by me: ${isSentByMe}`);
+        console.log(`🎮 Game invitation added - Sent by me: ${isSentByMe}, Status: ${inviteData.status || 'pending'}`);
     }
     
     private async loadChatHistory(friendId: number) {
@@ -705,12 +785,24 @@ export class ChatManager {
             const messages = this.chatHistory.get(friendId)!;
             const currentUserId = this.getCurrentUserId();
             
+            console.log('📋 Cached messages:', messages);
+            console.log('🔍 Cached game invites:', messages.filter((m: any) => m.type === 'game_invite'));
+            
             if (currentUserId) {
                 messages.forEach((message: any) => {
                     const isSentByMe = message.sender_id === currentUserId;
                     
                     if (message.type === 'game_invite') {
-                        this.addGameInviteToChat(message, isSentByMe);
+                        console.log(`🎮 Processing cached game invite:`, message);
+                        console.log(`🎮 Cached status:`, message.status);
+                        
+                        // Ajouter le statut à l'objet invitation
+                        const inviteWithStatus = {
+                            ...message,
+                            status: message.status || 'pending'
+                        };
+                        console.log(`🎮 Final cached invite object:`, inviteWithStatus);
+                        this.addGameInviteToChat(inviteWithStatus, isSentByMe);
                     } else {
                         this.addMessageToChat(message, isSentByMe);
                     }
@@ -764,6 +856,10 @@ export class ChatManager {
                 const messages = response.data;
                 const currentUserId = this.getCurrentUserId();
                 
+                console.log('📡 Raw API response:', response);
+                console.log('📋 Messages received:', messages);
+                console.log('🔍 Game invites in response:', messages.filter((m: any) => m.type === 'game_invite'));
+                
                 // Cache the messages
                 this.chatHistory.set(friendId, messages);
                 
@@ -772,7 +868,16 @@ export class ChatManager {
                         const isSentByMe = message.sender_id === currentUserId;
                         
                         if (message.type === 'game_invite') {
-                            this.addGameInviteToChat(message, isSentByMe);
+                            console.log(`🎮 Processing game invite:`, message);
+                            console.log(`🎮 Status from API:`, message.status);
+                            
+                            // Ajouter le statut à l'objet invitation
+                            const inviteWithStatus = {
+                                ...message,
+                                status: message.status || 'pending'
+                            };
+                            console.log(`🎮 Final invite object:`, inviteWithStatus);
+                            this.addGameInviteToChat(inviteWithStatus, isSentByMe);
                         } else {
                             this.addMessageToChat(message, isSentByMe);
                         }
@@ -1010,7 +1115,109 @@ export class ChatManager {
 
         // Listen for game invitation confirmations
         websocketService.on('game-invite-sent', (data: any) => {
-            console.log('✅ Game invitation sent');
+            console.log('✅ Game invitation sent', data);
+            
+            // Vérifier qu'on discute actuellement avec le destinataire
+            if (this.currentChatUserId === data.receiver_id) {
+                const invitationData = {
+                    id: data.id,
+                    sender_id: this.getCurrentUserId(),
+                    receiver_id: data.receiver_id,
+                    type: 'game_invite',
+                    content: 'Invitation à jouer',
+                    status: 'pending'
+                };
+                
+                // Ajouter l'invitation au chat (côté expéditeur)
+                this.addGameInviteToChat(invitationData, true);
+            }
+            
+            // Toujours mettre en cache pour l'historique
+            if (!this.chatHistory.has(data.receiver_id)) {
+                this.chatHistory.set(data.receiver_id, []);
+            }
+            const receiverHistory = this.chatHistory.get(data.receiver_id);
+            if (receiverHistory) {
+                const invitationData = {
+                    id: data.id,
+                    sender_id: this.getCurrentUserId(),
+                    receiver_id: data.receiver_id,
+                    type: 'game_invite',
+                    content: 'Invitation à jouer',
+                    status: 'pending'
+                };
+                receiverHistory.push(invitationData);
+            }
+        });
+
+        // Listen for invitation acceptance (quand quelqu'un accepte notre invitation)
+        websocketService.on('game-invite-accepted', (data: any) => {
+            console.log('✅ Game invitation accepted by:', data.acceptedBy);
+            
+            // Update the invitation message in chat if we're chatting with this user
+            if (this.currentChatUserId === data.acceptedBy) {
+                this.updateGameInviteStatus(data.id, 'accepted', 'Acceptée');
+            }
+            
+            // Update cache
+            this.updateInviteStatusInCache(data.acceptedBy, data.id, 'accepted');
+        });
+
+        // Listen for invitation rejection (quand quelqu'un refuse notre invitation)
+        websocketService.on('game-invite-rejected', (data: any) => {
+            console.log('❌ Game invitation rejected by:', data.rejectedBy);
+            
+            // Update the invitation message in chat if we're chatting with this user
+            if (this.currentChatUserId === data.rejectedBy) {
+                this.updateGameInviteStatus(data.id, 'rejected', 'Refusée');
+            }
+            
+            // Update cache
+            this.updateInviteStatusInCache(data.rejectedBy, data.id, 'rejected');
+        });
+
+        // Listen for accept confirmation (côté receveur)
+        websocketService.on('game-invite-accept-confirmed', (data: any) => {
+            console.log('✅ Game invitation accept confirmed:', data);
+            console.log('🔍 Current chat user:', this.currentChatUserId);
+            
+            // Update cache for current chat if we're the receiver
+            if (this.currentChatUserId) {
+                console.log(`💾 Confirming cache update: invite ${data.id} -> accepted`);
+                this.updateInviteStatusInCache(this.currentChatUserId, data.id, 'accepted');
+                
+                // Also update visual interface if the invitation is visible
+                const inviteElement = document.querySelector(`[data-invite-id="${data.id}"]`);
+                if (inviteElement) {
+                    console.log(`🎨 Updating visual confirmation for invite ${data.id}`);
+                    const actionsDiv = inviteElement.querySelector('.game-invite-actions');
+                    if (actionsDiv) {
+                        actionsDiv.innerHTML = `<span class="text-green-300 text-xs">✓ Acceptée</span>`;
+                    }
+                }
+            }
+        });
+
+        // Listen for reject confirmation (côté receveur)
+        websocketService.on('game-invite-reject-confirmed', (data: any) => {
+            console.log('❌ Game invitation reject confirmed:', data);
+            console.log('🔍 Current chat user:', this.currentChatUserId);
+            
+            // Update cache for current chat if we're the receiver
+            if (this.currentChatUserId) {
+                console.log(`💾 Confirming cache update: invite ${data.id} -> rejected`);
+                this.updateInviteStatusInCache(this.currentChatUserId, data.id, 'rejected');
+                
+                // Also update visual interface if the invitation is visible
+                const inviteElement = document.querySelector(`[data-invite-id="${data.id}"]`);
+                if (inviteElement) {
+                    console.log(`🎨 Updating visual confirmation for invite ${data.id}`);
+                    const actionsDiv = inviteElement.querySelector('.game-invite-actions');
+                    if (actionsDiv) {
+                        actionsDiv.innerHTML = `<span class="text-gray-300 text-xs">✗ Refusée</span>`;
+                    }
+                }
+            }
         });
 
         // Listen for incoming game invitations
@@ -1051,6 +1258,35 @@ export class ChatManager {
         console.log('✅ Chat WebSocket handlers setup complete');
     }
     
+    // Méthode pour mettre à jour le statut d'une invitation dans le chat
+    private updateGameInviteStatus(inviteId: number, status: 'accepted' | 'rejected', message: string) {
+        const inviteElement = document.querySelector(`[data-invite-id="${inviteId}"]`);
+        if (inviteElement) {
+            const actionsDiv = inviteElement.querySelector('.game-invite-actions');
+            if (actionsDiv) {
+                const statusColor = status === 'accepted' ? 'text-green-300' : 'text-red-300';
+                const statusIcon = status === 'accepted' ? '✓' : '✗';
+                actionsDiv.innerHTML = `<span class="${statusColor} text-xs">${statusIcon} ${message}</span>`;
+            }
+        }
+    }
+
+    // Méthode pour mettre à jour le cache
+    private updateInviteStatusInCache(userId: number, inviteId: number, status: 'accepted' | 'rejected') {
+        const userHistory = this.chatHistory.get(userId);
+        if (userHistory) {
+            const invite = userHistory.find(msg => msg.id === inviteId && msg.type === 'game_invite');
+            if (invite) {
+                invite.status = status;
+                console.log(`💾 Cache updated: Invitation ${inviteId} status set to ${status}`);
+            } else {
+                console.warn(`⚠️ Invitation ${inviteId} not found in cache for user ${userId}`);
+            }
+        } else {
+            console.warn(`⚠️ No chat history found for user ${userId}`);
+        }
+    }
+
     private getFriendNameById(friendId: number): string | null {
         // Try to find the friend name in the friends list
         const friendItems = document.querySelectorAll('.friend-item');
@@ -1365,6 +1601,41 @@ export class ChatManager {
             this.openChatWithFriend(friendId, friendUsername);
         }, 100);
     }
+
+    // Méthode de debug pour afficher le cache
+    debugChatHistory(userId?: number) {
+        if (userId) {
+            const history = this.chatHistory.get(userId);
+            console.log(`📋 Chat history for user ${userId}:`, history);
+        } else {
+            console.log('📋 All chat history:', Object.fromEntries(this.chatHistory));
+        }
+    }
+    
+    // Méthode de debug pour vérifier l'état des invitations dans le DOM
+    debugGameInvites() {
+        console.log('🔍 DEBUG: Checking game invites in DOM and cache...');
+        
+        // Vérifier les éléments DOM
+        const inviteElements = document.querySelectorAll('[data-invite-id]');
+        console.log(`📋 Found ${inviteElements.length} invite elements in DOM:`);
+        
+        inviteElements.forEach((element) => {
+            const inviteId = element.getAttribute('data-invite-id');
+            const actionsDiv = element.querySelector('.game-invite-actions');
+            console.log(`🎮 Invite ${inviteId}:`);
+            console.log(`  - Element:`, element);
+            console.log(`  - Actions div:`, actionsDiv);
+            console.log(`  - Actions content:`, actionsDiv?.innerHTML);
+        });
+        
+        // Vérifier le cache
+        if (this.currentChatUserId) {
+            const history = this.chatHistory.get(this.currentChatUserId);
+            const gameInvites = history?.filter(msg => msg.type === 'game_invite') || [];
+            console.log(`💾 Game invites in cache for user ${this.currentChatUserId}:`, gameInvites);
+        }
+    }
 }
 
 // Export a singleton instance
@@ -1374,6 +1645,10 @@ export const chatManager = new ChatManager();
 if (typeof window !== 'undefined') {
     (window as any).chatManager = chatManager;
     (window as any).ChatManager = ChatManager;
+    
+    // Expose debug function globally
+    (window as any).debugChat = (userId?: number) => chatManager.debugChatHistory(userId);
+    (window as any).debugGameInvites = () => chatManager.debugGameInvites();
 }
 
 // Add after DOMContentLoaded or chat manager initialization
