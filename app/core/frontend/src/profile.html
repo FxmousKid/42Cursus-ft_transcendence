@@ -54,7 +54,7 @@
                 <button id="edit-profile-button" class="btn-primary w-full py-2.5 px-4 mb-4">
                     Modifier le profil
                 </button>
-
+    
                 <!-- 2FA Section -->
                 <div class="border-t border-dark-600 pt-4 mt-4">
                     <h3 class="text-lg font-medium text-white mb-4">Authentification à deux facteurs</h3>
@@ -173,15 +173,15 @@
     
     <!-- Template pour un match -->
     <template id="match-template">
-        <div class="match-item bg-dark-700 border border-dark-600 rounded-lg p-4 flex items-center justify-between hover:border-primary-700 transition-colors shadow">
-            <div class="flex items-center">
-                <div class="match-result-indicator w-2 h-12 rounded mr-4"></div>
+        <div class="match-item bg-dark-700 border border-dark-600 rounded-lg p-4 flex items-center justify-between hover:border-primary-700 transition-all duration-200 shadow-sm hover:shadow-lg flex-col sm:flex-row gap-3 sm:gap-0">
+            <div class="flex items-center w-full sm:w-auto">
+                <div class="match-result-indicator w-2 h-12 rounded mr-4 bg-gradient-to-b from-green-500 to-green-600"></div>
                 <div>
                     <p class="font-medium match-opponent text-white"></p>
-                    <div class="match-result-label flex items-center mt-1 text-sm font-semibold"></div>
+                    <div class="match-result-label flex items-center mt-1 text-sm font-semibold text-green-400"></div>
                 </div>
             </div>
-            <div class="flex flex-col items-end">
+            <div class="flex flex-col items-start sm:items-end w-full sm:w-auto">
                 <div class="text-xl font-bold match-score text-white mb-2"></div>
                 <div class="match-date text-sm text-gray-400 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -200,53 +200,3 @@
     <script src="js/header-loader.js"></script>
     <script src="js/route-guard.js"></script>
     <script src="js/profile.js"></script>
-</body>
-
-<style>
-/* Match styling */
-.match-item {
-    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
-    transition: box-shadow 0.2s, border-color 0.2s;
-}
-
-.match-item:hover {
-    box-shadow: 0 4px 16px 0 rgba(0,0,0,0.18);
-    border-color: #6366f1;
-}
-
-.match-win .match-result-indicator {
-    background: linear-gradient(135deg, #22c55e 60%, #16a34a 100%);
-}
-
-.match-loss .match-result-indicator {
-    background: linear-gradient(135deg, #ef4444 60%, #b91c1c 100%);
-}
-
-.match-win .match-result-label {
-    color: #22c55e;
-}
-
-.match-loss .match-result-label {
-    color: #ef4444;
-}
-
-.match-date {
-    color: #9ca3af;
-    font-size: 0.875rem;
-}
-
-/* Responsive */
-@media (max-width: 640px) {
-    .match-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-    }
-    
-    .match-item .flex.flex-col.items-end {
-        align-items: flex-start;
-        width: 100%;
-    }
-}
-</style>
-</html>
