@@ -113,7 +113,7 @@ async function createTournament(users: string[]) {
     await tournamentService.createMatchs(tournamentValue.users); // creation des matchs
     tournamentService.saveToStorage();
 
-    window.location.href = '/tournament_round.html';
+    window.location.href = '/tournament_show.html';
 }
 
 startButton.addEventListener('click', () => {

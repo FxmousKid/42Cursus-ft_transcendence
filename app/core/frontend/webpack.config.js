@@ -19,6 +19,7 @@ module.exports = {
     tournament_round: './src/ts/tournament_round.ts',
     tournamentService: './src/ts/tournamentService.ts',
     tournament_finish: './src/ts/tournament_finish.ts',
+    tournament_show: './src/ts/tournament_show.ts',
   },
   module: {
     rules: [
