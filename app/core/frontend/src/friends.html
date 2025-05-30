@@ -129,7 +129,7 @@
                                 </button>
                             </div>
                             
-                            <div id="search-results" class="space-y-3 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
+                            <div id="search-results" class="space-y-3 max-h-72 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-dark-700">
                                 <!-- Les résultats de recherche seront insérés ici via JavaScript -->
                             </div>
                         </div>
@@ -142,7 +142,7 @@
                     <!-- Chat tab content -->
                     <div id="chat-tab" class="space-y-4 hidden">
                         <!-- Chat messages container -->
-                        <div id="chat-messages" class="h-96 overflow-y-auto custom-scrollbar space-y-4 mb-4">
+                        <div id="chat-messages" class="h-96 overflow-y-auto space-y-4 mb-4 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-dark-700">
                             <div id="no-chat-selected" class="flex flex-col items-center justify-center h-full text-gray-400">
                                 <i class="fas fa-comments text-4xl mb-4 text-blue-400/50"></i>
                                 <p class="text-center">Sélectionnez un ami pour commencer une conversation</p>
@@ -324,7 +324,7 @@
                     </button>
                 </div>
                 
-                <div id="blocked-users-list" class="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
+                <div id="blocked-users-list" class="space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-dark-700">
                     <!-- Blocked users will be inserted here -->
                 </div>
                 
@@ -352,28 +352,6 @@
             </button>
         </div>
     </template>
-    
-    <!-- Simplified styles - removed complex blocking animations -->
-    <style>
-        /* Custom scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(30, 30, 40, 0.5);
-            border-radius: 8px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(59, 130, 246, 0.5);
-            border-radius: 8px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(59, 130, 246, 0.7);
-        }
-    </style>
     
     <!-- Scripts -->
     <script>
