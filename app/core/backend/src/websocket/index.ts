@@ -19,6 +19,8 @@ const onlineUsers = new Map<number, string>();
 // Map of socketId -> userId
 const socketUserMap = new Map<string, number>();
 
+const userLastSeen = new Map<number, number>(); // userId -> last heartbeat timestamp
+
 interface UserSocket extends Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap> {
   userId?: number;
   username?: string;
@@ -592,27 +594,44 @@ export function setupWebSocket(io: Server, db: DB) {
       }
     });
     
+    // Heartbeat event from client
+    socket.on('heartbeat', () => {
+      if (userId) {
+        userLastSeen.set(userId, Date.now());
+      }
+    });
+
+    // Status update event from client
+    socket.on('status-update', async (data: { status: string }) => {
+      if (!userId) return;
+      const status = data.status === 'online' ? 'online' : 'offline';
+      try {
+        const user = await db.models.User.findByPk(userId);
+        if (user) {
+          user.status = status;
+          await user.save();
+          notifyFriendsStatusChange(userId, status);
+        }
+      } catch (error) {
+        console.error('[WebSocket] Error updating user status from status-update:', error);
+      }
+    });
+    
     // Handle disconnection
     socket.on('disconnect', async () => {
       console.log(`[WebSocket] User disconnected: ${username} (${userId})`);
-      
       if (userId) {
-        // Remove user from online users
         onlineUsers.delete(userId);
         socketUserMap.delete(socket.id);
-        
-        // Update user status to offline
         try {
           const user = await db.models.User.findByPk(userId);
-          if (user) {
+          if (user && user.status !== 'offline') {
             user.status = 'offline';
             await user.save();
-            
-            // Notify friends that user is offline
             notifyFriendsStatusChange(userId, 'offline');
           }
         } catch (error) {
-          console.error('[WebSocket] Error updating user status:', error);
+          console.error('[WebSocket] Error updating user status (instant disconnect):', error);
         }
       }
     });
