@@ -37,6 +37,7 @@ services:
       - ./agent/env/:/vault/env:rw
     healthcheck:
       test: ["CMD-SHELL", "test -f /vault/env/.env || exit 1"]
-      interval: 3s
+      interval: 1s
       timeout: 3s
       retries: 50
+      start_period: 3s
