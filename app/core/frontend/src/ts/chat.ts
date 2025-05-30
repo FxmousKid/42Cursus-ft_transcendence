@@ -1374,4 +1374,20 @@ export const chatManager = new ChatManager();
 if (typeof window !== 'undefined') {
     (window as any).chatManager = chatManager;
     (window as any).ChatManager = ChatManager;
+}
+
+// Add after DOMContentLoaded or chat manager initialization
+const websocketService = (window as any).websocketService;
+function setChatPartnerStatusUI(friendId: number, status: string) {
+    // Implement this to update the chat UI for the partner's status
+    // Example: document.querySelector(`#chat-status-${friendId}`)?.textContent = status;
+}
+if (websocketService && websocketService.on) {
+    websocketService.on('friend-status-change', (data: any) => {
+        // If the status change is for the current chat partner, update UI
+        const chatManager = (window as any).chatManager;
+        if (chatManager && chatManager.getCurrentChatUserId && chatManager.getCurrentChatUserId() === data.friend_id) {
+            setChatPartnerStatusUI(data.friend_id, data.status);
+        }
+    });
 } 

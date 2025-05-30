@@ -162,6 +162,7 @@ export function registerTournamentRoutes(fastify: FastifyInstance) {
 		}
 	});
 
+	// Create a tournament dans la DB
 	fastify.post<{ Body: TournamentBody}>('/tournaments', {
 		schema: {
 			  body: {

@@ -283,14 +283,14 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 					return reply.status(404).send({ success: false, message: 'MatchTournament not found' });
 				}
 
-				// Sauvegarder le match en SQLite IMMÉDIATEMENT
+				// Save instantanément le match dans la DB
 				match.player1_score = player1_score;
 				match.player2_score = player2_score;
 				match.winner_name = winner_name;
 				match.status = 'completed';
-				await match.save();
+				await match.save(); // Sauvegarde du match dans la DB
 
-				// 🚀 ENREGISTREMENT BLOCKCHAIN ASYNCHRONE (ne pas attendre)
+				// ENREGISTREMENT BLOCKCHAIN ASYNCHRONE (ne pas attendre)
 				if (fastify.blockchain && fastify.blockchain.isAvailable()) {
 					fastify.log.info(`Starting async blockchain recording for match ${match.id}`);
 					
@@ -372,7 +372,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 			try {
 				const { tournament_id, player1_name, player2_name } = request.body;
 
-				// Create new match
+				// Create new match dans la DB avec UUID
 				const newMatch = await fastify.db.models.MatchTournament.create({
 					tournament_id: tournament_id,
 					player1_name: player1_name,
@@ -380,7 +380,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 					player1_score: 0,
 					player2_score: 0,
 					winner_name: '',
-					status: 'scheduled',
+					status: 'scheduled', // <- status par defaut
 				});
 
 
@@ -479,7 +479,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 		}
 	});
 
-	// 📋 ROUTE POUR RÉCUPÉRER LES MATCHES D'UN TOURNOI
+	// ROUTE POUR RÉCUPÉRER LES MATCHES D'UN TOURNOI
 	fastify.get<{ Params: { tournamentId: string } }>('/tournaments/:tournamentId/matches', {
 		schema: {
 			params: {
@@ -525,7 +525,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 		}
 	});
 
-	// 🌐 ROUTE DE SANTÉ BLOCKCHAIN
+	// ROUTE DE SANTÉ BLOCKCHAIN
 	fastify.get('/health/blockchain', {
 		handler: async (request: FastifyRequest, reply: FastifyReply) => {
 			try {
@@ -540,22 +540,12 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 				const walletAddress = fastify.blockchain.getWalletAddress();
 				const balance = await fastify.blockchain.getBalance();
 				const network = await fastify.blockchain.getNetworkInfo();
-				
-				// Compter les matches sur la blockchain
-				let blockchainMatches = 0;
-				try {
-					const matches = await fastify.blockchain.getTournamentMatches(1); // Tournoi par défaut
-					blockchainMatches = matches.length;
-				} catch (error) {
-					fastify.log.warn('Could not retrieve blockchain matches count:', error.message);
-				}
 
 				return {
 					status: 'available',
 					network: network.name || `Chain ID: ${network.chainId}`,
 					wallet_address: walletAddress,
 					balance: balance,
-					blockchain_matches: blockchainMatches,
 					timestamp: new Date().toISOString()
 				};
 
@@ -564,6 +554,281 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 				return reply.status(500).send({
 					status: 'error',
 					message: 'Blockchain health check failed',
+					error: error.message
+				});
+			}
+		}
+	});
+
+	// ROUTE POUR DÉCRYPTER UNE TRANSACTION BLOCKCHAIN
+	fastify.get<{ Params: { txHash: string } }>('/blockchain/verify/:txHash', {
+		schema: {
+			params: {
+				type: 'object',
+				properties: {
+					txHash: { type: 'string' }
+				},
+				required: ['txHash']
+			}
+		},
+		handler: async (request: FastifyRequest<{ Params: { txHash: string } }>, reply: FastifyReply) => {
+			try {
+				if (!fastify.blockchain || !fastify.blockchain.isAvailable()) {
+					return reply.status(503).send({
+						success: false,
+						message: 'Blockchain service not available'
+					});
+				}
+
+				const txHash = request.params.txHash;
+
+				// Récupérer les détails de la transaction
+				const provider = new (await import('ethers')).ethers.JsonRpcProvider(
+					process.env.AVALANCHE_RPC_URL || 'http://localhost:8545'
+				);
+
+				// 1️⃣ Récupérer la transaction
+				const tx = await provider.getTransaction(txHash);
+				if (!tx) {
+					return reply.status(404).send({
+						success: false,
+						message: 'Transaction not found'
+					});
+				}
+
+				// 2️⃣ Récupérer le reçu de transaction (pour les événements)
+				const receipt = await provider.getTransactionReceipt(txHash);
+				if (!receipt) {
+					return reply.status(404).send({
+						success: false,
+						message: 'Transaction receipt not found'
+					});
+				}
+
+				// 3️⃣ Décoder les événements MatchRecorded
+				const contractInterface = new (await import('ethers')).ethers.Interface([
+					"event MatchRecorded(uint256 indexed tournamentId, uint256 indexed matchId, string player1Name, string player2Name, uint256 player1Score, uint256 player2Score, string winnerName, address recordedBy)"
+				]);
+
+				const matchEvents = receipt.logs
+					.filter(log => log.topics[0] === contractInterface.getEvent('MatchRecorded')?.topicHash)
+					.map(log => {
+						const decoded = contractInterface.parseLog(log);
+						return {
+							tournamentId: Number(decoded?.args.tournamentId),
+							matchId: Number(decoded?.args.matchId),
+							player1Name: decoded?.args.player1Name,
+							player2Name: decoded?.args.player2Name,
+							player1Score: Number(decoded?.args.player1Score),
+							player2Score: Number(decoded?.args.player2Score),
+							winnerName: decoded?.args.winnerName,
+							recordedBy: decoded?.args.recordedBy
+						};
+					});
+
+				// 4️⃣ Informations de la transaction
+				const block = tx.blockNumber ? await provider.getBlock(tx.blockNumber) : null;
+				const transactionInfo = {
+					hash: tx.hash,
+					blockNumber: receipt.blockNumber,
+					blockHash: receipt.blockHash,
+					gasUsed: receipt.gasUsed.toString(),
+					status: receipt.status === 1 ? 'Success' : 'Failed',
+					timestamp: block ? new Date(Number(block.timestamp) * 1000).toISOString() : null,
+					from: tx.from,
+					to: tx.to,
+					value: (await import('ethers')).ethers.formatEther(tx.value || 0)
+				};
+
+				// 5️⃣ Lien vers l'explorateur
+				const network = await provider.getNetwork();
+				const explorerUrl = network.chainId === 43113n 
+					? `https://testnet.snowtrace.io/tx/${txHash}`
+					: `https://snowtrace.io/tx/${txHash}`;
+
+				// 6️⃣ AFFICHAGE FORMATÉ ET ORDONNÉ
+				return {
+					success: true,
+					message: "Transaction decoded successfully",
+					data: {
+						// MATCH DETAILS
+						match: matchEvents.length > 0 ? {
+							tournament_id: matchEvents[0].tournamentId,
+							match_id: matchEvents[0].matchId,
+							players: {
+								player1: {
+									name: matchEvents[0].player1Name,
+									score: matchEvents[0].player1Score
+								},
+								player2: {
+									name: matchEvents[0].player2Name,
+									score: matchEvents[0].player2Score
+								}
+							},
+							winner: matchEvents[0].winnerName,
+							recorded_at: transactionInfo.timestamp ? new Date(transactionInfo.timestamp).toLocaleString('fr-FR') : null
+						} : null,
+
+						// BLOCKCHAIN PROOF
+						blockchain: {
+							transaction_hash: transactionInfo.hash,
+							block_number: transactionInfo.blockNumber,
+							status: transactionInfo.status,
+							network: network.chainId === 43113n ? "Avalanche Fuji Testnet" : "Avalanche Mainnet",
+							gas_used: parseInt(transactionInfo.gasUsed).toLocaleString(),
+							recorded_by: transactionInfo.from,
+							contract_address: transactionInfo.to
+						},
+
+						// VERIFICATION STATUS
+						verification: {
+							verified: receipt.status === 1,
+							immutable: true,
+							decentralized: true,
+							events_count: matchEvents.length,
+							description: "Data permanently stored on Avalanche blockchain"
+						},
+
+						// USEFUL LINKS
+						explorer: {
+							transaction: explorerUrl,
+							contract: network.chainId === 43113n 
+								? `https://testnet.snowtrace.io/address/${transactionInfo.to}`
+								: `https://snowtrace.io/address/${transactionInfo.to}`,
+							wallet: network.chainId === 43113n
+								? `https://testnet.snowtrace.io/address/${transactionInfo.from}`
+								: `https://snowtrace.io/address/${transactionInfo.from}`
+						},
+
+						// RAW DATA (for developers)
+						raw: {
+							transaction: transactionInfo,
+							events: matchEvents
+						}
+					}
+				};
+
+			} catch (error) {
+				fastify.log.error('Failed to verify blockchain transaction:', error);
+				return reply.status(500).send({
+					success: false,
+					message: 'Failed to verify transaction',
+					error: error.message
+				});
+			}
+		}
+	});
+
+	// ROUTE POUR VÉRIFIER UN MATCH DIRECTEMENT SUR LE SMART CONTRACT
+	fastify.get<{ Params: { tournamentId: string; matchId: string } }>('/blockchain/match/:tournamentId/:matchId', {
+		schema: {
+			params: {
+				type: 'object',
+				properties: {
+					tournamentId: { type: 'string' },
+					matchId: { type: 'string' }
+				},
+				required: ['tournamentId', 'matchId']
+			}
+		},
+		handler: async (request: FastifyRequest<{ Params: { tournamentId: string; matchId: string } }>, reply: FastifyReply) => {
+			try {
+				if (!fastify.blockchain || !fastify.blockchain.isAvailable()) {
+					return reply.status(503).send({
+						success: false,
+						message: 'Blockchain service not available'
+					});
+				}
+
+				const tournamentId = parseInt(request.params.tournamentId);
+				const matchId = parseInt(request.params.matchId);
+
+				// Récupérer tous les matchs du tournoi depuis la blockchain
+				const blockchainMatches = await fastify.blockchain.getTournamentMatches(tournamentId);
+				
+				// Trouver le match spécifique
+				const match = blockchainMatches.find((m: any) => Number(m.matchId) === matchId);
+
+				if (!match) {
+					return reply.status(404).send({
+						success: false,
+						message: `Match ${matchId} not found in tournament ${tournamentId} on blockchain`
+					});
+				}
+
+				// Vérifier si le match existe aussi en base de données
+				let sqliteMatch = null;
+				try {
+					// Convertir l'ID blockchain en UUID (recherche inverse)
+					const allMatches = await MatchTournament.findAll({
+						where: { tournament_id: tournamentId }
+					});
+					
+					// Trouver le match correspondant par conversion UUID -> blockchain ID
+					const crypto = await import('crypto');
+					sqliteMatch = allMatches.find(m => {
+						const hash = crypto.createHash('sha256').update(m.id).digest('hex');
+						const blockchainId = parseInt(hash.substring(0, 8), 16);
+						return blockchainId === matchId;
+					});
+				} catch (error) {
+					fastify.log.warn('Could not find corresponding SQLite match:', error);
+				}
+
+				// Informations réseau
+				const network = await fastify.blockchain.getNetworkInfo();
+				const explorerUrl = network.chainId === 43113n 
+					? `https://testnet.snowtrace.io/address/${process.env.TOURNAMENT_CONTRACT_ADDRESS}`
+					: `https://snowtrace.io/address/${process.env.TOURNAMENT_CONTRACT_ADDRESS}`;
+
+				return {
+					success: true,
+					data: {
+						blockchain_match: {
+							matchId: Number(match.matchId),
+							tournamentId: Number(match.tournamentId),
+							player1Name: match.player1Name,
+							player2Name: match.player2Name,
+							player1Score: Number(match.player1Score),
+							player2Score: Number(match.player2Score),
+							winnerName: match.winnerName,
+							timestamp: new Date(Number(match.timestamp) * 1000).toISOString(),
+							recordedBy: match.recordedBy
+						},
+						sqlite_match: sqliteMatch ? {
+							id: sqliteMatch.id,
+							tournament_id: sqliteMatch.tournament_id,
+							player1_name: sqliteMatch.player1_name,
+							player2_name: sqliteMatch.player2_name,
+							player1_score: sqliteMatch.player1_score,
+							player2_score: sqliteMatch.player2_score,
+							winner_name: sqliteMatch.winner_name,
+							status: sqliteMatch.status,
+							blockchain_verified: sqliteMatch.blockchain_verified,
+							blockchain_tx_hash: sqliteMatch.blockchain_tx_hash
+						} : null,
+						verification: {
+							data_matches: sqliteMatch ? (
+								sqliteMatch.player1_name === match.player1Name &&
+								sqliteMatch.player2_name === match.player2Name &&
+								sqliteMatch.player1_score === Number(match.player1Score) &&
+								sqliteMatch.player2_score === Number(match.player2Score) &&
+								sqliteMatch.winner_name === match.winnerName
+							) : null,
+							immutable: true,
+							decentralized: true,
+							message: "Ces données sont vérifiables et immutables sur la blockchain"
+						},
+						contract_address: process.env.TOURNAMENT_CONTRACT_ADDRESS,
+						explorer_url: explorerUrl
+					}
+				};
+
+			} catch (error) {
+				fastify.log.error('Failed to verify match on blockchain:', error);
+				return reply.status(500).send({
+					success: false,
+					message: 'Failed to verify match',
 					error: error.message
 				});
 			}

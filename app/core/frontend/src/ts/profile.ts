@@ -58,7 +58,7 @@ function createAvatarHTML(user: { id?: number; avatar_url?: string | null; usern
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('Profile page loaded');
     
     // Obtenir l'instance du service d'authentification
@@ -594,55 +594,37 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             console.log('Loading matches for user:', userId);
     
-            // Get matches from the API - no parameter needed
+            // Get matches from the API
             const matchesResponse = await api.user.getMatches();
             console.log('Matches response:', matchesResponse);
     
-            // Clear existing matches
             if (matchesContainer) {
                 matchesContainer.innerHTML = '';
             }
     
             if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
                 const matches = matchesResponse.data;
-                console.log('First match data:', matches[0]); // Debug log to see structure
+                console.log('First match data:', matches[0]);
                 
                 // Hide "no matches" message
                 if (noMatches) {
                     noMatches.classList.add('hidden');
                 }
+    
+                // Get current user's profile to get the username
+                const profileResponse = await api.user.getProfile();
+                const currentUsername = profileResponse.success ? profileResponse.data.username : 'Unknown';
                 
                 // Display matches
                 if (matchesContainer && matchTemplate) {
-                    // Sort matches by date (most recent first)
-                    matches.sort((a: any, b: any) => {
-                        const dateA = (a.created_at || a.createdAt) ? new Date(a.created_at || a.createdAt).getTime() : 0;
-                        const dateB = (b.created_at || b.createdAt) ? new Date(b.created_at || b.createdAt).getTime() : 0;
-                        return dateB - dateA;
-                    });
-    
-                    matches.forEach((match: any) => {
-                        // Handle both naming conventions (player1_id/player2_id or user1_id/user2_id)
-                        const player1Id = match.player1_id || match.user1_id;
-                        const player2Id = match.player2_id || match.user2_id;
-                        const player1Score = match.player1_score || match.user1_score || 0;
-                        const player2Score = match.player2_score || match.user2_score || 0;
-                        
-                        // Debug log
-                        console.log('Match data:', { player1Id, player2Id, player1Score, player2Score, userId });
-                        
-                        // Determine if current user is player1 or player2
-                        const isPlayer1 = player1Id && player1Id.toString() === userId.toString();
-                        const currentPlayerScore = isPlayer1 ? player1Score : player2Score;
-                        const opponentScore = isPlayer1 ? player2Score : player1Score;
-                        
-                        // Get usernames - handle both naming conventions
-                        const player1Username = match.player1_username || match.player1?.username || 'Unknown';
-                        const player2Username = match.player2_username || match.player2?.username || 'Unknown';
-                        const opponentUsername = isPlayer1 ? player2Username : player1Username;
-                        
+                    matches.forEach((match: MatchData) => {
                         // Create match element from template
                         const matchElement = document.importNode(matchTemplate.content, true);
+    
+                        // Determine if current user is player1 or player2
+                        const isPlayer1 = match.player1_id.toString() === userId.toString();
+                        const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
+                        const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
                         
                         // Set match details
                         const resultIndicator = matchElement.querySelector('.match-result-indicator');
@@ -655,16 +637,23 @@ document.addEventListener('DOMContentLoaded', () => {
                             resultIndicator.classList.add(currentPlayerScore > opponentScore ? 'bg-green-500' : 'bg-red-500');
                         }
                         
-                        // Set opponent name
-                        if (opponent) opponent.textContent = opponentUsername;
+                        // Set opponent name (show as "vs Yourself" if playing against self)
+                        if (opponent) {
+                            if (match.player1_id === match.player2_id) {
+                                opponent.textContent = 'vs Yourself (Practice)';
+                            } else {
+                                opponent.textContent = `vs ${isPlayer1 ? match.player2_username || 'Unknown' : match.player1_username || 'Unknown'}`;
+                            }
+                        }
                         
                         // Set score
-                        if (score) score.textContent = `${currentPlayerScore} - ${opponentScore}`;
+                        if (score) {
+                            score.textContent = `${currentPlayerScore} - ${opponentScore}`;
+                        }
                         
-                        // Format and set date - handle both naming conventions
-                        const matchDate = match.created_at || match.createdAt;
-                        if (date && matchDate) {
-                            const dateObj = new Date(matchDate);
+                        // Format and set date
+                        if (date && match.created_at) {
+                            const dateObj = new Date(match.created_at);
                             date.textContent = dateObj.toLocaleDateString('fr-FR', {
                                 year: 'numeric',
                                 month: 'long',
@@ -675,6 +664,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Add match to container
                         matchesContainer.appendChild(matchElement);
                     });
+    
+                    // Update statistics
+                    let wins = 0;
+                    let losses = 0;
+                    matches.forEach((match: MatchData) => {
+                        const isPlayer1 = match.player1_id.toString() === userId.toString();
+                        const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
+                        const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
+                        if (currentPlayerScore > opponentScore) wins++;
+                        else losses++;
+                    });
+    
+                    if (statsGamesPlayed) statsGamesPlayed.textContent = matches.length.toString();
+                    if (statsWins) statsWins.textContent = wins.toString();
+                    if (statsLosses) statsLosses.textContent = losses.toString();
+                    if (statsRatio) {
+                        const ratio = matches.length > 0 ? (wins / matches.length).toFixed(2) : '0.00';
+                        statsRatio.textContent = ratio;
+                    }
                 }
             } else {
                 // Show "no matches" message if no matches found
@@ -685,7 +693,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error loading matches:', error);
-            
             // Show "no matches" message in case of error
             if (noMatches) {
                 noMatches.classList.remove('hidden');
@@ -790,4 +797,35 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
+    // After DOMContentLoaded and element selection
+    const websocketService = (window as any).websocketService;
+    const currentUserId = authService.getUserId && authService.getUserId();
+    function setStatusUI(status: string) {
+        if (profileStatus) {
+            if (status === 'online') {
+                profileStatus.textContent = 'En ligne';
+                profileStatus.classList.remove('text-gray-600');
+                profileStatus.classList.add('text-green-500');
+            } else if (status === 'in_game') {
+                profileStatus.textContent = 'En jeu';
+                profileStatus.classList.remove('text-gray-600');
+                profileStatus.classList.add('text-blue-500');
+            } else {
+                profileStatus.textContent = 'Hors ligne';
+                profileStatus.classList.remove('text-green-500', 'text-blue-500');
+                profileStatus.classList.add('text-gray-600');
+            }
+        }
+    }
+    // Listen for status changes for the current user
+    if (websocketService && websocketService.on && currentUserId) {
+        websocketService.on('friend-status-change', (data: any) => {
+            if (data.friend_id === Number(currentUserId)) {
+                setStatusUI(data.status);
+            }
+        });
+    }
+    // Optionally, fetch and set initial status from API or localStorage
+    // ... existing code ...
 });

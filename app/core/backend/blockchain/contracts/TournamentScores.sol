@@ -21,11 +21,13 @@ contract TournamentScores {
         address recordedBy;        // Qui a enregistré (votre backend)
     }
     
-    // Stockage : tournamentId => array de matchs
+    // Stockage : tournamentId => array de matchs - stocke tous les matchs d'un tournoi
     mapping(uint256 => MatchRecord[]) public tournamentMatches;
     
     // Vérification qu'un match spécifique existe
     mapping(uint256 => mapping(uint256 => bool)) public matchExists; // tournamentId => matchId => exists
+
+    // Une fois un match enregistré, impossible de le modifier
     
     // Événements pour traçabilité
     event MatchRecorded(
@@ -88,11 +90,11 @@ contract TournamentScores {
             recordedBy: msg.sender
         });
         
-        // Stocker
+        // Stocker de façon immutable avec le push()
         tournamentMatches[_tournamentId].push(newMatch);
         matchExists[_tournamentId][_matchId] = true;
         
-        // Émettre l'événement
+        // Émettre l'événement pour la traçabilité
         emit MatchRecorded(
             _tournamentId,
             _matchId,
