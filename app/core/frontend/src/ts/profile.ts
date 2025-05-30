@@ -350,9 +350,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('No user ID available');
                 return;
             }
-
-            const res = await api.game.createMatch(userId, userId - 1);
-            await api.game.updateMatch(res.data.id, 5, 3, 'completed');
             
             // Use the profile endpoint with statistics (same as in friends modal)
             const response = await fetch(`${api.baseUrl}/users/${userId}/profile`, {

@@ -307,9 +307,23 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
 
         if (updateData.player1_score !== undefined && updateData.player2_score !== undefined) match.winner_id = (match.player1_score >= match.player2_score) ? match.player1_id : match.player2_id;
         
+        if (updateData.player1_score !== undefined && updateData.player2_score !== undefined) match.winner_id = ( match.player1_score >= match.player2_score ) ? match.player1_id : match.player2_id;
+
+
         await match.save();
         
-        return { success: true, data: match };
+        return { success: true, 
+          data: {
+            id: match.id,
+            player1_id: match.player1_id,
+            player2_id: match.player2_id,
+            player1_score: match.player1_score,
+            player2_score: match.player2_score,
+            status: match.status,
+            created_at: match.createdAt,
+            updated_at: match.updatedAt,
+          } 
+        };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });

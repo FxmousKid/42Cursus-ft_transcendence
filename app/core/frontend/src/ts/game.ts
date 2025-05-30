@@ -1,11 +1,18 @@
 // Improved Pong Game - Cleaner, Simpler, More Efficient
 // Key improvements: Better separation of concerns, simpler physics, more efficient rendering
 
+import { api } from "./api";
+import { TournamentService } from "./tournamentService";
+import { createAvatarHTML } from "./friends";
+
 class PongGame {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private animationId: number = 0;
     
+    private id: number = 0;
+
+    private type: string = 'local';
     // Game dimensions
     private readonly ASPECT_RATIO = 16 / 10;
     private readonly MIN_WIDTH = 320;
@@ -23,6 +30,11 @@ class PongGame {
     private winner: string = '';
     private lastTime: number = 0;
     private deltaTime: number = 0;
+
+    private player1: string = 'Joueur 1';
+    private player2: string = 'Joueur 2';
+
+    private tournamentService: TournamentService = new TournamentService();
     
     // Game objects (normalized coordinates 0-1)
     private ball = {
@@ -58,7 +70,7 @@ class PongGame {
         rightCard: HTMLElement;
     };
     
-    constructor(canvasId: string) {
+    constructor(canvasId: string, type: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d')!;
         
@@ -71,8 +83,14 @@ class PongGame {
             leftCard: document.getElementById('player-left-card') as HTMLElement,
             rightCard: document.getElementById('player-right-card') as HTMLElement
         };
+
+        this.type = type;
         
-        this.init();
+        switch (type) {
+            case 'tournament': this.initTournament(); break;
+            case 'friend': this.initFriend(); break;
+            default: this.init();
+        }
     }
     
     private init(): void {
@@ -80,6 +98,57 @@ class PongGame {
         this.setupEventListeners();
         this.resetGame();
         this.gameLoop();
+    }
+
+    private initTournament(): void {
+        this.tournamentService.loadFromStorage();
+        this.setNames();
+        this.setupCanvas();
+        this.setupEventListeners();
+        this.resetGame();
+        this.gameLoop();
+    }
+
+    private async initFriend() {
+        const matchStore = localStorage.getItem('matchItem');
+        if (matchStore) {
+            const match = JSON.parse(matchStore);
+            this.id = match.id;
+            this.setNamesAndAvatar(match.player1_id, match.player2_id);
+        }
+        this.setupCanvas();
+        this.setupEventListeners();
+        this.resetGame();
+        this.gameLoop();
+    }
+
+    private async setNamesAndAvatar(player1_id: number, player2_id: number) {
+        const player1Res = await api.user.getUser(player1_id); 
+        const player1Body = player1Res.data;
+
+        const player2Res = await api.user.getUser(player2_id); 
+        const player2Body = player2Res.data;
+
+        document.getElementById('player1_name')!.textContent = player1Body.username;
+        document.getElementById('player2_name')!.textContent = player2Body.username;
+        this.player1 = player1Body.username;
+        this.player2 = player2Body.username;
+
+        const avatar1 = document.getElementById('player1-avatar') as HTMLElement;
+        avatar1.innerHTML = createAvatarHTML(player1Body, "large");
+
+        const avatar2 = document.getElementById('player2-avatar') as HTMLElement;
+        avatar2.innerHTML = createAvatarHTML(player2Body, "large");
+    }
+
+    private setNames() {
+        if (!this.tournamentService.getCurrentMatch()) { 
+            return;
+        }
+        document.getElementById('player1_name')!.textContent = this.tournamentService.getCurrentMatch().player1_name;
+        document.getElementById('player2_name')!.textContent = this.tournamentService.getCurrentMatch().player2_name;
+        this.player1 = this.tournamentService.getCurrentMatch().player1_name;
+        this.player2 = this.tournamentService.getCurrentMatch().player2_name;
     }
     
     private setupCanvas(): void {
@@ -353,7 +422,7 @@ class PongGame {
             this.highlightWinner(this.elements.rightCard);
             
             if (this.paddles.right.score >= this.WINNING_SCORE) {
-                this.endGame('Joueur 2');
+                this.endGame(this.player2);
             } else {
                 this.ball.x = 0.5;
                 this.ball.y = 0.5;
@@ -372,7 +441,7 @@ class PongGame {
             this.highlightWinner(this.elements.leftCard);
             
             if (this.paddles.left.score >= this.WINNING_SCORE) {
-                this.endGame('Joueur 1');
+                this.endGame(this.player1);
             } else {
                 this.ball.x = 0.5;
                 this.ball.y = 0.5;
@@ -416,9 +485,38 @@ class PongGame {
         setTimeout(() => card.classList.remove('scoring'), 500);
     }
     
+
+    async goToNextRound(player1_score: number, player2_score: number) {
+        await this.tournamentService.finishAndUpdateGame(this.tournamentService.getCurrentIndex(), player1_score, player2_score);
+
+        if (await this.tournamentService.isFinished()) {
+            await api.tournament.updateStatusTournament(this.tournamentService.id, 'finished');
+            window.location.href = "/tournament_finish.html";
+            return ;
+        }
+
+        await this.tournamentService.goToNextMatch();
+
+        window.location.href = '/tournament_round.html';
+    }
+
+    async finishGameFriend() {
+        await api.game.updateMatch(this.id, this.paddles.left.score, this.paddles.right.score, 'completed');
+    }
+
     private endGame(winner: string): void {
+        console.log('winnner: ', winner);
         this.winner = winner;
         this.gameState = 'gameover';
+        if (this.type == 'tournament') {
+            this.goToNextRound(this.paddles.left.score, this.paddles.right.score);
+            return ;
+        }
+        if (this.type == 'friend') {
+            this.finishGameFriend();
+            this.elements.startBtn.textContent = 'Recommencer';
+            return ;
+        }
         this.elements.startBtn.textContent = 'Nouvelle Partie';
     }
     
@@ -435,7 +533,13 @@ class PongGame {
 
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new PongGame('game-canvas');
+    const saved = localStorage.getItem('matchType');
+    let type = 'local';
+    if (saved) {
+        const data = JSON.parse(saved); 
+        type = data.type;
+    }
+    new PongGame('game-canvas', type);
 });
 
 // Add CSS for scoring animation
