@@ -431,86 +431,94 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
     
             if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
-                const matches = matchesResponse.data;
-                console.log('First match data:', matches[0]);
-                
-                // Hide "no matches" message
-                if (noMatches) {
-                    noMatches.classList.add('hidden');
-                }
-    
-                // Get current user's profile to get the username
-                const profileResponse = await api.user.getProfile();
-                const currentUsername = profileResponse.success ? profileResponse.data.username : 'Unknown';
-                
-                // Display matches
-                if (matchesContainer && matchTemplate) {
-                    matches.forEach((match: MatchData) => {
-                        // Create match element from template
-                        const matchElement = document.importNode(matchTemplate.content, true);
-    
-                        // Determine if current user is player1 or player2
-                        const isPlayer1 = match.player1_id.toString() === userId.toString();
-                        const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
-                        const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
-                        
-                        // Set match details
-                        const resultIndicator = matchElement.querySelector('.match-result-indicator');
-                        const opponent = matchElement.querySelector('.match-opponent');
-                        const date = matchElement.querySelector('.match-date');
-                        const score = matchElement.querySelector('.match-score');
-                        
-                        // Set win/loss indicator
-                        if (resultIndicator) {
-                            resultIndicator.classList.add(currentPlayerScore > opponentScore ? 'bg-green-500' : 'bg-red-500');
-                        }
-                        
-                        // Set opponent name (show as "vs Yourself" if playing against self)
-                        if (opponent) {
-                            if (match.player1_id === match.player2_id) {
-                                opponent.textContent = 'vs Yourself (Practice)';
-                            } else {
-                                opponent.textContent = `vs ${isPlayer1 ? match.player2_username || 'Unknown' : match.player1_username || 'Unknown'}`;
-                            }
-                        }
-                        
-                        // Set score
-                        if (score) {
-                            score.textContent = `${currentPlayerScore} - ${opponentScore}`;
-                        }
-                        
-                        // Format and set date
-                        if (date && match.created_at) {
-                            const dateObj = new Date(match.created_at);
-                            date.textContent = dateObj.toLocaleDateString('fr-FR', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            });
-                        }
-                        
-                        // Add match to container
-                        matchesContainer.appendChild(matchElement);
-                    });
-    
-                    // Update statistics
-                    let wins = 0;
-                    let losses = 0;
-                    matches.forEach((match: MatchData) => {
-                        const isPlayer1 = match.player1_id.toString() === userId.toString();
-                        const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
-                        const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
-                        if (currentPlayerScore > opponentScore) wins++;
-                        else losses++;
-                    });
-    
-                    if (statsGamesPlayed) statsGamesPlayed.textContent = matches.length.toString();
-                    if (statsWins) statsWins.textContent = wins.toString();
-                    if (statsLosses) statsLosses.textContent = losses.toString();
-                    if (statsRatio) {
-                        const ratio = matches.length > 0 ? (wins / matches.length).toFixed(2) : '0.00';
-                        statsRatio.textContent = ratio;
+                // Filter matches to only include those with status 'completed'
+                const matches = matchesResponse.data.filter((match: MatchData) => match.status === 'completed');
+                if (matches.length > 0) {
+                    console.log('First match data:', matches[0]);
+                    // Hide "no matches" message
+                    if (noMatches) {
+                        noMatches.classList.add('hidden');
                     }
+    
+                    // Get current user's profile to get the username
+                    const profileResponse = await api.user.getProfile();
+                    const currentUsername = profileResponse.success ? profileResponse.data.username : 'Unknown';
+                    
+                    // Display matches
+                    if (matchesContainer && matchTemplate) {
+                        matches.forEach((match: MatchData) => {
+                            // Create match element from template
+                            const matchElement = document.importNode(matchTemplate.content, true);
+    
+                            // Determine if current user is player1 or player2
+                            const isPlayer1 = match.player1_id.toString() === userId.toString();
+                            const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
+                            const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
+                            
+                            // Set match details
+                            const resultIndicator = matchElement.querySelector('.match-result-indicator');
+                            const opponent = matchElement.querySelector('.match-opponent');
+                            const date = matchElement.querySelector('.match-date');
+                            const score = matchElement.querySelector('.match-score');
+                            
+                            // Set win/loss indicator
+                            if (resultIndicator) {
+                                resultIndicator.classList.add(currentPlayerScore > opponentScore ? 'bg-green-500' : 'bg-red-500');
+                            }
+                            
+                            // Set opponent name (show as "vs Yourself" if playing against self)
+                            if (opponent) {
+                                if (match.player1_id === match.player2_id) {
+                                    opponent.textContent = 'vs Yourself (Practice)';
+                                } else {
+                                    opponent.textContent = `vs ${isPlayer1 ? match.player2_username || 'Unknown' : match.player1_username || 'Unknown'}`;
+                                }
+                            }
+                            
+                            // Set score
+                            if (score) {
+                                score.textContent = `${currentPlayerScore} - ${opponentScore}`;
+                            }
+                            
+                            // Format and set date
+                            if (date && match.created_at) {
+                                const dateObj = new Date(match.created_at);
+                                date.textContent = dateObj.toLocaleDateString('fr-FR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                });
+                            }
+                            
+                            // Add match to container
+                            matchesContainer.appendChild(matchElement);
+                        });
+    
+                        // Update statistics
+                        let wins = 0;
+                        let losses = 0;
+                        matches.forEach((match: MatchData) => {
+                            const isPlayer1 = match.player1_id.toString() === userId.toString();
+                            const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
+                            const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
+                            if (currentPlayerScore > opponentScore) wins++;
+                            else losses++;
+                        });
+    
+                        if (statsGamesPlayed) statsGamesPlayed.textContent = matches.length.toString();
+                        if (statsWins) statsWins.textContent = wins.toString();
+                        if (statsLosses) statsLosses.textContent = losses.toString();
+                        if (statsRatio) {
+                            const ratio = matches.length > 0 ? (wins / matches.length).toFixed(2) : '0.00';
+                            statsRatio.textContent = ratio;
+                        }
+                    }
+                } else {
+                    // Show "no matches" message if no completed matches found
+                    if (noMatches) {
+                        noMatches.classList.remove('hidden');
+                    }
+                    console.log('No completed matches found');
                 }
             } else {
                 // Show "no matches" message if no matches found
