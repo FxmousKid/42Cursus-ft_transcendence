@@ -7,6 +7,7 @@ import { configureRoutes } from './routes';
 import { configureDatabasePlugin } from './plugins/database';
 import { configureAuthPlugin } from './plugins/auth';
 import { configureGoogleOAuthPlugin } from './plugins/google-oauth';
+import blockchainPlugin from './plugins/blockchain.plugin';
 import { setupWebSocket } from './websocket';
 import dotenv from 'dotenv';
 
@@ -27,20 +28,22 @@ const server: FastifyInstance = Fastify({
 async function setup() {
   try {
     // Register CORS first
+
+	const allowedOrigins =
+	process.env.NODE_ENV === 'production'
+	? ['https://localhost']
+	: [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:3000',
+        'http://frontend:5173',
+        'http://0.0.0.0:5173',
+		'https://localhost',
+        true
+	  ];
+	
     await server.register(cors, {
-      origin: [
-        'http://localhost:5173',  // Frontend port
-        'http://localhost:37505', // Alternative frontend port
-        'http://localhost:45477', // Another alternative frontend port
-        'http://localhost:35331', // Another alternative frontend port
-        'http://localhost:46593', // Another potential port from your logs
-        'http://127.0.0.1:5173',  // Using IP instead of localhost
-        'http://127.0.0.1:3000',  // In case the frontend is on the same port
-        'http://localhost',       // Simple localhost without port
-        // Add these new origins
-        'http://0.0.0.0:5173',    // Using 0.0.0.0 address
-        true,                     // Allow all origins temporarily for debugging
-      ],
+      origin: allowedOrigins,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -55,6 +58,9 @@ async function setup() {
     
     // Register Google OAuth plugin after JWT auth
     await server.register(configureGoogleOAuthPlugin);
+
+    // Register blockchain plugin
+    await server.register(blockchainPlugin);
 
     // Register Swagger documentation
     await server.register(swagger, {
@@ -93,15 +99,16 @@ async function setup() {
     // Setup Socket.IO
     const io = new Server(server.server, {
       cors: {
-        origin: [
-          'http://localhost:5173',
-          'http://localhost:3000',
-          'http://frontend:5173',
-          'http://127.0.0.1:5173',
-          // Add these new origins
-          'http://0.0.0.0:5173',    
-          true,                    // Allow all origins temporarily for debugging
-        ],
+		origin:
+			process.env.NODE_ENV === 'production'
+			? ['https://localhost']
+			: [
+				'http://localhost:5173',
+				'https://localhost',
+            	'http://127.0.0.1:5173',
+            	'http://frontend:5173',
+            	true,
+			],
         methods: ['GET', 'POST'],
         credentials: true,
       },

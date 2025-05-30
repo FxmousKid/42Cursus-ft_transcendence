@@ -23,6 +23,7 @@ class FriendshipService {
   private friendListeners: ((friends: Friend[]) => void)[] = [];
   private requestListeners: ((requests: PendingRequest[]) => void)[] = [];
   private notificationListeners: ((message: string, type: 'info' | 'success' | 'error') => void)[] = [];
+  private statusChangeListeners: ((friendId: number, status: string) => void)[] = [];
 
   constructor() {
     this.setupWebSocketHandlers();
@@ -73,11 +74,12 @@ class FriendshipService {
     // Listen for friend status changes
     websocketService.on('friend-status-change', (data: any) => {
       console.log('Friend status changed via WebSocket:', data);
-      // Make sure we're using the right property name for the friend ID
       const friendId = data.friend_id;
       const status = data.status;
       if (friendId && status) {
         this.loadFriends(); // Reload all friends to keep UI in sync
+        // Notify global listeners
+        this.statusChangeListeners.forEach(cb => cb(friendId, status));
       }
     });
   }
@@ -275,6 +277,11 @@ class FriendshipService {
   // Method to add a notification listener
   onNotification(callback: (message: string, type: 'info' | 'success' | 'error') => void) {
     this.notificationListeners.push(callback);
+  }
+
+  // Method to add a status change listener
+  onStatusChange(callback: (friendId: number, status: string) => void) {
+    this.statusChangeListeners.push(callback);
   }
 
   // Helper method to load and broadcast friends

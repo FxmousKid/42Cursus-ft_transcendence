@@ -10,9 +10,9 @@ interface MatchData {
     player1_score: number;
     player2_score: number;
     winner_id?: number;
-    status?: string;
-    created_at: string;
-    updated_at: string;
+    status: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 /**
@@ -58,7 +58,7 @@ function createAvatarHTML(user: { id?: number; avatar_url?: string | null; usern
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('Profile page loaded');
     
     // Obtenir l'instance du service d'authentification
@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Profile elements
     const profileUsernameElement = document.getElementById('profile-username') as HTMLElement;
     const profileEmail = document.getElementById('profile-email') as HTMLElement;
+    const profileStatus = document.getElementById('profile-status') as HTMLElement;
     const profileAvatar = document.getElementById('profile-avatar') as HTMLElement;
     const avatarUploadInput = document.getElementById('avatar-upload-input') as HTMLInputElement;
     const removeAvatarBtn = document.getElementById('remove-avatar-btn') as HTMLButtonElement;
@@ -122,23 +123,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Current user data
     let currentUserData: any = null;
     
+    // Initially hide the remove button until we confirm there's an avatar
+    if (removeAvatarBtn) {
+        removeAvatarBtn.classList.add('hidden');
+    }
+    
     // Utiliser les données du localStorage pour afficher des informations de base
     const username = localStorage.getItem('username');
     const email = localStorage.getItem('email') || '';
     const avatarUrl = localStorage.getItem('avatar_url');
+    const userId = localStorage.getItem('userId') || localStorage.getItem('user_id');
     
     // Afficher les informations de base depuis localStorage
     if (username) {
         profileUsernameElement.textContent = username;
+        if (profileStatus) {
+            profileStatus.textContent = 'offline';
+            profileStatus.classList.add('text-gray-600');
+        }
         
         // Pré-remplir les champs du formulaire
         if (editUsername) editUsername.value = username;
         if (editEmail) editEmail.value = email;
         if (editAvatar) editAvatar.value = avatarUrl || '';
         
-        // Afficher l'avatar si disponible
-        if (avatarUrl) {
-            profileAvatar.innerHTML = `<img src="${avatarUrl}" alt="${username}" class="w-full h-full object-cover">`;
+        // Afficher l'avatar si disponible et userId est défini
+        if (avatarUrl && avatarUrl.trim() !== '' && userId) {
+            updateAvatarDisplay({ id: parseInt(userId), avatar_url: avatarUrl, has_avatar_data: false });
         }
     }
     
@@ -151,23 +162,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // EVENT LISTENERS SIMPLIFIÉS
     
     // Clic sur l'avatar pour choisir une nouvelle photo
-    profileAvatar?.addEventListener('click', (e) => {
-        console.log('Avatar clicked!');
-        e.preventDefault();
-        e.stopPropagation();
-        avatarUploadInput?.click();
-    });
+    if (profileAvatar && avatarUploadInput) {
+        profileAvatar.addEventListener('click', (e) => {
+            console.log('Avatar clicked!');
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+                avatarUploadInput.click();
+            } catch (error) {
+                console.error('Error triggering file input:', error);
+            }
+        });
+    } else {
+        console.warn('Profile avatar or upload input not found');
+    }
     
     // Bouton supprimer avatar
-    removeAvatarBtn?.addEventListener('click', (e) => {
-        console.log('Remove button clicked!');
-        e.preventDefault();
-        e.stopPropagation();
-        handleRemoveAvatar();
-    });
+    if (removeAvatarBtn) {
+        removeAvatarBtn.addEventListener('click', (e) => {
+            console.log('Remove button clicked!');
+            e.preventDefault();
+            e.stopPropagation();
+            handleRemoveAvatar();
+        });
+    }
     
     // Handle avatar upload
-    avatarUploadInput?.addEventListener('change', handleAvatarUpload);
+    if (avatarUploadInput) {
+        avatarUploadInput.addEventListener('change', handleAvatarUpload);
+    }
     
     // Gérer le bouton d'édition de profil
     if (editProfileButton && editProfileModal) {
@@ -216,32 +239,44 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Fonction pour mettre à jour l'affichage de l'avatar
     function updateAvatarDisplay(userData: { id: number; username?: string; avatar_url?: string; has_avatar_data?: boolean }) {
-        if (!profileAvatar) return;
-        
-        const avatarUrl = getAvatarUrl ? getAvatarUrl(userData) : '';
-        
-        if (avatarUrl) {
-            // Add cache-busting parameter to force reload of uploaded avatars
-            const finalAvatarUrl = userData.has_avatar_data ? 
-                `${avatarUrl}?t=${Date.now()}` : avatarUrl;
-            
-            // When there's an avatar, show the image and hide the default icon
-            profileAvatar.innerHTML = `
-                <img src="${finalAvatarUrl}" alt="${userData.username || username}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <i class="fas fa-user text-white text-5xl" style="display: none;"></i>
-            `;
-        } else {
-            // When there's no avatar, show only the default icon - the container keeps its gradient background
-            profileAvatar.innerHTML = `<i class="fas fa-user text-white text-5xl"></i>`;
+        if (!profileAvatar) {
+            console.warn('Profile avatar element not found');
+            return;
         }
         
-        // Show/hide remove button based on whether user has uploaded avatar or avatar_url
-        if (removeAvatarBtn) {
-            if (userData.has_avatar_data || userData.avatar_url) {
-                removeAvatarBtn.classList.remove('hidden');
+        try {
+            const avatarUrl = getAvatarUrl ? getAvatarUrl(userData) : '';
+            
+            if (avatarUrl) {
+                // Add cache-busting parameter to force reload of uploaded avatars
+                const finalAvatarUrl = userData.has_avatar_data ? 
+                    `${avatarUrl}?t=${Date.now()}` : avatarUrl;
+                
+                // When there's an avatar, show the image and hide the default icon
+                profileAvatar.innerHTML = `
+                    <img src="${finalAvatarUrl}" alt="${userData.username || username}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <i class="fas fa-user text-white text-5xl" style="display: none;"></i>
+                `;
             } else {
-                removeAvatarBtn.classList.add('hidden');
+                // When there's no avatar, show only the default icon - the container keeps its gradient background
+                profileAvatar.innerHTML = `<i class="fas fa-user text-white text-5xl"></i>`;
             }
+            
+            // Show/hide remove button based on whether user has uploaded avatar or avatar_url
+            if (removeAvatarBtn) {
+                // Only show remove button if there's actually an avatar to remove
+                // This means either uploaded avatar data OR a valid avatar_url that produces an image
+                const hasUploadedAvatar = userData.has_avatar_data;
+                const hasValidAvatarUrl = userData.avatar_url && userData.avatar_url.trim() !== '';
+                
+                if (hasUploadedAvatar || hasValidAvatarUrl) {
+                    removeAvatarBtn.classList.remove('hidden');
+                } else {
+                    removeAvatarBtn.classList.add('hidden');
+                }
+            }
+        } catch (error) {
+            console.error('Error updating avatar display:', error);
         }
     }
     
@@ -308,15 +343,35 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadProfileData() {
         try {
             console.log('Loading full profile data from API');
-            const response = await api.user.getProfile();
-            console.log('Profile API response:', response);
             
-            if (response.success && response.data) {
+            // Get current user's ID
+            const userId = authService.getUserId();
+            if (!userId) {
+                console.error('No user ID available');
+                return;
+            }
+            
+            // Use the profile endpoint with statistics (same as in friends modal)
+            const response = await fetch(`${api.baseUrl}/users/${userId}/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${authService.getToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('Profile API response with stats:', data);
+            
+            if (data.success && data.data) {
                 console.log('Successfully loaded profile data');
-                const profile = response.data;
+                const profile = data.data;
                 currentUserData = profile;
                 
-                // Afficher les informations du profil
+                // Display profile information
                 profileUsernameElement.textContent = profile.username;
                 if (profileEmail) {
                     profileEmail.textContent = profile.email || '';
@@ -325,22 +380,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update avatar display using the unified function
                 updateAvatarDisplay(profile);
                 
-                // Définir les valeurs du formulaire pour l'édition
+                // Update statistics if available
+                if (profile.statistics) {
+                    if (statsGamesPlayed) statsGamesPlayed.textContent = profile.statistics.games_played.toString();
+                    if (statsWins) statsWins.textContent = profile.statistics.wins.toString();
+                    if (statsLosses) statsLosses.textContent = profile.statistics.losses.toString();
+                    if (statsRatio) {
+                        const winRate = profile.statistics.win_rate / 100; // Convert percentage to ratio
+                        statsRatio.textContent = winRate.toFixed(2);
+                    }
+                }
+                
+                // Set form values for editing
                 if (editUsername) editUsername.value = profile.username;
                 if (editEmail) editEmail.value = profile.email || '';
                 if (editAvatar) editAvatar.value = profile.avatar_url || '';
                 
-                // Stocker l'email dans localStorage pour une utilisation future
+                // Store email in localStorage for future use
                 if (profile.email) {
                     localStorage.setItem('email', profile.email);
                 }
                 
-                // Stocker l'URL de l'avatar dans localStorage si disponible
+                // Store avatar URL in localStorage if available
                 if (profile.avatar_url) {
                     localStorage.setItem('avatar_url', profile.avatar_url);
                 }
             } else {
-                console.error('Failed to load profile data:', response.message);
+                console.error('Failed to load profile data:', data.message);
             }
         } catch (error) {
             console.error('Error loading profile data:', error);
@@ -349,86 +415,116 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadMatches() {
         try {
-          const matchesResponse = await api.user.getMatches();
-          
-          if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
-            const matches = matchesResponse.data as MatchData[];
-            
-            // Hide "no matches" message
-            if (noMatches) {
-              noMatches.classList.add('hidden');
-            }
-            
-            // Calculate stats
-            let wins = 0;
-            let losses = 0;
             const userId = authService.getUserId();
-            
-            // Clear existing matches
+            if (!userId) {
+                console.error('No user ID available');
+                return;
+            }
+            console.log('Loading matches for user:', userId);
+    
+            // Get matches from the API
+            const matchesResponse = await api.user.getMatches();
+            console.log('Matches response:', matchesResponse);
+    
             if (matchesContainer) {
-              matchesContainer.innerHTML = '';
+                matchesContainer.innerHTML = '';
             }
-            
-            // Display matches
-            if (matchesContainer && matchTemplate) {
-              matches.forEach((match: MatchData) => {
-                // Determine if current user is player1 or player2
-                const isPlayer1 = match.player1_id.toString() === userId;
-                const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
-                const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
-                const opponentUsername = isPlayer1 ? match.player2_username : match.player1_username;
+    
+            if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
+                const matches = matchesResponse.data;
+                console.log('First match data:', matches[0]);
                 
-                // Determine if match was won or lost
-                const isWin = currentPlayerScore > opponentScore;
-                if (isWin) wins++;
-                else losses++;
-                
-                // Create match element from template
-                const matchElement = document.importNode(matchTemplate.content, true);
-                
-                // Set match details
-                const resultIndicator = matchElement.querySelector('.match-result-indicator');
-                const opponent = matchElement.querySelector('.match-opponent');
-                const date = matchElement.querySelector('.match-date');
-                const score = matchElement.querySelector('.match-score');
-                
-                if (resultIndicator) {
-                  resultIndicator.classList.add(isWin ? 'bg-green-500' : 'bg-red-500');
+                // Hide "no matches" message
+                if (noMatches) {
+                    noMatches.classList.add('hidden');
                 }
+    
+                // Get current user's profile to get the username
+                const profileResponse = await api.user.getProfile();
+                const currentUsername = profileResponse.success ? profileResponse.data.username : 'Unknown';
                 
-                if (opponent) opponent.textContent = opponentUsername || 'Unknown';
-                if (score) score.textContent = `${currentPlayerScore} - ${opponentScore}`;
-                
-                // Format date
-                if (date && match.created_at) {
-                  const matchDate = new Date(match.created_at);
-                  date.textContent = matchDate.toLocaleDateString();
+                // Display matches
+                if (matchesContainer && matchTemplate) {
+                    matches.forEach((match: MatchData) => {
+                        // Create match element from template
+                        const matchElement = document.importNode(matchTemplate.content, true);
+    
+                        // Determine if current user is player1 or player2
+                        const isPlayer1 = match.player1_id.toString() === userId.toString();
+                        const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
+                        const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
+                        
+                        // Set match details
+                        const resultIndicator = matchElement.querySelector('.match-result-indicator');
+                        const opponent = matchElement.querySelector('.match-opponent');
+                        const date = matchElement.querySelector('.match-date');
+                        const score = matchElement.querySelector('.match-score');
+                        
+                        // Set win/loss indicator
+                        if (resultIndicator) {
+                            resultIndicator.classList.add(currentPlayerScore > opponentScore ? 'bg-green-500' : 'bg-red-500');
+                        }
+                        
+                        // Set opponent name (show as "vs Yourself" if playing against self)
+                        if (opponent) {
+                            if (match.player1_id === match.player2_id) {
+                                opponent.textContent = 'vs Yourself (Practice)';
+                            } else {
+                                opponent.textContent = `vs ${isPlayer1 ? match.player2_username || 'Unknown' : match.player1_username || 'Unknown'}`;
+                            }
+                        }
+                        
+                        // Set score
+                        if (score) {
+                            score.textContent = `${currentPlayerScore} - ${opponentScore}`;
+                        }
+                        
+                        // Format and set date
+                        if (date && match.created_at) {
+                            const dateObj = new Date(match.created_at);
+                            date.textContent = dateObj.toLocaleDateString('fr-FR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            });
+                        }
+                        
+                        // Add match to container
+                        matchesContainer.appendChild(matchElement);
+                    });
+    
+                    // Update statistics
+                    let wins = 0;
+                    let losses = 0;
+                    matches.forEach((match: MatchData) => {
+                        const isPlayer1 = match.player1_id.toString() === userId.toString();
+                        const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
+                        const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
+                        if (currentPlayerScore > opponentScore) wins++;
+                        else losses++;
+                    });
+    
+                    if (statsGamesPlayed) statsGamesPlayed.textContent = matches.length.toString();
+                    if (statsWins) statsWins.textContent = wins.toString();
+                    if (statsLosses) statsLosses.textContent = losses.toString();
+                    if (statsRatio) {
+                        const ratio = matches.length > 0 ? (wins / matches.length).toFixed(2) : '0.00';
+                        statsRatio.textContent = ratio;
+                    }
                 }
-                
-                // Add match to container
-                matchesContainer.appendChild(matchElement);
-              });
+            } else {
+                // Show "no matches" message if no matches found
+                if (noMatches) {
+                    noMatches.classList.remove('hidden');
+                }
+                console.log('No matches found or empty response');
             }
-            
-            // Update stats
-            const total = wins + losses;
-            if (statsGamesPlayed) statsGamesPlayed.textContent = total.toString();
-            if (statsWins) statsWins.textContent = wins.toString();
-            if (statsLosses) statsLosses.textContent = losses.toString();
-            if (statsRatio) statsRatio.textContent = total > 0 ? (wins / total).toFixed(2) : '0.00';
-          } else {
-            // Show "no matches" message if no matches found
-            if (noMatches) {
-              noMatches.classList.remove('hidden');
-            }
-          }
         } catch (error) {
-          console.error('Error loading matches:', error);
-          
-          // Show "no matches" message in case of error
-          if (noMatches) {
-            noMatches.classList.remove('hidden');
-          }
+            console.error('Error loading matches:', error);
+            // Show "no matches" message in case of error
+            if (noMatches) {
+                noMatches.classList.remove('hidden');
+            }
         }
     }
     
@@ -529,4 +625,35 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
+    // After DOMContentLoaded and element selection
+    const websocketService = (window as any).websocketService;
+    const currentUserId = authService.getUserId && authService.getUserId();
+    function setStatusUI(status: string) {
+        if (profileStatus) {
+            if (status === 'online') {
+                profileStatus.textContent = 'En ligne';
+                profileStatus.classList.remove('text-gray-600');
+                profileStatus.classList.add('text-green-500');
+            } else if (status === 'in_game') {
+                profileStatus.textContent = 'En jeu';
+                profileStatus.classList.remove('text-gray-600');
+                profileStatus.classList.add('text-blue-500');
+            } else {
+                profileStatus.textContent = 'Hors ligne';
+                profileStatus.classList.remove('text-green-500', 'text-blue-500');
+                profileStatus.classList.add('text-gray-600');
+            }
+        }
+    }
+    // Listen for status changes for the current user
+    if (websocketService && websocketService.on && currentUserId) {
+        websocketService.on('friend-status-change', (data: any) => {
+            if (data.friend_id === Number(currentUserId)) {
+                setStatusUI(data.status);
+            }
+        });
+    }
+    // Optionally, fetch and set initial status from API or localStorage
+    // ... existing code ...
 });

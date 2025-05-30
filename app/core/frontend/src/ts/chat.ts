@@ -649,7 +649,7 @@ export class ChatManager {
             
             if (acceptBtn) {
                 acceptBtn.addEventListener('click', () => {
-                    this.acceptGameInvitation(inviteData.id);
+                    this.acceptGameInvitation(inviteData.id, inviteData.receiver_id, inviteData.sender_id);
                     actionsDiv.innerHTML = `<span class="text-green-300 text-xs">✓ Acceptée</span>`;
                 });
             }
@@ -1140,7 +1140,7 @@ export class ChatManager {
     }
     
     // Method to accept game invitation
-    acceptGameInvitation(inviteId: number) {
+    async acceptGameInvitation(inviteId: number, user_id: number, friend_id: number) {
         console.log(`🎮 Accepting game invitation ${inviteId}`);
         
         const websocketService = (window as any).websocketService;
@@ -1148,6 +1148,26 @@ export class ChatManager {
             websocketService.send('game-invite-accept', { inviteId });
             console.log('🎮 Game invitation accepted, redirecting...');
             
+
+            const respond = await api.game.createMatch(user_id, friend_id);
+            
+            localStorage.setItem('matchType', JSON.stringify({
+			    type: 'friend',
+		    }));
+
+            const match = respond.data;
+
+            localStorage.setItem('matchItem', JSON.stringify({
+			    id: match.id,
+                player1_id: match.player1_id,
+                player2_id: match.player2_id,
+                player1_score: match.player1_score,
+                player2_score: match.player2_score,
+                status: match.status,
+                created_at: match.createdAt,
+                updated_at: match.updatedAt,
+		    }));
+
             // Redirect to game page
             setTimeout(() => {
                 window.location.href = '/game.html';
@@ -1354,4 +1374,20 @@ export const chatManager = new ChatManager();
 if (typeof window !== 'undefined') {
     (window as any).chatManager = chatManager;
     (window as any).ChatManager = ChatManager;
+}
+
+// Add after DOMContentLoaded or chat manager initialization
+const websocketService = (window as any).websocketService;
+function setChatPartnerStatusUI(friendId: number, status: string) {
+    // Implement this to update the chat UI for the partner's status
+    // Example: document.querySelector(`#chat-status-${friendId}`)?.textContent = status;
+}
+if (websocketService && websocketService.on) {
+    websocketService.on('friend-status-change', (data: any) => {
+        // If the status change is for the current chat partner, update UI
+        const chatManager = (window as any).chatManager;
+        if (chatManager && chatManager.getCurrentChatUserId && chatManager.getCurrentChatUserId() === data.friend_id) {
+            setChatPartnerStatusUI(data.friend_id, data.status);
+        }
+    });
 } 

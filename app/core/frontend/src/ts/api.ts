@@ -1,7 +1,12 @@
-// API URL configuration
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'http://localhost:3000'  
-  : window.location.origin;  // Use the same origin in production
+// // API URL configuration
+
+
+export const API_URL = (
+  window.location.hostname === 'localhost' &&
+  window.location.port === '5173'
+)
+  ? 'http://localhost:3000'
+  : '/api';
 
 // Types for API responses
 export interface UserProfile {
@@ -24,9 +29,9 @@ export interface MatchData {
   player1_score: number;
   player2_score: number;
   winner_id?: number;
-  status?: string;
-  created_at: string;
-  updated_at: string;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Helper for API requests
@@ -232,7 +237,7 @@ export const api = {
     },
 
     async getMatches(): Promise<{ success: boolean; data?: MatchData[]; message?: string }> {
-      return request('/users/matches');
+      return request('/matches/user');  // Changed from '/users/matches' to '/matches/user'
     },
     
     async getAll() {
@@ -241,6 +246,10 @@ export const api = {
     
     async searchUsers(username: string) {
       return request(`/users/search?username=${encodeURIComponent(username)}`);
+    },
+
+    async getUser(id: number) {
+      return request(`/users/${id}/profile`);
     },
 
     async checkUsername(username: string) {
@@ -307,7 +316,21 @@ export const api = {
   game: {
     async getAllMatches() {
       return request('/game/matches');
-    }
+    },
+
+    async createMatch(player1: number, player2: number) {
+      return request('/matches', {
+        method: 'POST',
+        body: JSON.stringify({ player1_id: player1, player2_id: player2 }),
+      })
+    },
+
+    async updateMatch(id: number, player1_score: number, player2_score: number, status: string) {
+      return request(`/matches/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify( { player1_score: player1_score, player2_score: player2_score, status: status }),
+      })
+    },
   },
 
   // Chat services
@@ -336,7 +359,45 @@ export const api = {
     async getBlockedUsers() {
       return request('/chat/blocks');
     }
-  }
+  },
+
+  // Tournament services - Creation d'un tournamene et des matches_tournament sur la DB
+  tournament: {
+    async createTournament(host_id: number, users: string[]) {
+      return request('/tournaments', {
+        method: 'POST',
+        body: JSON.stringify( {host_id: host_id, users: users} ),
+      })
+    },
+
+    async updateStatusTournament(id: number, status: string) {
+      return request('/tournaments/status', {
+        method: 'PATCH',
+        body: JSON.stringify( {id: id, status: status} ),
+      })
+    },
+
+    async createMatchTournament(host_id: number, player1: string, player2: string) {
+      return request('/match_tournaments', {
+        method: 'POST',
+        body: JSON.stringify( {tournament_id: host_id, player1_name: player1, player2_name: player2} )
+      })
+    },
+
+    async updateScoreMatchTournament(id: number, p1_score: number, p2_score: number, winner: string) {
+      return request('/match_tournaments/scores', {
+        method: 'PATCH',
+        body: JSON.stringify( {id: id, player1_score: p1_score, player2_score: p2_score, winner_name: winner} )
+      })
+    },
+
+    async updateStatusMatchTournament(id: number, status: string) {
+      return request('/match_tournaments/status', {
+        method: 'PATCH',
+        body: JSON.stringify( {id: id, status: status} )
+      })
+    },
+  },
 };
 
 // Pour la rétrocompatibilité, on expose aussi API globalement

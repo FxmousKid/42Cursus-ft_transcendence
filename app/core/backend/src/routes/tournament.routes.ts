@@ -109,8 +109,9 @@ export function registerTournamentRoutes(fastify: FastifyInstance) {
 		schema: {
 			body: {
 				type: 'object',
-				required: ['status'],
+				required: ['id', 'status'],
 				properties: {
+					id: { type: 'number' },
 					status: { type: 'string', enum: ['on-going', 'finished'] }
 				}
 			},
@@ -161,6 +162,7 @@ export function registerTournamentRoutes(fastify: FastifyInstance) {
 		}
 	});
 
+	// Create a tournament dans la DB
 	fastify.post<{ Body: TournamentBody}>('/tournaments', {
 		schema: {
 			  body: {
@@ -218,7 +220,7 @@ export function registerTournamentRoutes(fastify: FastifyInstance) {
 				// Return user info and token
 				return reply.status(201).send({
 				  success: true,
-				  data: {newTournament}
+				  data: {id: newTournament.id, host_id: newTournament.host_id, users: newTournament.users, status: newTournament.status}
 				});
 			  } catch (error) {
 				fastify.log.error(error);

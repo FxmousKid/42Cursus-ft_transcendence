@@ -45,7 +45,7 @@ const sequelize = new Sequelize({
 });
 
 // Plugin to add the database connection to the Fastify instance
-export const configureDatabasePlugin = fp(async (fastify, options) => {
+export const configureDatabasePlugin = fp(async (fastify) => {
   try {
     // Initialize database connection
     await sequelize.authenticate();
