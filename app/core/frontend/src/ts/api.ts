@@ -214,7 +214,34 @@ export const api = {
       return request('/auth/logout', {
         method: 'POST'
       });
-    }
+    },
+    
+	async verify2FA(userId: number, code: string) {
+      return request('/auth/2fa/verify', {
+        method: 'POST',
+        body: JSON.stringify({ userId, code })
+      });
+    },
+
+    async setup2FA() {
+      return request('/auth/2fa/setup', {
+        method: 'GET'
+      });
+    },
+
+    async enable2FA(code: string) {
+      return request('/auth/2fa/enable', {
+        method: 'POST',
+        body: JSON.stringify({ code })
+      });
+    },
+
+    async disable2FA(userID: any) {
+      return request('/auth/2fa/disable', {
+        method: 'POST',
+		body: JSON.stringify({ userID })
+      });
+    },
   },
   
   // User services

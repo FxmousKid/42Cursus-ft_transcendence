@@ -137,6 +137,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
                 status: { type: 'string' },
                 avatar_url: { type: ['string', 'null'] },
                 has_avatar_data: { type: 'boolean' },
+                two_factor_enabled: { type: 'boolean' },
               }
             }
           }
@@ -147,7 +148,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const user = await fastify.db.models.User.findByPk(request.user!.id, {
-          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data']
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data', 'two_factor_enabled']
         });
 
         if (!user) {
@@ -160,7 +161,8 @@ export function registerUserRoutes(fastify: FastifyInstance) {
           email: user.email,
           status: user.status,
           avatar_url: user.avatar_url,
-          has_avatar_data: !!user.avatar_data
+          has_avatar_data: !!user.avatar_data,
+          two_factor_enabled: user.two_factor_enabled
         };
         
         return { success: true, data: userData };
@@ -401,7 +403,8 @@ export function registerUserRoutes(fastify: FastifyInstance) {
           email: user.email,
           status: user.status,
           avatar_url: user.avatar_url,
-          has_avatar_data: !!user.avatar_data
+          has_avatar_data: !!user.avatar_data,
+          two_factor_enabled: user.two_factor_enabled
         };
         
         return { success: true, data: userData };
@@ -581,7 +584,7 @@ export function registerUserRoutes(fastify: FastifyInstance) {
 
         // Get user basic info
         const user = await fastify.db.models.User.findByPk(userId, {
-          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data', 'createdAt']
+          attributes: ['id', 'username', 'email', 'status', 'avatar_url', 'avatar_data', 'createdAt', 'two_factor_enabled']
         });
 
         if (!user) {
@@ -622,12 +625,13 @@ export function registerUserRoutes(fastify: FastifyInstance) {
           avatar_url: user.avatar_url,
           has_avatar_data: !!user.avatar_data,
           created_at: user.createdAt,
+          two_factor_enabled: user.two_factor_enabled,
           statistics: {
             games_played: gamesPlayed,
             wins: wins,
             losses: losses,
             win_rate: winRate
-          }
+          },
         };
 
         return { success: true, data: userData };

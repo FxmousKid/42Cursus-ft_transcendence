@@ -151,7 +151,7 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
             return reply.status(400).send({ success: false, message: error.message });
         }
     }
-  });
+  }),
 
   // Get match by ID
   fastify.get('/matches/:id', {
