@@ -1,6 +1,4 @@
-// // API URL configuration
-
-
+// API URL configuration
 export const API_URL = (
   window.location.hostname === 'localhost' &&
   window.location.port === '5173'
@@ -30,6 +28,7 @@ export interface MatchData {
   player2_score: number;
   winner_id?: number;
   status: string;
+  match_date?: string; // Added for Paris timezone match completion time
   created_at?: string;
   updated_at?: string;
 }

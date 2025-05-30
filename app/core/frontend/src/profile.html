@@ -22,10 +22,9 @@
                     <!-- Avatar with upload functionality -->
                     <div class="relative">
                         <div id="profile-avatar" class="w-32 h-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mb-4 flex items-center justify-center overflow-hidden border-2 border-primary-600 shadow-md cursor-pointer hover:border-primary-500 transition-colors group">
-                            <!-- L'avatar sera inséré ici via JavaScript -->
                             <i class="fas fa-user text-white text-5xl"></i>
                             
-                            <!-- Overlay simple qui apparaît au hover -->
+                            <!-- Overlay hover -->
                             <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center rounded-full pointer-events-none">
                                 <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-white text-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -37,7 +36,7 @@
                             </div>
                         </div>
                         
-                        <!-- Bouton supprimer (visible seulement si avatar présent) -->
+                        <!-- Bouton supprimer -->
                         <button id="remove-avatar-btn" class="hidden absolute top-0 right-0 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors shadow-lg">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -45,11 +44,11 @@
                         </button>
                     </div>
                     
-                    <!-- Hidden file input for avatar upload -->
+                    <!-- Hidden file input -->
                     <input type="file" id="avatar-upload-input" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden">
                     
-                    <h2 id="profile-username" class="text-xl font-semibold text-white"></h2>
-                    <p id="profile-email" class="text-gray-400"></p>
+                    <h2 id="profile-username" class="text-xl font-semibold text-white">Chargement...</h2>
+                    <p id="profile-email" class="text-gray-400">Chargement...</p>
                 </div>
                 
                 <button id="edit-profile-button" class="btn-primary w-full py-2.5 px-4 mb-4">
@@ -107,7 +106,7 @@
                 <div class="card">
                     <h3 class="text-xl font-semibold mb-5 text-white">Historique des matchs</h3>
                     <div id="matches-container" class="space-y-3">
-                        <!-- Les matchs seront insérés ici via JavaScript -->
+                        <!-- Les matchs seront insérés ici -->
                     </div>
                     
                     <div id="no-matches" class="text-center py-8 text-gray-500">
@@ -136,16 +135,12 @@
                     <div>
                         <label for="edit-avatar" class="block text-gray-300 mb-2">URL de l'avatar (externe)</label>
                         <input type="url" id="edit-avatar" name="avatar_url" class="input-field w-full" placeholder="https://example.com/avatar.jpg">
-                        <p class="text-sm text-gray-500 mt-1">Pour télécharger une image, cliquez sur votre avatar dans le profil</p>
+                        <p class="text-sm text-gray-500 mt-1">Pour télécharger une image, cliquez sur votre avatar</p>
                     </div>
                     
                     <div class="flex justify-end space-x-3 pt-4">
-                        <button type="button" id="cancel-edit" class="btn-secondary">
-                            Annuler
-                        </button>
-                        <button type="submit" class="btn-primary">
-                            Enregistrer
-                        </button>
+                        <button type="button" id="cancel-edit" class="btn-secondary">Annuler</button>
+                        <button type="submit" class="btn-primary">Enregistrer</button>
                     </div>
                 </form>
                 
@@ -155,59 +150,15 @@
             </div>
         </div>
         
-        <!-- 2FA Setup Modal -->
-        <div id="2fa-setup-modal" class="fixed inset-0 bg-dark-900/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-            <div class="bg-dark-800 border border-dark-600 rounded-xl p-6 max-w-md w-full">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-white">Configuration 2FA</h3>
-                    <button id="close-2fa-setup" class="text-gray-400 hover:text-white">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <div class="space-y-4">
-                    <div id="2fa-qr-container" class="flex justify-center p-4 bg-white rounded-lg">
-                        <!-- QR code will be inserted here -->
-                    </div>
-                    
-                    <div class="text-center">
-                        <p class="text-gray-300 mb-2">Scannez ce QR code avec votre application d'authentification</p>
-                        <p class="text-sm text-gray-400">Ou entrez manuellement cette clé :</p>
-                        <code id="2fa-secret" class="block mt-2 p-2 bg-dark-700 rounded text-primary-400 font-mono text-sm"></code>
-                    </div>
-                    
-                    <div class="mt-4">
-                        <label for="2fa-verification-code" class="block text-gray-300 mb-2">Code de vérification</label>
-                        <input type="text" id="2fa-verification-code" class="input-field w-full" placeholder="Entrez le code à 6 chiffres" maxlength="6" pattern="[0-9]*" inputmode="numeric">
-                    </div>
-                    
-                    <div id="2fa-setup-error" class="hidden p-3 bg-red-900/30 border-l-4 border-red-500 text-red-300 rounded-lg">
-                        <span id="2fa-setup-error-text"></span>
-                    </div>
-                    
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <button id="cancel-2fa-setup" class="btn-secondary">
-                            Annuler
-                        </button>
-                        <button id="verify-2fa-setup" class="btn-primary">
-                            Activer
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Modal de confirmation de suppression de compte -->
+        <!-- Modal de suppression -->
         <div id="delete-account-modal" class="fixed inset-0 bg-dark-900/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
             <div class="card max-w-md w-full">
                 <h2 class="text-2xl font-bold mb-5 text-red-500">Supprimer mon compte</h2>
                 
-                <p class="text-gray-300 mb-6">Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et entraînera la suppression de toutes vos données.</p>
+                <p class="text-gray-300 mb-6">Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.</p>
                 
                 <div class="flex justify-end space-x-3 pt-4">
-                    <button type="button" id="cancel-delete" class="btn-secondary">
-                        Annuler
-                    </button>
+                    <button type="button" id="cancel-delete" class="btn-secondary">Annuler</button>
                     <button type="button" id="confirm-delete" class="bg-red-600 hover:bg-red-700 text-white font-medium rounded-md py-2 px-4 transition-colors">
                         Confirmer la suppression
                     </button>
@@ -220,33 +171,82 @@
         </div>
     </main>
     
-    <!-- Pied de page -->
-    <div id="footer-container"></div>
-    
     <!-- Template pour un match -->
     <template id="match-template">
-        <div class="match-item bg-dark-700 border border-dark-600 rounded-lg p-4 flex items-center justify-between hover:border-primary-700 transition-colors">
+        <div class="match-item bg-dark-700 border border-dark-600 rounded-lg p-4 flex items-center justify-between hover:border-primary-700 transition-colors shadow">
             <div class="flex items-center">
-                <div class="match-result-indicator w-4 h-full mr-3"></div>
+                <div class="match-result-indicator w-2 h-12 rounded mr-4"></div>
                 <div>
                     <p class="font-medium match-opponent text-white"></p>
-                    <p class="text-sm text-gray-400 match-date"></p>
+                    <div class="match-result-label flex items-center mt-1 text-sm font-semibold"></div>
                 </div>
             </div>
-            <div class="text-xl font-bold match-score text-white"></div>
+            <div class="flex flex-col items-end">
+                <div class="text-xl font-bold match-score text-white mb-2"></div>
+                <div class="match-date text-sm text-gray-400 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span></span>
+                </div>
+            </div>
         </div>
     </template>
     
-    <!-- Core scripts -->
+    <!-- Scripts -->
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/websocket.js"></script>
-    
-    <!-- App initialization and utilities (load these first) -->
     <script src="js/header-loader.js"></script>
     <script src="js/route-guard.js"></script>
-    
-    <!-- Page-specific script (load this last) -->
     <script src="js/profile.js"></script>
 </body>
+
+<style>
+/* Match styling */
+.match-item {
+    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.match-item:hover {
+    box-shadow: 0 4px 16px 0 rgba(0,0,0,0.18);
+    border-color: #6366f1;
+}
+
+.match-win .match-result-indicator {
+    background: linear-gradient(135deg, #22c55e 60%, #16a34a 100%);
+}
+
+.match-loss .match-result-indicator {
+    background: linear-gradient(135deg, #ef4444 60%, #b91c1c 100%);
+}
+
+.match-win .match-result-label {
+    color: #22c55e;
+}
+
+.match-loss .match-result-label {
+    color: #ef4444;
+}
+
+.match-date {
+    color: #9ca3af;
+    font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .match-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .match-item .flex.flex-col.items-end {
+        align-items: flex-start;
+        width: 100%;
+    }
+}
+</style>
 </html>
