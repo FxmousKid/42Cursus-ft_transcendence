@@ -166,15 +166,18 @@
     
     <!-- Template pour un match -->
     <template id="match-template">
-        <div class="match-item bg-dark-700 border border-dark-600 rounded-lg p-4 flex items-center justify-between hover:border-primary-700 transition-colors">
+        <div class="match-item bg-dark-700 border border-dark-600 rounded-lg p-4 flex items-center justify-between hover:border-primary-700 transition-colors shadow match-result">
             <div class="flex items-center">
-                <div class="match-result-indicator w-4 h-full mr-3"></div>
+                <div class="match-result-indicator w-2 h-12 rounded mr-4"></div>
                 <div>
                     <p class="font-medium match-opponent text-white"></p>
-                    <p class="text-sm text-gray-400 match-date"></p>
+                    <div class="match-result-label flex items-center mt-1 text-sm font-semibold"></div>
                 </div>
             </div>
-            <div class="text-xl font-bold match-score text-white"></div>
+            <div class="flex flex-col items-end justify-center">
+                <div class="text-xl font-bold match-score text-white"></div>
+                <div class="match-date flex items-center mt-1 text-base font-medium"></div>
+            </div>
         </div>
     </template>
     
@@ -190,4 +193,40 @@
     <!-- Page-specific script (load this last) -->
     <script src="js/profile.js"></script>
 </body>
+
+<style>
+.match-item {
+    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+.match-item:hover {
+    box-shadow: 0 4px 16px 0 rgba(0,0,0,0.18);
+    border-color: #6366f1;
+}
+.match-win .match-result-indicator {
+    background: linear-gradient(135deg, #22c55e 60%, #16a34a 100%);
+}
+.match-loss .match-result-indicator {
+    background: linear-gradient(135deg, #ef4444 60%, #b91c1c 100%);
+}
+.match-win .match-result-label {
+    color: #22c55e;
+}
+.match-loss .match-result-label {
+    color: #ef4444;
+}
+.match-result-label svg {
+    margin-right: 0.3em;
+}
+.match-date {
+    color: #e5e7eb;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+}
+.match-date svg {
+    margin-right: 0.3em;
+    color: #a1a1aa;
+}
+</style>
 </html>

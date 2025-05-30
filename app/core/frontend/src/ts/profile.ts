@@ -460,10 +460,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                             const opponent = matchElement.querySelector('.match-opponent');
                             const date = matchElement.querySelector('.match-date');
                             const score = matchElement.querySelector('.match-score');
+                            const resultLabel = matchElement.querySelector('.match-result-label');
+                            const matchItem = matchElement.querySelector('.match-item');
                             
-                            // Set win/loss indicator
-                            if (resultIndicator) {
-                                resultIndicator.classList.add(currentPlayerScore > opponentScore ? 'bg-green-500' : 'bg-red-500');
+                            // Set win/loss indicator and label
+                            let isWin = currentPlayerScore > opponentScore;
+                            if (matchItem) {
+                                matchItem.classList.add(isWin ? 'match-win' : 'match-loss');
+                            }
+                            if (resultLabel) {
+                                if (isWin) {
+                                    resultLabel.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' class='inline h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'><path stroke-linecap='round' stroke-linejoin='round' d='M8 21h8M12 17v4m-6-4a6 6 0 1112 0H6z' /></svg> Victoire`;
+                                } else {
+                                    resultLabel.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' class='inline h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'><path stroke-linecap='round' stroke-linejoin='round' d='M6 18L18 6M6 6l12 12' /></svg> Défaite`;
+                                }
                             }
                             
                             // Set opponent name (show as "vs Yourself" if playing against self)
@@ -480,14 +490,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 score.textContent = `${currentPlayerScore} - ${opponentScore}`;
                             }
                             
-                            // Format and set date
+                            // Format and set date (now on the right, under the score, with a clock icon)
                             if (date && match.created_at) {
                                 const dateObj = new Date(match.created_at);
-                                date.textContent = dateObj.toLocaleDateString('fr-FR', {
+                                const formatted = dateObj.toLocaleString('fr-FR', {
                                     year: 'numeric',
                                     month: 'long',
-                                    day: 'numeric'
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false,
+                                    timeZone: 'Europe/Paris'
                                 });
+                                date.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' class='inline h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'><path stroke-linecap='round' stroke-linejoin='round' d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' /></svg> ${formatted}`;
                             }
                             
                             // Add match to container
