@@ -63,7 +63,6 @@ class PongGame {
     // DOM elements
     private elements: {
         startBtn: HTMLButtonElement;
-        resetBtn: HTMLButtonElement;
         leftScore: HTMLElement;
         rightScore: HTMLElement;
         leftCard: HTMLElement;
@@ -77,7 +76,6 @@ class PongGame {
         // Cache DOM elements
         this.elements = {
             startBtn: document.getElementById('start-button') as HTMLButtonElement,
-            resetBtn: document.getElementById('reset-button') as HTMLButtonElement,
             leftScore: document.getElementById('player-left-score') as HTMLElement,
             rightScore: document.getElementById('player-right-score') as HTMLElement,
             leftCard: document.getElementById('player-left-card') as HTMLElement,
@@ -196,7 +194,6 @@ class PongGame {
         
         // Button controls
         this.elements.startBtn.addEventListener('click', () => this.handleStartButton());
-        this.elements.resetBtn.addEventListener('click', () => this.resetGame());
     }
     
     private handleStartButton(): void {
