@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Player Setup - ft_transcendence</title>
     <link rel="stylesheet" href="css/output.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     <meta name="description" content="ft_transcendence - Player name input page">
 </head>
 <body class="flex flex-col min-h-screen bg-dark-800">
@@ -14,16 +15,56 @@
 
     <!-- Contenu principal -->
     <main class="flex-grow flex items-center justify-center p-4">
-        <div class="w-full max-w-md text-center">
-            <h1 class="text-2xl font-semibold text-gray-200 mb-4">Enter Player Names</h1>
-            <form id="player-form" class="space-y-3"></form>
+        <div class="w-full max-w-lg text-center">
+            <!-- Page title with icon -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-white flex items-center justify-center mb-3">
+                    Enter Player Names
+                </h1>
+                <div class="inline-flex">
+                    <span class="bg-dark-700/80 text-blue-400 px-4 py-2 rounded-lg font-medium text-sm border border-dark-600 uppercase tracking-wide shadow-inner">
+                        Setup Tournament
+                    </span>
+                </div>
+            </div>
 
-            <button id="add-player" type="button" class="mt-3 w-full bg-blue-800 hover:bg-blue-600 text-white py-2 rounded-lg font-semibold">
-                ➕ Add Player
-            </button>
+            <!-- Main card with glassmorphism styling -->
+            <div class="glass rounded-xl shadow-xl p-8 relative overflow-hidden transition-custom hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/5">
+                <!-- Top accent line -->
+                <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
+                
+                <!-- Players form section -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-center mb-4">
+                        <h2 class="text-xl font-semibold text-white">Tournament Players</h2>
+                    </div>
+                    
+                    <form id="player-form" class="space-y-4"></form>
+                </div>
 
-            <button id="start-button" type="button" class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg text-lg font-bold hidden">
-                Start
+                <!-- Add player button -->
+                <button id="add-player" type="button" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-6 rounded-xl font-semibold transition-custom border border-blue-500/50 shadow-lg hover:shadow-blue-500/25 hover:scale-105 flex items-center justify-center mb-4">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add Player
+                </button>
+
+                <!-- Match info footer -->
+                <div class="border-t border-dark-600/70 pt-4 mt-6">
+                    <div class="flex items-center justify-center text-sm text-gray-400">
+                        <div class="flex items-center">
+                            <i class="fas fa-info-circle mr-1.5"></i>
+                            <span>Add players to start the tournament</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bottom accent line -->
+                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
+            </div>
+
+            <!-- Start tournament button -->
+            <button id="start-button" type="button" class="mt-8 w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-4 px-8 rounded-xl text-xl font-bold transition-custom border border-green-500/50 shadow-lg hover:shadow-green-500/25 hover:scale-105 flex items-center justify-center hidden">
+                Start Tournament
             </button>
         </div>
     </main>
@@ -35,5 +76,7 @@
     <script src="js/header-loader.js"></script>
     <script src="js/route-guard.js"></script>
     <script type="module" src="js/tournament.js"></script>
+
+
 </body>
 </html>

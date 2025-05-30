@@ -14,7 +14,6 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log('Open tournament round with player: ', tournamentService.getCurrentMatch().player1_name, ' ', tournamentService.getCurrentMatch().player2_name);
         document.getElementById('player1')!.textContent = tournamentService.getCurrentMatch().player1_name;
         document.getElementById('player2')!.textContent = tournamentService.getCurrentMatch().player2_name;
-        document.getElementById('text-round')!.textContent = "Upcoming Match Round: " + tournamentService.getRound();
     }
 });
 

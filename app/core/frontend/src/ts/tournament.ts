@@ -16,21 +16,22 @@ function updateStartVisibility() {
     startButton.classList.toggle('hidden', inputs.length < 2);
 }
 
-function createPlayerField(index: number) {
+function createPlayerField(index: number, first: boolean) {
     const container = document.createElement(`div`);
-    container.className = 'flex items-center gap-2';
+    container.className = 'bg-dark-700/50 border border-dark-600/70 rounded-xl p-4 transition-custom hover:border-blue-500/30 relative flex items-center gap-3';
 
     const input = document.createElement('input');
     input.type = 'text';
     input.name = `player${index}`;
     input.placeholder = `Player ${index}`;
     input.required = true;
-    input.className = 'flex-1 p-2 rounded-lg border bg-blue-800 border-gray-800';
+    input.className = 'bg-blue-800 border border-gray-800 text-gray-200 rounded-xl py-3 px-4 shadow-inner focus:outline-none focus:border-blue-500/70 focus:ring-1 focus:ring-blue-500/50 transition-custom placeholder-gray-400';
+    input.style.width = 'calc(100% - 44px)'; // Reserve space for remove button (32px + 12px gap)
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
-    removeBtn.textContent = '❌';
-    removeBtn.className = 'text-red-500 hover:text-red-700 font-bold px-2';
+    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    removeBtn.className = 'w-8 h-8 bg-dark-600/60 hover:bg-red-500/80 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-custom text-sm opacity-70 hover:opacity-100 flex-shrink-0';
     removeBtn.addEventListener('click', () => {
         form.removeChild(container);
         playerCount--;
@@ -42,13 +43,14 @@ function createPlayerField(index: number) {
         updatePlayerIndices();
     });
     container.appendChild(input);
-    container.appendChild(removeBtn);
-
+    if (!first) {
+        container.appendChild(removeBtn);
+    }
     return container;
 }
 
 function updatePlayerIndices() {
-  const containers = form.querySelectorAll('.flex.items-center.gap-2');
+  const containers = form.querySelectorAll('.flex.items-center.gap-3');
   containers.forEach((container, index) => {
     const input = container.querySelector('input');
     if (input) {
@@ -59,10 +61,10 @@ function updatePlayerIndices() {
   });
 }
 
-function addPlayerField() {
+function addPlayerField(first: boolean) {
     if (playerCount >= maxPlayers) return;
     playerCount++;
-    const field = createPlayerField(playerCount);
+    const field = createPlayerField(playerCount, first);
     form.appendChild(field);
 
     updateStartVisibility();
@@ -74,10 +76,10 @@ function addPlayerField() {
 }
 
 // Initial field
-addPlayerField();
+addPlayerField(true);
 
 addButton.addEventListener('click', () => {
-    addPlayerField();
+    addPlayerField(false);
 });
 
 function suffleArray(array: string[]) {
@@ -113,7 +115,7 @@ async function createTournament(users: string[]) {
     await tournamentService.createMatchs(tournamentValue.users); // creation des matchs
     tournamentService.saveToStorage();
 
-    window.location.href = '/tournament_round.html';
+    window.location.href = '/tournament_show.html';
 }
 
 startButton.addEventListener('click', () => {
@@ -121,7 +123,17 @@ startButton.addEventListener('click', () => {
         .map(input => (input as HTMLInputElement).value.trim())
         .filter(name => name !== '');
 
+    
+
     if (names.length >= 2) {
+        for (let i = 0; i < names.length; i++) {
+            for (let j = 0; j < names.length; j++) {
+                if (names[i] == names[j] && i != j) {
+                    alert('Please enter different names: ' + names[i]);
+                    return;
+                }
+            }
+        }
         createTournament(names);
     } else {
         alert('Please enter at least 2 player names.');
