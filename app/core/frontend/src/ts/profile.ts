@@ -625,4 +625,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     }
+
+    // After DOMContentLoaded and element selection
+    const websocketService = (window as any).websocketService;
+    const currentUserId = authService.getUserId && authService.getUserId();
+    function setStatusUI(status: string) {
+        if (profileStatus) {
+            if (status === 'online') {
+                profileStatus.textContent = 'En ligne';
+                profileStatus.classList.remove('text-gray-600');
+                profileStatus.classList.add('text-green-500');
+            } else if (status === 'in_game') {
+                profileStatus.textContent = 'En jeu';
+                profileStatus.classList.remove('text-gray-600');
+                profileStatus.classList.add('text-blue-500');
+            } else {
+                profileStatus.textContent = 'Hors ligne';
+                profileStatus.classList.remove('text-green-500', 'text-blue-500');
+                profileStatus.classList.add('text-gray-600');
+            }
+        }
+    }
+    // Listen for status changes for the current user
+    if (websocketService && websocketService.on && currentUserId) {
+        websocketService.on('friend-status-change', (data: any) => {
+            if (data.friend_id === Number(currentUserId)) {
+                setStatusUI(data.status);
+            }
+        });
+    }
+    // Optionally, fetch and set initial status from API or localStorage
+    // ... existing code ...
 });
