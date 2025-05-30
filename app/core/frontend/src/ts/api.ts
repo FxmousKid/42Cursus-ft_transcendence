@@ -361,6 +361,7 @@ export const api = {
     }
   },
 
+  // Tournament services - Creation d'un tournamene et des matches_tournament sur la DB
   tournament: {
     async createTournament(host_id: number, users: string[]) {
       return request('/tournaments', {

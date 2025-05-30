@@ -110,7 +110,7 @@ async function createTournament(users: string[]) {
     console.log('Tournament create: ', tournamentValue);
 
     tournamentService.setValue(tournamentValue.id, tournamentValue.users);
-    await tournamentService.createMatchs(tournamentValue.users);
+    await tournamentService.createMatchs(tournamentValue.users); // creation des matchs
     tournamentService.saveToStorage();
 
     window.location.href = '/tournament_round.html';

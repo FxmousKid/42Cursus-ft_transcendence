@@ -143,17 +143,13 @@ export class BlockchainService {
         // Vérifier si le contrat existe déjà
         const code = await this.provider!.getCode(contractAddress);
         if (code !== '0x') {
-          this.fastify.log.info(`Contract already deployed at: ${contractAddress}`);
           return contractAddress;
         }
       } catch (error) {
-        this.fastify.log.warn('Contract verification failed, will redeploy');
+        // Contract verification failed, will redeploy
       }
     }
 
-    // Déployer le contrat
-    this.fastify.log.info('Deploying TournamentScores contract...');
-    
     // Lire le contrat compilé
     const artifactPath = path.join(process.cwd(), 'blockchain/artifacts/blockchain/contracts/TournamentScores.sol/TournamentScores.json');
     const artifact = JSON.parse(await fs.readFile(artifactPath, 'utf8'));
@@ -164,7 +160,6 @@ export class BlockchainService {
     await contract.waitForDeployment();
     
     const deployedAddress = await contract.getAddress();
-    this.fastify.log.info(`Contract deployed successfully at: ${deployedAddress}`);
     
     return deployedAddress;
   }
@@ -186,15 +181,15 @@ export class BlockchainService {
       const isLocalNetwork = rpcUrl.includes('localhost') || rpcUrl.includes('127.0.0.1');
       
       if (isLocalNetwork) {
-        // 🚀 MODE LOCAL : Auto-démarrage du réseau Hardhat
-        this.fastify.log.info('🏠 Mode LOCAL détecté - Démarrage automatique du réseau Hardhat');
+        // MODE LOCAL : Auto-démarrage du réseau Hardhat
+        this.fastify.log.info('Mode LOCAL détecté - Démarrage automatique du réseau Hardhat');
         const networkStarted = await this.startLocalBlockchain();
         if (!networkStarted) {
           throw new Error('Failed to start local blockchain network');
         }
       } else {
-        // 🌐 MODE TESTNET/PRODUCTION : Connexion directe
-        this.fastify.log.info('🌐 Mode TESTNET/PRODUCTION détecté - Connexion au réseau externe');
+        // MODE TESTNET/PRODUCTION : Connexion directe
+        this.fastify.log.info('MODE TESTNET détecté');
       }
 
       // Connexion au réseau
@@ -205,18 +200,18 @@ export class BlockchainService {
       const network = await this.provider.getNetwork();
       const balance = await this.provider.getBalance(this.wallet.address);
       
-      this.fastify.log.info(`✅ Réseau connecté: ${network.name} (chainId: ${network.chainId})`);
-      this.fastify.log.info(`💰 Adresse wallet: ${this.wallet.address}`);
-      this.fastify.log.info(`💰 Solde: ${ethers.formatEther(balance)} ${isLocalNetwork ? 'ETH' : 'AVAX'}`);
+      this.fastify.log.info(`Réseau connecté: ${network.name} (chainId: ${network.chainId})`);
+      this.fastify.log.info(`Adresse wallet: ${this.wallet.address}`);
+      this.fastify.log.info(`Solde: ${ethers.formatEther(balance)} ${isLocalNetwork ? 'ETH' : 'AVAX'}`);
 
       // Gestion du contrat selon le mode
       let contractAddress = process.env.TOURNAMENT_CONTRACT_ADDRESS;
       
       if (isLocalNetwork) {
-        // 🚀 MODE LOCAL : Auto-déploiement
+        // MODE LOCAL : Auto-déploiement
         contractAddress = await this.deployContractIfNeeded();
       } else {
-        // 🌐 MODE TESTNET/PRODUCTION : Utiliser l'adresse configurée
+        // MODE TESTNET/PRODUCTION : Utiliser l'adresse configurée
         if (!contractAddress) {
           throw new Error('TOURNAMENT_CONTRACT_ADDRESS must be set for testnet/production mode');
         }
@@ -227,26 +222,21 @@ export class BlockchainService {
           throw new Error(`No contract found at address: ${contractAddress}`);
         }
         
-        this.fastify.log.info(`📋 Contrat trouvé à l'adresse: ${contractAddress}`);
+        this.fastify.log.info(`Contrat trouvé à l'adresse: ${contractAddress}`);
       }
 
-      // Initialiser le contrat
+      // Initialiser le contrat avec ABI -> ABI = Application Binary Interface
+      // En gros, c'est un fichier qui décrit les fonctions et les événements du contrat
       this.contract = new ethers.Contract(contractAddress, this.contractABI, this.wallet);
-
-      // Test du contrat
-      try {
-        const matchCount = await this.contract.getTournamentMatchCount(1);
-        this.fastify.log.info(`🏆 Matchs du tournoi 1: ${matchCount}`);
-      } catch (error) {
-        this.fastify.log.warn('Impossible de tester le contrat, mais connexion établie');
+      if (!this.contract) {
+        throw new Error('Failed to initialize blockchain - contract not found');
       }
-
-      this.fastify.log.info('🎉 Service blockchain initialisé avec succès !');
+      this.fastify.log.info('Service blockchain initialisé avec succès');
       
     } catch (error) {
-      this.fastify.log.error('❌ Échec de l\'initialisation du service blockchain:', error);
+      this.fastify.log.error('Échec de l\'initialisation du service blockchain:', error);
       // Ne pas faire planter l'application, juste désactiver la blockchain
-      this.fastify.log.warn('⚠️  Les fonctionnalités blockchain seront désactivées');
+      this.fastify.log.warn('Les fonctionnalités blockchain seront désactivées');
     }
   }
 
@@ -284,7 +274,7 @@ export class BlockchainService {
 
       this.fastify.log.info(`Recording match ${matchData.id} for tournament ${matchData.tournament_id} on blockchain`);
 
-      // 🚀 ENREGISTREMENT ASYNCHRONE - Ne pas attendre la confirmation
+      // ENREGISTREMENT ASYNCHRONE - Ne pas attendre la confirmation
       this.recordMatchAsync(matchData);
 
       // Retourner immédiatement un statut "pending"
@@ -362,7 +352,7 @@ export class BlockchainService {
       // Convertir l'UUID en ID blockchain
       const blockchainMatchId = this.uuidToBlockchainId(matchData.id);
       
-      // Envoyer la transaction
+      // Envoyer la transaction - Appel du Smart Contract - recordMatch()
       const tx = await this.contract!.recordMatch(
         matchData.tournament_id,
         blockchainMatchId,
@@ -379,7 +369,7 @@ export class BlockchainService {
       const receipt = await tx.wait();
       this.fastify.log.info(`Match recorded on blockchain. Block: ${receipt?.blockNumber}`);
 
-      // Mettre à jour la base de données avec la preuve blockchain
+      // Mettre à jour blockchain_verified et blockchain_tx_hash dans la DB
       await this.updateMatchWithBlockchainProof(matchData.id, tx.hash);
 
     } catch (error) {
@@ -389,7 +379,7 @@ export class BlockchainService {
   }
 
   /**
-   * Met à jour le match avec la preuve blockchain
+   * Met à jour le match avec la preuve blockchain - blockchain_verified et blockchain_tx_hash dans la DB
    */
   private async updateMatchWithBlockchainProof(matchId: string, txHash: string): Promise<void> {
     try {
