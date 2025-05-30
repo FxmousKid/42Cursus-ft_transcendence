@@ -709,7 +709,8 @@ export function setupWebSocket(io: Server, db: DB) {
           receiver_id: friendId,
           content: 'Game invitation',
           type: 'game_invite',
-          read: false
+          read: false,
+          status: 'pending'
         });
 
         // Send invitation to friend if online
@@ -731,6 +732,98 @@ export function setupWebSocket(io: Server, db: DB) {
       } catch (error) {
         console.error('[WebSocket] Error sending game invitation:', error);
         socket.emit('error', { type: 'error', message: 'Failed to send game invitation: ' + error.message });
+      }
+    });
+
+    socket.on('game-invite-accept', async (data: { inviteId: number }) => {
+      try {
+        const { inviteId } = data;
+        
+        if (!userId) {
+          socket.emit('error', { type: 'error', message: 'You are not authenticated' });
+          return;
+        }
+
+        // Update invitation status
+        const invitation = await db.models.ChatMessage.findByPk(inviteId);
+        if (!invitation || invitation.type !== 'game_invite') {
+          socket.emit('error', { type: 'error', message: 'Invitation not found' });
+          return;
+        }
+
+        // Verify the user is the receiver
+        if (invitation.receiver_id !== userId) {
+          socket.emit('error', { type: 'error', message: 'Not authorized to accept this invitation' });
+          return;
+        }
+
+        // Update status
+        await invitation.update({ status: 'accepted' });
+
+        // Notify sender if online
+        const senderSocketId = onlineUsers.get(invitation.sender_id);
+        if (senderSocketId) {
+          io.to(senderSocketId).emit('game-invite-accepted', {
+            id: invitation.id,
+            acceptedBy: userId,
+            created_at: invitation.createdAt
+          });
+        }
+
+        // Confirm to accepter
+        socket.emit('game-invite-accept-confirmed', {
+          id: invitation.id,
+          status: 'accepted'
+        });
+      } catch (error) {
+        console.error('[WebSocket] Error accepting game invitation:', error);
+        socket.emit('error', { type: 'error', message: 'Failed to accept invitation: ' + error.message });
+      }
+    });
+
+    socket.on('game-invite-reject', async (data: { inviteId: number }) => {
+      try {
+        const { inviteId } = data;
+        
+        if (!userId) {
+          socket.emit('error', { type: 'error', message: 'You are not authenticated' });
+          return;
+        }
+
+        // Update invitation status
+        const invitation = await db.models.ChatMessage.findByPk(inviteId);
+        if (!invitation || invitation.type !== 'game_invite') {
+          socket.emit('error', { type: 'error', message: 'Invitation not found' });
+          return;
+        }
+
+        // Verify the user is the receiver
+        if (invitation.receiver_id !== userId) {
+          socket.emit('error', { type: 'error', message: 'Not authorized to reject this invitation' });
+          return;
+        }
+
+        // Update status
+        await invitation.update({ status: 'rejected' });
+
+        // Notify sender if online
+        const senderSocketId = onlineUsers.get(invitation.sender_id);
+        if (senderSocketId) {
+          io.to(senderSocketId).emit('game-invite-rejected', {
+            id: invitation.id,
+            rejectedBy: userId,
+            created_at: invitation.createdAt
+          });
+        }
+
+        // Confirm to rejector
+        socket.emit('game-invite-reject-confirmed', {
+          id: invitation.id,
+          status: 'rejected'
+        });
+      } catch (error) {
+        console.error('[WebSocket] Error rejecting game invitation:', error);
+        socket.emit('error', { type: 'error', message: 'Failed to reject invitation: ' + error.message });
       }
     });
 

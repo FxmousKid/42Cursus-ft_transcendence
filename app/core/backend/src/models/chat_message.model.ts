@@ -40,6 +40,11 @@ export class ChatMessage extends Model {
   @Column(DataType.BOOLEAN)
   declare read: boolean;
 
+  @AllowNull(true)
+  @Default('pending')
+  @Column(DataType.ENUM('pending', 'accepted', 'rejected'))
+  declare status?: 'pending' | 'accepted' | 'rejected';
+
   @BelongsTo(() => User, 'sender_id')
   declare sender: User;
 
