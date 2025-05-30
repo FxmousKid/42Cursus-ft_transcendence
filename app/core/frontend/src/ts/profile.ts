@@ -356,21 +356,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Set match details
         const opponent = matchElement.querySelector('.match-opponent');
         const resultLabel = matchElement.querySelector('.match-result-label');
+        const resultIndicator = matchElement.querySelector('.match-result-indicator');
         const score = matchElement.querySelector('.match-score');
         const dateElement = matchElement.querySelector('.match-date span');
-        
-        // Add win/loss class
-        matchElement.classList.add(isWin ? 'match-win' : 'match-loss');
         
         // Set content
         if (opponent) opponent.textContent = `vs ${opponentName || 'Joueur'}`;
         if (score) score.textContent = `${currentPlayerScore} - ${opponentScore}`;
         
-        if (resultLabel) {
-            if (isWin) {
+        // Apply win/loss styling with Tailwind classes
+        if (isWin) {
+            // Victory styling
+            if (resultIndicator) {
+                resultIndicator.className = 'w-2 h-12 rounded mr-4 bg-gradient-to-b from-green-500 to-green-600';
+            }
+            if (resultLabel) {
+                resultLabel.className = 'flex items-center mt-1 text-sm font-semibold text-green-400';
                 resultLabel.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Victoire`;
-            } else {
-                resultLabel.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>Défaite`;
+            }
+        } else {
+            // Defeat styling
+            if (resultIndicator) {
+                resultIndicator.className = 'w-2 h-12 rounded mr-4 bg-gradient-to-b from-red-500 to-red-600';
+            }
+            if (resultLabel) {
+                resultLabel.className = 'flex items-center mt-1 text-sm font-semibold text-red-400';
+                resultLabel.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>Defaite`;
             }
         }
         

@@ -76,6 +76,7 @@ export class TournamentService {
 		this.matchs[index].player1_score = player1_score;
 		this.matchs[index].player2_score = player2_score;
 		this.matchs[index].winner_name = (player1_score > player2_score) ? this.matchs[index].player1_name : this.matchs[index].player2_name;
+		this.matchs[index].status = 'completed';
 		this.winners.push( this.matchs[index].winner_name );
 
 		await api.tournament.updateScoreMatchTournament( this.matchs[index].id, this.matchs[index].player1_score,
@@ -88,9 +89,11 @@ export class TournamentService {
 		if (this.current >= this.matchs.length) {
 			if (this.winners.length > 1) {
 				await this.goToNextRound();
+				await this.saveToStorage();
 			}
 		}
 		await this.saveToStorage();
+		window.location.href = '/tournament_show.html';
 	}
 
 	async isFinished() {

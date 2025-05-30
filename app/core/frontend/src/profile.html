@@ -6,6 +6,7 @@
     <title>Profil - ft_transcendence</title>
     <link rel="stylesheet" href="css/output.css">
     <meta name="description" content="Gérez votre profil sur ft_transcendence, consultez vos statistiques et modifiez vos informations.">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
 </head>
 <body class="flex flex-col min-h-screen bg-dark-800 text-gray-200">
     <!-- En-tête -->
@@ -243,14 +244,14 @@
         </div>
     </main>
     
-    <!-- Template pour un match -->
+   <!-- Template pour un match -->
     <template id="match-template">
         <div class="match-item bg-dark-700 border border-dark-600 rounded-lg p-4 flex items-center justify-between hover:border-primary-700 transition-all duration-200 shadow-sm hover:shadow-lg flex-col sm:flex-row gap-3 sm:gap-0">
             <div class="flex items-center w-full sm:w-auto">
-                <div class="match-result-indicator w-2 h-12 rounded mr-4 bg-gradient-to-b from-green-500 to-green-600"></div>
+                <div class="match-result-indicator w-2 h-12 rounded mr-4 bg-gray-500"></div>
                 <div>
                     <p class="font-medium match-opponent text-white"></p>
-                    <div class="match-result-label flex items-center mt-1 text-sm font-semibold text-green-400"></div>
+                    <div class="match-result-label flex items-center mt-1 text-sm font-semibold text-gray-400"></div>
                 </div>
             </div>
             <div class="flex flex-col items-start sm:items-end w-full sm:w-auto">

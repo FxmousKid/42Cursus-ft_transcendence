@@ -133,10 +133,10 @@ class PongGame {
         this.player2 = player2Body.username;
 
         const avatar1 = document.getElementById('player1-avatar') as HTMLElement;
-        avatar1.innerHTML = createAvatarHTML(player1Body, "large");
+        avatar1.innerHTML = createAvatarHTML(player1Body, "medium");
 
         const avatar2 = document.getElementById('player2-avatar') as HTMLElement;
-        avatar2.innerHTML = createAvatarHTML(player2Body, "large");
+        avatar2.innerHTML = createAvatarHTML(player2Body, "medium");
     }
 
     private setNames() {
@@ -482,19 +482,21 @@ class PongGame {
         setTimeout(() => card.classList.remove('scoring'), 500);
     }
     
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
     async goToNextRound(player1_score: number, player2_score: number) {
         await this.tournamentService.finishAndUpdateGame(this.tournamentService.getCurrentIndex(), player1_score, player2_score);
 
         if (await this.tournamentService.isFinished()) {
             await api.tournament.updateStatusTournament(this.tournamentService.id, 'finished');
+            await this.delay(2000);
             window.location.href = "/tournament_finish.html";
             return ;
         }
-
+        await this.delay(2000);
         await this.tournamentService.goToNextMatch();
-
-        window.location.href = '/tournament_round.html';
     }
 
     async finishGameFriend() {
