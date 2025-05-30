@@ -9,7 +9,6 @@ import { registerGoogleAuthRoutes } from './google-auth.routes';
 import { registerChatRoutes } from './chat.routes';
 import { registerTwoFactorRoutes } from './two-factor.routes';
 
-
 export function configureRoutes(server: FastifyInstance) {
   // Health check route
   server.get('/health', async (request, reply) => {
