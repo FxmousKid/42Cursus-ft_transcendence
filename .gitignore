@@ -167,6 +167,8 @@ dist
 .pnp.*
 app/.env
 app/core/backend/.env
+app/core/frontend/.env.production
+app/core/frontend/.env.testnet
 app/core/frontend/.env
 app/core/frontend/src/js
 

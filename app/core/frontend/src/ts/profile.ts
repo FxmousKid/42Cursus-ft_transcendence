@@ -10,9 +10,9 @@ interface MatchData {
     player1_score: number;
     player2_score: number;
     winner_id?: number;
-    status?: string;
-    created_at: string;
-    updated_at: string;
+    status: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 /**
@@ -508,15 +508,35 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadProfileData() {
         try {
             console.log('Loading full profile data from API');
-            const response = await api.user.getProfile();
-            console.log('Profile API response:', response);
             
-            if (response.success && response.data) {
+            // Get current user's ID
+            const userId = authService.getUserId();
+            if (!userId) {
+                console.error('No user ID available');
+                return;
+            }
+            
+            // Use the profile endpoint with statistics (same as in friends modal)
+            const response = await fetch(`${api.baseUrl}/users/${userId}/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${authService.getToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('Profile API response with stats:', data);
+            
+            if (data.success && data.data) {
                 console.log('Successfully loaded profile data');
-                const profile = response.data;
+                const profile = data.data;
                 currentUserData = profile;
                 
-                // Afficher les informations du profil
+                // Display profile information
                 profileUsernameElement.textContent = profile.username;
                 if (profileEmail) {
                     profileEmail.textContent = profile.email || '';
@@ -525,22 +545,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update avatar display using the unified function
                 updateAvatarDisplay(profile);
                 
-                // Définir les valeurs du formulaire pour l'édition
+                // Update statistics if available
+                if (profile.statistics) {
+                    if (statsGamesPlayed) statsGamesPlayed.textContent = profile.statistics.games_played.toString();
+                    if (statsWins) statsWins.textContent = profile.statistics.wins.toString();
+                    if (statsLosses) statsLosses.textContent = profile.statistics.losses.toString();
+                    if (statsRatio) {
+                        const winRate = profile.statistics.win_rate / 100; // Convert percentage to ratio
+                        statsRatio.textContent = winRate.toFixed(2);
+                    }
+                }
+                
+                // Set form values for editing
                 if (editUsername) editUsername.value = profile.username;
                 if (editEmail) editEmail.value = profile.email || '';
                 if (editAvatar) editAvatar.value = profile.avatar_url || '';
                 
-                // Stocker l'email dans localStorage pour une utilisation future
+                // Store email in localStorage for future use
                 if (profile.email) {
                     localStorage.setItem('email', profile.email);
                 }
                 
-                // Stocker l'URL de l'avatar dans localStorage si disponible
+                // Store avatar URL in localStorage if available
                 if (profile.avatar_url) {
                     localStorage.setItem('avatar_url', profile.avatar_url);
                 }
             } else {
-                console.error('Failed to load profile data:', response.message);
+                console.error('Failed to load profile data:', data.message);
             }
         } catch (error) {
             console.error('Error loading profile data:', error);
@@ -549,86 +580,109 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadMatches() {
         try {
-          const matchesResponse = await api.user.getMatches();
-          
-          if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
-            const matches = matchesResponse.data as MatchData[];
-            
-            // Hide "no matches" message
-            if (noMatches) {
-              noMatches.classList.add('hidden');
-            }
-            
-            // Calculate stats
-            let wins = 0;
-            let losses = 0;
             const userId = authService.getUserId();
-            
+            if (!userId) {
+                console.error('No user ID available');
+                return;
+            }
+            console.log('Loading matches for user:', userId);
+    
+            // Get matches from the API - no parameter needed
+            const matchesResponse = await api.user.getMatches();
+            console.log('Matches response:', matchesResponse);
+    
             // Clear existing matches
             if (matchesContainer) {
-              matchesContainer.innerHTML = '';
+                matchesContainer.innerHTML = '';
             }
-            
-            // Display matches
-            if (matchesContainer && matchTemplate) {
-              matches.forEach((match: MatchData) => {
-                // Determine if current user is player1 or player2
-                const isPlayer1 = match.player1_id.toString() === userId;
-                const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
-                const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
-                const opponentUsername = isPlayer1 ? match.player2_username : match.player1_username;
+    
+            if (matchesResponse.success && matchesResponse.data && matchesResponse.data.length > 0) {
+                const matches = matchesResponse.data;
+                console.log('First match data:', matches[0]); // Debug log to see structure
                 
-                // Determine if match was won or lost
-                const isWin = currentPlayerScore > opponentScore;
-                if (isWin) wins++;
-                else losses++;
-                
-                // Create match element from template
-                const matchElement = document.importNode(matchTemplate.content, true);
-                
-                // Set match details
-                const resultIndicator = matchElement.querySelector('.match-result-indicator');
-                const opponent = matchElement.querySelector('.match-opponent');
-                const date = matchElement.querySelector('.match-date');
-                const score = matchElement.querySelector('.match-score');
-                
-                if (resultIndicator) {
-                  resultIndicator.classList.add(isWin ? 'bg-green-500' : 'bg-red-500');
+                // Hide "no matches" message
+                if (noMatches) {
+                    noMatches.classList.add('hidden');
                 }
                 
-                if (opponent) opponent.textContent = opponentUsername || 'Unknown';
-                if (score) score.textContent = `${currentPlayerScore} - ${opponentScore}`;
-                
-                // Format date
-                if (date && match.created_at) {
-                  const matchDate = new Date(match.created_at);
-                  date.textContent = matchDate.toLocaleDateString();
+                // Display matches
+                if (matchesContainer && matchTemplate) {
+                    // Sort matches by date (most recent first)
+                    matches.sort((a: any, b: any) => {
+                        const dateA = (a.created_at || a.createdAt) ? new Date(a.created_at || a.createdAt).getTime() : 0;
+                        const dateB = (b.created_at || b.createdAt) ? new Date(b.created_at || b.createdAt).getTime() : 0;
+                        return dateB - dateA;
+                    });
+    
+                    matches.forEach((match: any) => {
+                        // Handle both naming conventions (player1_id/player2_id or user1_id/user2_id)
+                        const player1Id = match.player1_id || match.user1_id;
+                        const player2Id = match.player2_id || match.user2_id;
+                        const player1Score = match.player1_score || match.user1_score || 0;
+                        const player2Score = match.player2_score || match.user2_score || 0;
+                        
+                        // Debug log
+                        console.log('Match data:', { player1Id, player2Id, player1Score, player2Score, userId });
+                        
+                        // Determine if current user is player1 or player2
+                        const isPlayer1 = player1Id && player1Id.toString() === userId.toString();
+                        const currentPlayerScore = isPlayer1 ? player1Score : player2Score;
+                        const opponentScore = isPlayer1 ? player2Score : player1Score;
+                        
+                        // Get usernames - handle both naming conventions
+                        const player1Username = match.player1_username || match.player1?.username || 'Unknown';
+                        const player2Username = match.player2_username || match.player2?.username || 'Unknown';
+                        const opponentUsername = isPlayer1 ? player2Username : player1Username;
+                        
+                        // Create match element from template
+                        const matchElement = document.importNode(matchTemplate.content, true);
+                        
+                        // Set match details
+                        const resultIndicator = matchElement.querySelector('.match-result-indicator');
+                        const opponent = matchElement.querySelector('.match-opponent');
+                        const date = matchElement.querySelector('.match-date');
+                        const score = matchElement.querySelector('.match-score');
+                        
+                        // Set win/loss indicator
+                        if (resultIndicator) {
+                            resultIndicator.classList.add(currentPlayerScore > opponentScore ? 'bg-green-500' : 'bg-red-500');
+                        }
+                        
+                        // Set opponent name
+                        if (opponent) opponent.textContent = opponentUsername;
+                        
+                        // Set score
+                        if (score) score.textContent = `${currentPlayerScore} - ${opponentScore}`;
+                        
+                        // Format and set date - handle both naming conventions
+                        const matchDate = match.created_at || match.createdAt;
+                        if (date && matchDate) {
+                            const dateObj = new Date(matchDate);
+                            date.textContent = dateObj.toLocaleDateString('fr-FR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            });
+                        }
+                        
+                        // Add match to container
+                        matchesContainer.appendChild(matchElement);
+                    });
                 }
-                
-                // Add match to container
-                matchesContainer.appendChild(matchElement);
-              });
+            } else {
+                // Show "no matches" message if no matches found
+                if (noMatches) {
+                    noMatches.classList.remove('hidden');
+                }
+                console.log('No matches found or empty response');
             }
-            
-            // Update stats
-            const total = wins + losses;
-            if (statsGamesPlayed) statsGamesPlayed.textContent = total.toString();
-            if (statsWins) statsWins.textContent = wins.toString();
-            if (statsLosses) statsLosses.textContent = losses.toString();
-            if (statsRatio) statsRatio.textContent = total > 0 ? (wins / total).toFixed(2) : '0.00';
-          } else {
-            // Show "no matches" message if no matches found
-            if (noMatches) {
-              noMatches.classList.remove('hidden');
-            }
-          }
         } catch (error) {
-          console.error('Error loading matches:', error);
-          
-          // Show "no matches" message in case of error
-          if (noMatches) {
-            noMatches.classList.remove('hidden');
-          }
+            console.error('Error loading matches:', error);
+            
+            // Show "no matches" message in case of error
+            if (noMatches) {
+                noMatches.classList.remove('hidden');
+            }
         }
     }
     

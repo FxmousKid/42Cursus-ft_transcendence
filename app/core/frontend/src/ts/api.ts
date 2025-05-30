@@ -29,9 +29,9 @@ export interface MatchData {
   player1_score: number;
   player2_score: number;
   winner_id?: number;
-  status?: string;
-  created_at: string;
-  updated_at: string;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Helper for API requests
@@ -263,7 +263,7 @@ export const api = {
     },
 
     async getMatches(): Promise<{ success: boolean; data?: MatchData[]; message?: string }> {
-      return request('/users/matches');
+      return request('/matches/user');  // Changed from '/users/matches' to '/matches/user'
     },
     
     async getAll() {
@@ -272,6 +272,10 @@ export const api = {
     
     async searchUsers(username: string) {
       return request(`/users/search?username=${encodeURIComponent(username)}`);
+    },
+
+    async getUser(id: number) {
+      return request(`/users/${id}/profile`);
     },
 
     async checkUsername(username: string) {
@@ -338,7 +342,21 @@ export const api = {
   game: {
     async getAllMatches() {
       return request('/game/matches');
-    }
+    },
+
+    async createMatch(player1: number, player2: number) {
+      return request('/matches', {
+        method: 'POST',
+        body: JSON.stringify({ player1_id: player1, player2_id: player2 }),
+      })
+    },
+
+    async updateMatch(id: number, player1_score: number, player2_score: number, status: string) {
+      return request(`/matches/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify( { player1_score: player1_score, player2_score: player2_score, status: status }),
+      })
+    },
   },
 
   // Chat services

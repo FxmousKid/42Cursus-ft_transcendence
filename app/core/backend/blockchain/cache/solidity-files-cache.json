@@ -1,0 +1,40 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/ptheo/42cursus/transcendence/mygit_transcendence/app/core/backend/blockchain/contracts/TournamentScores.sol": {
+      "lastModificationDate": 1748563757101,
+      "contentHash": "f93faaff9235859cbdb21d865dcc344e",
+      "sourceName": "blockchain/contracts/TournamentScores.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "TournamentScores"
+      ]
+    }
+  }
+}

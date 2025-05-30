@@ -7,7 +7,7 @@ import { friendshipService, Friend, PendingRequest } from './friendship';
 import { chatManager } from './chat';
 
 // Utility function to create avatar HTML with consistent styling
-function createAvatarHTML(user: { id?: number; avatar_url?: string | null; username: string; has_avatar_data?: boolean }, size: 'small' | 'medium' | 'large' = 'medium'): string {
+export function createAvatarHTML(user: { id?: number; avatar_url?: string | null; username: string; has_avatar_data?: boolean }, size: 'small' | 'medium' | 'large' = 'medium'): string {
     const sizeClasses = {
         small: 'w-8 h-8 sm:w-10 sm:h-10',
         medium: 'w-10 h-10 sm:w-12 sm:h-12', 

@@ -14,7 +14,7 @@
             <!-- Primary navigation -->
             <nav class="hidden md:flex space-x-8">
                 <a href="/" class="nav-link">Accueil</a>
-                <a href="/game.html" class="nav-link">Jouer</a>
+                <a href="/game.html" class="nav-link" id="nav-game-link" onclick="localStorage.setItem('matchType', JSON.stringify({type: 'local',}));">Jouer</a>
                 <a href="/friends.html" class="nav-link">Amis</a>
                 <a href="/tournament.html" class="nav-link">Tournament</a>
                 <a href="/profile.html" class="nav-link">Profil</a>
@@ -54,9 +54,9 @@
         <div id="mobile-menu" class="md:hidden hidden pb-4">
             <div class="flex flex-col space-y-1">
                 <a href="/" class="mobile-nav-link">Accueil</a>
-                <a href="/game.html" class="mobile-nav-link">Jouer</a>
+                <a href="/game.html" class="mobile-nav-link" id="mobile-nav-game-link" onclick="localStorage.setItem('matchType', JSON.stringify({type: 'local',}));">Jouer</a>
                 <a href="/friends.html" class="mobile-nav-link">Amis</a>
-                <a href="/tournament.html" class="nav-link">Tournament</a>
+                <a href="/tournament.html" class="mobile-nav-link">Tournament</a>
                 <a href="/profile.html" class="mobile-nav-link">Mon profil</a>
                 <button id="mobile-logout-button" class="mobile-nav-link text-red-400 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -69,7 +69,12 @@
             </div>
         </div>
     </div>
+        
 </header>
+
+<body>
+
+</body>
 
 <style>
     .nav-link {
@@ -103,17 +108,7 @@
             usernameDisplay.textContent = `Salut, ${authService.getUsername() || 'Utilisateur'}`;
         }
     }
-    
-    // Mobile menu toggle
-    const menuToggle = document.getElementById('menu-toggle');
-    const mobileMenu = document.getElementById('mobile-menu');
-    
-    if (menuToggle && mobileMenu) {
-        menuToggle.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
-    }
-    
+
     // Handle header logout button
     const headerLogoutButton = document.getElementById('header-logout-button');
     const mobileLogoutButton = document.getElementById('mobile-logout-button');
@@ -155,8 +150,43 @@
         }
     }
     
+    function handleGameClick(e) {
+        console.log('Game link clicked!');
+        e.preventDefault();
+        localStorage.removeItem('matchType');
+        localStorage.setItem('matchType', JSON.stringify({
+            type: 'local',
+        }));
+    }
+
     // Set active nav link
-    document.addEventListener('DOMContentLoaded', () => {
+
+    function initializeNavigation() {
+
+        const gameNavLink = document.getElementById('nav-game-link');
+        const mobGameNavLink = document.getElementById('mobile-nav-game-link');
+        
+        console.log('Game links found:', {
+            desktop: !!gameNavLink,
+            mobile: !!mobGameNavLink
+        });
+
+        // Add event listeners
+        if (gameNavLink) {
+            gameNavLink.addEventListener('click', handleGameClick);
+            console.log('Desktop game link event listener added');
+        } else {
+            console.error('Desktop game link not found!');
+        }
+
+        if (mobGameNavLink) {
+            mobGameNavLink.addEventListener('click', handleGameClick);
+            console.log('Mobile game link event listener added');
+        } else {
+            console.error('Mobile game link not found!');
+        }
+
+
         const currentPath = window.location.pathname;
         const navLinks = document.querySelectorAll('.nav-link');
         const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
@@ -174,5 +204,13 @@
         
         setActiveLink(navLinks);
         setActiveLink(mobileNavLinks);
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        console.log('Waiting for DOM to load...');
+        document.addEventListener('DOMContentLoaded', initializeNavigation);
+    } else {
+        console.log('DOM already ready, initializing now');
+        initializeNavigation();
+    }
 </script> 

@@ -17,7 +17,7 @@ function updateStartVisibility() {
 }
 
 function createPlayerField(index: number) {
-    const container = document.createElement('div');
+    const container = document.createElement(`div`);
     container.className = 'flex items-center gap-2';
 
     const input = document.createElement('input');
@@ -39,12 +39,24 @@ function createPlayerField(index: number) {
             addButton.disabled = false;
             addButton.classList.remove('opacity-50', 'cursor-not-allowed');
         }
+        updatePlayerIndices();
     });
-
     container.appendChild(input);
     container.appendChild(removeBtn);
 
     return container;
+}
+
+function updatePlayerIndices() {
+  const containers = form.querySelectorAll('.flex.items-center.gap-2');
+  containers.forEach((container, index) => {
+    const input = container.querySelector('input');
+    if (input) {
+      const newIndex = index + 1;
+      input.name = `player${newIndex}`;
+      input.placeholder = `Player ${newIndex}`;
+    }
+  });
 }
 
 function addPlayerField() {
@@ -73,7 +85,7 @@ function suffleArray(array: string[]) {
     const j = Math.floor(Math.random() * (i + 1)); 
     [array[i], array[j]] = [array[j], array[i]]; 
   }
-  return array; 
+  return array;
 }; 
 
 

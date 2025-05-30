@@ -1,10 +1,10 @@
 # ft_transcendence - Modules
 
-## Web - 2 
+## Web - 3
 - [X] - Major module: Use a framework to build the backend - Fastify
 - [X] - Minor module: Use a framework or a toolkit to build the frontend - TailwindCSS
 - [X] - Minor module: Use a database for the backend - SQLite
-- [TODO] - Major module: Store the score of a tournament in the Blockchain - Avalanche / Solidity - @John
+- [X] - Major module: Store the score of a tournament in the Blockchain - Avalanche / Solidity - @Joey
 
 ## User Management 2
 - [X] - Major module: Standard user management, authentication, users across tournaments - Online/Offline Status @Genaro add upload PP
@@ -45,6 +45,6 @@
 - [ ] - Major module: Replace basic Pong with server-side Pong and implement an API
 - [ ] - Major module: Enabling Pong gameplay via CLI against web users with API integration
 
-# TOTAL POINTS = 7 | 6 MINORS + 4 MAJORS
+# TOTAL POINTS = 10 | 6 MINORS + 7 MAJORS
 # 100% --> 7 points
 # 125% --> 9.5 points
