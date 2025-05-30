@@ -20,8 +20,10 @@
 **/modsec-nginx/logs/nginx/.gitkeep
 
 # Blockchain stuff
-app/core/backend/blockchain/artifacts/build-info/
+app/core/backend/blockchain/artifacts/
 app/core/backend/blockchain/cache/
+app/core/backend/typechain-types/factories/TournamentScores__factory.ts
+
 
 # Environment files
 app/infra/vault/agent/env/.env
