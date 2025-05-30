@@ -1,2 +1,0 @@
-node verify-blockchain.js
-cd app/core/backend && npx hardhat console --network localhost
