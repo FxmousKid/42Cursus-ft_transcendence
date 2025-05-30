@@ -223,7 +223,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Mark as setup to avoid conflicts
             (window as any).friendsWebSocketSetup = true;
-            console.log('✅ Friends WebSocket handlers setup complete');
         }
     } else {
         console.warn('WebSocket service not available for event handling');

@@ -1645,10 +1645,6 @@ export const chatManager = new ChatManager();
 if (typeof window !== 'undefined') {
     (window as any).chatManager = chatManager;
     (window as any).ChatManager = ChatManager;
-    
-    // Expose debug function globally
-    (window as any).debugChat = (userId?: number) => chatManager.debugChatHistory(userId);
-    (window as any).debugGameInvites = () => chatManager.debugGameInvites();
 }
 
 // Add after DOMContentLoaded or chat manager initialization
