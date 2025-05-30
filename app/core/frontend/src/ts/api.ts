@@ -29,9 +29,9 @@ export interface MatchData {
   player1_score: number;
   player2_score: number;
   winner_id?: number;
-  status?: string;
-  created_at: string;
-  updated_at: string;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Helper for API requests
@@ -237,7 +237,7 @@ export const api = {
     },
 
     async getMatches(): Promise<{ success: boolean; data?: MatchData[]; message?: string }> {
-      return request('/users/matches');
+      return request('/matches/user');  // Changed from '/users/matches' to '/matches/user'
     },
     
     async getAll() {
@@ -312,6 +312,20 @@ export const api = {
   game: {
     async getAllMatches() {
       return request('/game/matches');
+    },
+
+    async createMatch(player1_id: number, player2_id: number) {
+      return request('/matches', {
+        method: 'POST',
+        body: JSON.stringify({ player1_id, player2_id })
+      });
+    },
+
+    async updateMatch(id:number, player1_score: number, player2_score: number, status: string) {
+      return request(`/matches/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ player1_score, player2_score, status}),
+      });
     }
   },
 
@@ -378,6 +392,7 @@ export const api = {
         body: JSON.stringify( {id: id, status: status} )
       })
     },
+
   },
 };
 

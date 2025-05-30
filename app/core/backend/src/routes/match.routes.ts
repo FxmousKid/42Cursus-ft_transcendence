@@ -60,54 +60,55 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Get user matches
+
+    // Get user matches
   fastify.get('/matches/user', {
     schema: {
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'array',
-              items: {
+        response: {
+            200: {
                 type: 'object',
                 properties: {
-                  id: { type: 'number' },
-                  user1_id: { type: 'number' },
-                  user2_id: { type: 'number' },
-                  user1_score: { type: 'number' },
-                  user2_score: { type: 'number' },
-                  status: { type: 'string' },
-                  created_at: { type: 'string' },
-                  updated_at: { type: 'string' },
+                    success: { type: 'boolean' },
+                    data: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                id: { type: 'number' },
+                                user1_id: { type: 'number' },
+                                user2_id: { type: 'number' },
+                                user1_score: { type: 'number' },
+                                user2_score: { type: 'number' },
+                                status: { type: 'string' },
+                                created_at: { type: 'string' },
+                                updated_at: { type: 'string' },
+                            }
+                        }
+                    }
                 }
-              }
             }
-          }
         }
-      }
     },
     preHandler: fastify.authenticate,
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const userId = request.user!.id;
-        const matches = await fastify.db.models.Match.findAll({
-          where: {
-            [Op.or]: [
-              { player1_id: userId },
-              { player2_id: userId }
-            ]
-          },
-          order: [['created_at', 'DESC']]
-        });
-        return { success: true, data: matches };
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(400).send({ success: false, message: error.message });
-      }
+        try {
+            const userId = request.user!.id;
+            const matches = await fastify.db.models.Match.findAll({
+                where: {
+                    [Op.or]: [
+                        { player1_id: userId },
+                        { player2_id: userId }
+                    ]
+                },
+                order: [['createdAt', 'DESC']]  // Changed from 'created_at' to 'createdAt'
+            });
+            return { success: true, data: matches };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(400).send({ success: false, message: error.message });
+        }
     }
-  });
+  }),
 
   // Get match by ID
   fastify.get('/matches/:id', {
@@ -303,6 +304,8 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
         if (updateData.player1_score !== undefined) match.player1_score = updateData.player1_score;
         if (updateData.player2_score !== undefined) match.player2_score = updateData.player2_score;
         if (updateData.status) match.status = updateData.status;
+
+        if (updateData.player1_score !== undefined && updateData.player2_score !== undefined) match.winner_id = (match.player1_score >= match.player2_score) ? match.player1_id : match.player2_id;
         
         await match.save();
         

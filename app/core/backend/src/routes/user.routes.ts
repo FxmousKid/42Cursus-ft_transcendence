@@ -292,116 +292,60 @@ export function registerUserRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Get user matches
   fastify.get('/users/matches', {
     preHandler: fastify.authenticate,
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const userId = request.user!.id;
-        
-        // Query matches where the user is either player1 or player2
-        const matches = await fastify.db.models.Match.findAll({
-          where: {
-            [Op.or]: [
-              { player1_id: userId },
-              { player2_id: userId }
-            ]
-          },
-          include: [
-            { 
-              model: fastify.db.models.User, 
-              as: 'player1',
-              attributes: ['username']
-            },
-            { 
-              model: fastify.db.models.User, 
-              as: 'player2',
-              attributes: ['username']
-            }
-          ],
-          order: [['created_at', 'DESC']]
-        });
-        
-        // Transform matches to include player usernames
-        const transformedMatches = matches.map((match: any) => {
-          const m = match.toJSON();
-          return {
-            id: m.id,
-            player1_id: m.player1_id,
-            player2_id: m.player2_id,
-            player1_score: m.player1_score,
-            player2_score: m.player2_score,
-            player1_username: m.player1?.username || 'Unknown',
-            player2_username: m.player2?.username || 'Unknown',
-            winner_id: m.winner_id,
-            status: m.status,
-            created_at: m.created_at,
-            updated_at: m.updated_at
-          };
-        });
-        
-        return { success: true, data: transformedMatches };
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(400).send({ success: false, message: error.message });
-      }
+        try {
+            const userId = request.user!.id;
+            
+            // Query matches where the user is either player1 or player2
+            const matches = await fastify.db.models.Match.findAll({
+                where: {
+                    [Op.or]: [
+                        { player1_id: userId },
+                        { player2_id: userId }
+                    ]
+                },
+                include: [
+                    { 
+                        model: fastify.db.models.User, 
+                        as: 'player1',
+                        attributes: ['username']
+                    },
+                    { 
+                        model: fastify.db.models.User, 
+                        as: 'player2',
+                        attributes: ['username']
+                    }
+                ],
+                order: [['createdAt', 'DESC']]  // Changed from 'created_at' to 'createdAt'
+            });
+            
+            // Transform matches to include player usernames
+            const transformedMatches = matches.map((match: any) => {
+                const m = match.toJSON();
+                return {
+                    id: m.id,
+                    player1_id: m.player1_id,
+                    player2_id: m.player2_id,
+                    player1_score: m.player1_score,
+                    player2_score: m.player2_score,
+                    player1_username: m.player1?.username || 'Unknown',
+                    player2_username: m.player2?.username || 'Unknown',
+                    winner_id: m.winner_id,
+                    status: m.status,
+                    created_at: m.createdAt,  // Map createdAt to created_at for frontend compatibility
+                    updated_at: m.updatedAt   // Map updatedAt to updated_at for frontend compatibility
+                };
+            });
+            
+            return { success: true, data: transformedMatches };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(400).send({ success: false, message: error.message });
+        }
     }
-  });
-
-  // Update user status
-  fastify.patch<{ Body: StatusUpdateBody }>('/users/status', {
-    schema: {
-      body: {
-        type: 'object',
-        required: ['status'],
-        properties: {
-          status: { type: 'string', enum: ['online', 'offline', 'in_game', 'away'] }
-        }
-      },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: {
-              type: 'object',
-              properties: {
-                id: { type: 'number' },
-                username: { type: 'string' },
-                status: { type: 'string' },
-              }
-            }
-          }
-        }
-      }
-    },
-    preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Body: StatusUpdateBody }>, reply: FastifyReply) => {
-      try {
-        const { status } = request.body;
-        const user = await fastify.db.models.User.findByPk(request.user!.id);
-        
-        if (!user) {
-          return reply.status(404).send({ success: false, message: 'User not found' });
-        }
-
-        user.status = status;
-        await user.save();
-
-        return {
-          success: true,
-          data: {
-            id: user.id,
-            username: user.username,
-            status: user.status
-          }
-        };
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(400).send({ success: false, message: error.message });
-      }
-    }
-  });
+}),
 
   // Update user profile
   fastify.put<{ Body: UserUpdateBody }>('/users/profile', {
