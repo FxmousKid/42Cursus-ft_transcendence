@@ -7,6 +7,7 @@ import { configureRoutes } from './routes';
 import { configureDatabasePlugin } from './plugins/database';
 import { configureAuthPlugin } from './plugins/auth';
 import { configureGoogleOAuthPlugin } from './plugins/google-oauth';
+import blockchainPlugin from './plugins/blockchain.plugin';
 import { setupWebSocket } from './websocket';
 import dotenv from 'dotenv';
 
@@ -57,6 +58,9 @@ async function setup() {
     
     // Register Google OAuth plugin after JWT auth
     await server.register(configureGoogleOAuthPlugin);
+
+    // Register blockchain plugin
+    await server.register(blockchainPlugin);
 
     // Register Swagger documentation
     await server.register(swagger, {
