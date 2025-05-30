@@ -7,11 +7,12 @@ import {
   BelongsTo,
   AllowNull,
   Default,
+  PrimaryKey,
 } from 'sequelize-typescript';
 import { Tournament } from './tournament.model';
 
 interface MatchTournamentAttributes {
-  id?: number;
+  id?: string; // UUID au lieu d'un number
   tournament_id: number;
   player1_name: string;
   player2_name: string;
@@ -31,6 +32,11 @@ interface MatchTournamentAttributes {
   timestamps: true,
 })
 export class MatchTournament extends Model<MatchTournamentAttributes> {
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column(DataType.UUID)
+  declare id: string;
+
   @ForeignKey(() => Tournament)
   @AllowNull(false)
   @Column(DataType.INTEGER)

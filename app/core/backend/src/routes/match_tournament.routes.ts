@@ -7,7 +7,7 @@ interface MatchsTournamentRequest {
 }
 
 interface MatchTournamentRequest {
-	id: number;
+	id: string; // UUID
 }
 
 interface MatchTournamentBody {
@@ -17,12 +17,12 @@ interface MatchTournamentBody {
 }
 
 interface StatusUpdateBody {
-	id: number;
+	id: string; // UUID
 	status: string;
 }
 
 interface ScoreUpdateBody {
-	id: number;
+	id: string; // UUID
 	player1_score: number;
 	player2_score: number;
 	winner_name: string;
@@ -42,7 +42,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 							items: {
 								type: 'object',
 								properties: {
-									id: { type: 'number' },
+									id: { type: 'string' },
 									tournament_id: { type: 'number' },
 									player1_name: { type: 'string' },
 									player2_name: { type: 'string' },
@@ -89,7 +89,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 							items: {
 								type: 'object',
 								properties: {
-									id: { type: 'number' },
+									id: { type: 'string' },
 									tournament_id: { type: 'number' },
 									player1_name: { type: 'string' },
 									player2_name: { type: 'string' },
@@ -131,7 +131,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 			querystring: {
 				type: 'object',
 				properties: {
-					id: { type: 'number' },
+					id: { type: 'string' },
 				}
 			},
 			response: {
@@ -142,7 +142,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 						data: {
 							type: 'object',
 							properties: {
-								id: { type: 'number' },
+								id: { type: 'string' },
 								tournament_id: { type: 'number' },
 								player1_name: { type: 'string' },
 								player2_name: { type: 'string' },
@@ -190,7 +190,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 						data: {
 							type: 'object',
 							properties: {
-								id: { type: 'number' },
+								id: { type: 'string' },
 								tournament_id: { type: 'number' },
 								player1_name: { type: 'string' },
 								player2_name: { type: 'string' },
@@ -244,7 +244,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 				type: 'object',
 				required: ['id', 'player1_score', 'player2_score', 'winner_name'],
 				properties: {
-					id: { type: 'number' },
+					id: { type: 'string' },
 					player1_score: { type: 'number' },
 					player2_score: { type: 'number' },
 					winner_name: { type: 'string' },
@@ -258,7 +258,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 						data: {
 							type: 'object',
 							properties: {
-								id: { type: 'number' },
+								id: { type: 'string' },
 								tournament_id: { type: 'number' },
 								player1_name: { type: 'string' },
 								player2_name: { type: 'string' },
@@ -354,7 +354,7 @@ export function registerMatchTournamentRoutes(fastify: FastifyInstance) {
 						data: {
 							type: 'object',
 							properties: {
-								id: { type: 'number' },
+								id: { type: 'string' },
 								tournament_id: { type: 'number' },
 								player1_name: { type: 'string' },
 								player2_name: { type: 'string' },

@@ -3,10 +3,11 @@ import { FastifyInstance } from 'fastify';
 import { spawn, ChildProcess } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
 // Interface pour les données de match à enregistrer
 export interface MatchData {
-  id: number;
+  id: string; // UUID au lieu d'un number
   tournament_id: number;
   player1_name: string;
   player2_name: string;
@@ -45,6 +46,42 @@ export class BlockchainService {
 
   constructor(fastify: FastifyInstance) {
     this.fastify = fastify;
+  }
+
+  /**
+   * Convertit un UUID en nombre pour la blockchain
+   * Utilise un hash SHA-256 tronqué pour éviter les collisions
+   */
+  private uuidToBlockchainId(uuid: string): number {
+    const hash = crypto.createHash('sha256').update(uuid).digest('hex');
+    // Prendre les 8 premiers caractères hex et les convertir en nombre
+    // Cela donne un nombre entre 0 et 4,294,967,295 (2^32 - 1)
+    return parseInt(hash.substring(0, 8), 16);
+  }
+
+  /**
+   * Trouve l'UUID correspondant à un ID blockchain
+   */
+  private async findUuidFromBlockchainId(blockchainId: number, tournamentId: number): Promise<string | null> {
+    try {
+      // Récupérer tous les matchs de la base de données pour ce tournoi
+      const { MatchTournament } = this.fastify.db.models;
+      const matches = await MatchTournament.findAll({
+        where: { tournament_id: tournamentId }
+      });
+
+      // Trouver le match dont l'UUID correspond à cet ID blockchain
+      for (const match of matches) {
+        if (this.uuidToBlockchainId(match.id) === blockchainId) {
+          return match.id;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      this.fastify.log.error('Error finding UUID from blockchain ID:', error);
+      return null;
+    }
   }
 
   /**
@@ -237,14 +274,11 @@ export class BlockchainService {
     try {
       this.fastify.log.info(`Attempting to record match ${matchData.id} on blockchain`);
 
-      // Vérifier si le match est déjà enregistré
-      const isAlreadyRecorded = await this.contract!.isMatchRecorded(
-        matchData.tournament_id,
-        matchData.id
-      );
+      // Vérifier si le match est déjà enregistré avec les mêmes données
+      const isAlreadyRecorded = await this.isMatchDataAlreadyRecorded(matchData);
 
       if (isAlreadyRecorded) {
-        this.fastify.log.info(`Match ${matchData.id} already recorded on blockchain`);
+        this.fastify.log.info(`Match ${matchData.id} already recorded on blockchain with same data`);
         return 'already_recorded';
       }
 
@@ -263,14 +297,75 @@ export class BlockchainService {
   }
 
   /**
+   * Vérifie si un match avec les mêmes données est déjà enregistré sur la blockchain
+   */
+  private async isMatchDataAlreadyRecorded(matchData: MatchData): Promise<boolean> {
+    try {
+      // Convertir l'UUID en ID blockchain
+      const blockchainMatchId = this.uuidToBlockchainId(matchData.id);
+      
+      // Récupérer tous les matchs du tournoi depuis la blockchain
+      const blockchainMatches = await this.contract!.getTournamentMatches(matchData.tournament_id);
+      
+      // Chercher un match avec les mêmes données
+      const existingMatch = blockchainMatches.find((match: any) => 
+        Number(match.matchId) === blockchainMatchId &&
+        match.player1Name === matchData.player1_name &&
+        match.player2Name === matchData.player2_name &&
+        Number(match.player1Score) === matchData.player1_score &&
+        Number(match.player2Score) === matchData.player2_score &&
+        match.winnerName === matchData.winner_name
+      );
+
+      if (existingMatch) {
+        this.fastify.log.info(`Match ${matchData.id} found on blockchain with matching data`);
+        // Mettre à jour la base de données si ce n'est pas déjà fait
+        await this.updateMatchWithBlockchainProof(matchData.id, 'existing_on_blockchain');
+        return true;
+      }
+
+      // Vérifier si un match avec le même ID blockchain existe mais avec des données différentes
+      const matchWithSameId = blockchainMatches.find((match: any) => 
+        Number(match.matchId) === blockchainMatchId
+      );
+
+      if (matchWithSameId) {
+        this.fastify.log.warn(`Match ${matchData.id} (blockchain ID: ${blockchainMatchId}) exists on blockchain but with different data:`, {
+          blockchain: {
+            player1: matchWithSameId.player1Name,
+            player2: matchWithSameId.player2Name,
+            winner: matchWithSameId.winnerName
+          },
+          current: {
+            player1: matchData.player1_name,
+            player2: matchData.player2_name,
+            winner: matchData.winner_name
+          }
+        });
+        // Dans ce cas, on va quand même essayer d'enregistrer (le contrat devrait rejeter)
+      }
+
+      return false;
+
+    } catch (error) {
+      this.fastify.log.error('Error checking if match data already recorded:', error);
+      // En cas d'erreur, on essaie d'enregistrer quand même
+      return false;
+    }
+  }
+
+  /**
    * Enregistrement asynchrone en arrière-plan
    */
   private async recordMatchAsync(matchData: MatchData): Promise<void> {
     try {
+      // Convertir l'UUID en ID blockchain
+      const blockchainMatchId = this.uuidToBlockchainId(matchData.id);
+      
       // Envoyer la transaction
       const tx = await this.contract!.recordMatch(
         matchData.tournament_id,
-        matchData.id,
+        blockchainMatchId,
         matchData.player1_name,
         matchData.player2_name,
         matchData.player1_score,
@@ -278,7 +373,7 @@ export class BlockchainService {
         matchData.winner_name
       );
 
-      this.fastify.log.info(`Transaction sent: ${tx.hash}`);
+      this.fastify.log.info(`Transaction sent: ${tx.hash} (UUID: ${matchData.id} -> Blockchain ID: ${blockchainMatchId})`);
 
       // Attendre la confirmation en arrière-plan
       const receipt = await tx.wait();
@@ -296,24 +391,34 @@ export class BlockchainService {
   /**
    * Met à jour le match avec la preuve blockchain
    */
-  private async updateMatchWithBlockchainProof(matchId: number, txHash: string): Promise<void> {
+  private async updateMatchWithBlockchainProof(matchId: string, txHash: string): Promise<void> {
     try {
       // Utiliser Sequelize pour mettre à jour
       const { MatchTournament } = this.fastify.db.models;
       
+      const updateData: any = {
+        blockchain_verified: true,
+        blockchain_recorded_at: new Date()
+      };
+
+      // Si ce n'est pas un match existant, enregistrer le hash de transaction
+      if (txHash !== 'existing_on_blockchain') {
+        updateData.blockchain_tx_hash = txHash;
+      }
+      
       await MatchTournament.update(
-        {
-          blockchain_tx_hash: txHash,
-          blockchain_verified: true,
-          blockchain_recorded_at: new Date()
-        },
+        updateData,
         {
           where: { id: matchId }
         }
       );
 
-      this.fastify.log.info(`Match ${matchId} recorded on blockchain: ${txHash}`);
-      this.fastify.log.info(`Blockchain proof stored in database for match ${matchId}`);
+      if (txHash === 'existing_on_blockchain') {
+        this.fastify.log.info(`Match ${matchId} marked as verified (already existed on blockchain)`);
+      } else {
+        this.fastify.log.info(`Match ${matchId} recorded on blockchain: ${txHash}`);
+        this.fastify.log.info(`Blockchain proof stored in database for match ${matchId}`);
+      }
 
     } catch (error) {
       this.fastify.log.error(`Failed to update match ${matchId} with blockchain proof:`, error);
