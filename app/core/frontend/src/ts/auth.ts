@@ -18,6 +18,8 @@ interface AuthState {
   expiresAt: number | null;
 }
 
+import { presenceService } from './presence';
+
 export class AuthService {
   private state: AuthState;
   private refreshTimeout: number | null = null;
@@ -94,6 +96,7 @@ export class AuthService {
           console.log('Auth: Login successful, setting auth state');
           // Set auth state for normal login (no 2FA)
           this.setAuthState(response.data, rememberMe);
+          presenceService.start(); // Start presence after login
           return {success: true, requires2FA: false};
         }
       }
@@ -148,6 +151,7 @@ export class AuthService {
     } finally {
       // Clear session data even if API call fails
       this.clearSession();
+      presenceService.stop(); // Stop presence on logout
     }
   }
 
@@ -283,6 +287,7 @@ export class AuthService {
     }
     
     console.log('Auth: Session cleared');
+    presenceService.stop(); // Stop presence on session clear
   }
   
   /**
@@ -334,6 +339,7 @@ export class AuthService {
       if (expiresAt) {
         this.scheduleTokenRefresh();
       }
+      presenceService.start(); // Start presence on session restore
     } else {
       console.log('Auth: Session restoration failed - invalid or expired token');
       this.clearSession(); // Clean up any invalid data

@@ -425,6 +425,22 @@ export const api = {
       })
     },
   },
+
+  // Presence/Status services
+  presence: {
+    async getOnlineUsers() {
+      return request('/users/online', { method: 'GET' });
+    },
+    async getUserStatus(userId: number) {
+      return request(`/users/${userId}/status`, { method: 'GET' });
+    },
+    async setUserStatus(userId: number, status: 'online' | 'offline') {
+      return request(`/users/${userId}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ status })
+      });
+    }
+  },
 };
 
 // Pour la rétrocompatibilité, on expose aussi API globalement
