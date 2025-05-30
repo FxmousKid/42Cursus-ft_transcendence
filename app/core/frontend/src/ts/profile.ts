@@ -209,22 +209,52 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
         }
+        
+        // Hide error message when user starts typing
+        if (verificationCode) {
+            verificationCode.addEventListener('input', () => {
+                if (setupError) {
+                    setupError.classList.add('hidden');
+                }
+            });
+        }
     }
 
     async function setup2FA() {
         try {
             const response = await api.user.setup2FA();
-            if (response.success) {
-                // Display QR code
-                if (qrContainer) {
-                    qrContainer.innerHTML = `<img src="${response.data.qr_code}" alt="QR Code" class="mx-auto">`;
+            console.log('2FA setup response:', response);
+            if (response.success && response.data) {
+                // Hide any previous error messages
+                if (setupError) {
+                    setupError.classList.add('hidden');
+                }
+                
+                // Display QR code - FIXED: use correct field name and add proper styling
+                if (qrContainer && response.data.qrCode) {
+                    console.log('QR Code data received:', response.data.qrCode.substring(0, 50) + '...');
+                    qrContainer.innerHTML = `
+                        <img src="${response.data.qrCode}" 
+                             alt="QR Code 2FA" 
+                             class="mx-auto max-w-full h-auto"
+                             style="width: 200px; height: 200px;"
+                             onload="console.log('QR code loaded successfully')"
+                             onerror="console.error('QR code failed to load')">
+                    `;
                 }
                 
                 // Display secret
-                if (secretDisplay) {
+                if (secretDisplay && response.data.secret) {
                     secretDisplay.textContent = response.data.secret;
                 }
+                
+                // Show verify button
+                if (verify2FASetup) {
+                    verify2FASetup.classList.remove('hidden');
+                    verify2FASetup.classList.add('btn-primary', 'py-2', 'px-6', 'ml-4');
+                }
             } else {
+                console.error('2FA setup failed:', response);
                 show2FAError(response.message || 'Erreur lors de la configuration');
             }
         } catch (error) {

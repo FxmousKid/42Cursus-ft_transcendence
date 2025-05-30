@@ -149,11 +149,10 @@ export function registerTwoFactorRoutes(fastify: FastifyInstance) {
   });
 
   // Disable 2FA
-  fastify.post<{ Body: {userID: number} }>('/auth/2fa/disable', {
+  fastify.post('/auth/2fa/disable', {
     schema: {
       body: {
         type: 'object',
-        required: ['userID'],
         properties: {
           userID: { type: 'number' }
         }
@@ -169,9 +168,19 @@ export function registerTwoFactorRoutes(fastify: FastifyInstance) {
       }
     },
     preHandler: fastify.authenticate,
-    handler: async (request: FastifyRequest<{ Body: {userID: number} }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Body: {userID?: number} }>, reply: FastifyReply) => {
       try {
-        const { userID } = request.body;
+        const requestBody = request.body as any;
+        const userID = requestBody?.userID || request.user!.id;
+        
+        // Security check: ensure user can only disable their own 2FA
+        if (userID !== request.user!.id) {
+          return reply.status(403).send({ 
+            success: false, 
+            message: 'You can only disable your own 2FA' 
+          });
+        }
+        
         const user = await fastify.db.models.User.findByPk(userID);
         
         if (!user) {
@@ -191,6 +200,7 @@ export function registerTwoFactorRoutes(fastify: FastifyInstance) {
         // Disable 2FA
         user.two_factor_enabled = false;
         user.two_factor_secret = null;
+        user.two_factor_temp_secret = null; // Also clear temp secret if any
         await user.save();
 
         return {

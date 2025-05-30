@@ -236,10 +236,10 @@ export const api = {
       });
     },
 
-    async disable2FA(userID: any) {
+    async disable2FA() {
       return request('/auth/2fa/disable', {
         method: 'POST',
-		body: JSON.stringify({ userID })
+        body: JSON.stringify({})
       });
     },
   },
@@ -281,6 +281,27 @@ export const api = {
 
     async checkUsername(username: string) {
       return request(`/users/check-username?username=${encodeURIComponent(username)}`);
+    },
+    
+    // 2FA methods - added to user section for easier access
+    async setup2FA() {
+      return request('/auth/2fa/setup', {
+        method: 'GET'
+      });
+    },
+
+    async verify2FASetup(code: string) {
+      return request('/auth/2fa/enable', {
+        method: 'POST',
+        body: JSON.stringify({ code })
+      });
+    },
+
+    async disable2FA() {
+      return request('/auth/2fa/disable', {
+        method: 'POST',
+        body: JSON.stringify({})
+      });
     },
     
     // New avatar methods
