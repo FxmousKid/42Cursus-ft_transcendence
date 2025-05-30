@@ -8,6 +8,7 @@ import { registerMatchTournamentRoutes } from './match_tournament.routes';
 import { registerGoogleAuthRoutes } from './google-auth.routes';
 import { registerChatRoutes } from './chat.routes';
 import { registerTestRoutes } from './test-routes';
+import { registerTwoFactorRoutes } from './two-factor.routes';
 
 export function configureRoutes(server: FastifyInstance) {
   // Health check route
@@ -25,4 +26,5 @@ export function configureRoutes(server: FastifyInstance) {
   registerMatchTournamentRoutes(server);
   registerGoogleAuthRoutes(server);
   registerTestRoutes(server);
+  registerTwoFactorRoutes(server);
 } 
