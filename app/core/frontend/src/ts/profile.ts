@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 // Display matches
                 if (matchesContainer && matchTemplate) {
-                    matches.forEach(match => {
+                    matches.forEach((match: MatchData) => {
                         // Create match element from template
                         const matchElement = document.importNode(matchTemplate.content, true);
     
@@ -496,7 +496,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Update statistics
                     let wins = 0;
                     let losses = 0;
-                    matches.forEach(match => {
+                    matches.forEach((match: MatchData) => {
                         const isPlayer1 = match.player1_id.toString() === userId.toString();
                         const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
                         const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
