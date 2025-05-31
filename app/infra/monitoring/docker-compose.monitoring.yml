@@ -1,0 +1,111 @@
+
+services:
+  monitoring-prometheus:
+    container_name: "monitoring-prometheus"
+    user: root
+    privileged: true
+    image: quay.io/prometheus/prometheus:latest
+    networks:
+      - transcendence-network
+    ports: 
+      - "9090:9090"
+    # expose:
+    #   - "9090"
+    volumes:
+      - prometheus_data:/prometheus:rw
+      - ./prometheus/:/etc/prometheus:rw
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL","rm -f index.html healthy && wget http://localhost:9090"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  monitoring-grafana:
+    container_name: "monitoring-grafana"
+    image: grafana/grafana:latest
+    networks:
+      - transcendence-network
+    ports:
+      - "9091:9091/tcp"
+    # expose:
+    #   - "9091"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      # - ./grafana/custom.ini:/etc/grafana/grafana.ini
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_HTTP_PORT=9091
+    restart: unless-stopped
+    depends_on:
+      monitoring-prometheus:
+        condition: service_healthy
+
+  es01-exporter:
+    container_name: monitoring-es01-exporter
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
+    user: root
+    entrypoint: /tmp/es-exporter/entrypoint_custom.sh
+    volumes:
+      - escerts:/tmp/certs:ro
+      - ./es-exporter:/tmp/es-exporter:rw
+      - ../vault/agent/env/:/tmp/env:ro
+    networks:
+      - transcendence-network
+    ports:
+      - "9114:9114"
+    # expose:
+    #   - "9114"
+    depends_on:
+      es01:
+        condition: service_healthy
+      vault-agent:
+        condition: service_healthy
+    restart: unless-stopped
+
+  node-exporter:
+    container_name: monitoring-node-exporter
+    image: quay.io/prometheus/node-exporter:latest
+    networks:
+      - transcendence-network
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "9100:9100"
+    # expose:
+    #   - "9100"
+    restart: unless-stopped
+
+  cadvisor:
+    container_name: monitoring-cadvisor
+    image: gcr.io/cadvisor/cadvisor:latest
+    privileged: true
+    networks:
+      - transcendence-network
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

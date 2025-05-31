@@ -4,7 +4,7 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
     volumes:
       - ../vault/agent/env:/tmp/env:ro
-      - certs:/usr/share/elasticsearch/config/certs
+      - escerts:/usr/share/elasticsearch/config/certs
     user: "0"
     depends_on:
       vault-agent:
@@ -82,12 +82,14 @@ services:
     labels:
       co.elastic.logs/module: elasticsearch
     volumes:
-      - certs:/usr/share/elasticsearch/config/certs
+      - escerts:/usr/share/elasticsearch/config/certs
       - esdata01:/usr/share/elasticsearch/data
       - ../vault/agent/env:/tmp/env:ro
       - ./elasticsearch/entrypoint-wrapper.sh:/entrypoint-wrapper.sh
     ports:
       - 9200:9200
+    # expose:
+    #   - "9200"
     environment:
       - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
       - node.name=es01
@@ -134,9 +136,13 @@ services:
       co.elastic.logs/module: kibana
     restart: unless-stopped
     container_name: logging-kibana
+
     ports:
       - 5601:5601
+    # expose: ["5601"]
     environment:
+      # - SERVER_BASEPATH=/kibana
+      # - SERVER_REWRITEBASEPATH=true
       - TZ=Europe/Paris
       - SERVER_NAME=kibana
       - ELASTICSEARCH_HOSTS=https://es01:9200
@@ -149,21 +155,12 @@ services:
       - "XPACK_SECURITY_SECURECOOKIES=false"
     volumes:
       - kibanadata:/usr/share/kibana/data
-      - certs:/usr/share/kibana/config/certs
+      - escerts:/usr/share/kibana/config/certs
       - ../vault/agent/env:/tmp/env:ro
       - ./kibana/entrypoint-wrapper.sh:/entrypoint-wrapper.sh
     mem_limit: 2g
     networks:
       - transcendence-network
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
-        ]
-      interval: 10s
-      timeout: 10s
-      retries: 120
     depends_on:
       es01:
         condition: service_healthy
@@ -173,7 +170,7 @@ services:
     image: docker.elastic.co/beats/filebeat:8.18.0
     user: root  # Required to access logs
     volumes:
-      - certs:/usr/share/filebeat/certs
+      - escerts:/usr/share/filebeat/certs
       - filebeatdata01:/usr/share/filebeat/data
       - "./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
       - "/var/lib/docker:/var/lib/docker:ro"
@@ -187,8 +184,6 @@ services:
       - transcendence-network
     depends_on:
       es01:
-        condition: service_healthy
-      kibana:
         condition: service_healthy
     command: >
       bash -c '
@@ -205,18 +200,3 @@ services:
         fi;
         filebeat -e --strict.perms=false
       '
-     
-
-volumes:
-  certs:
-    driver: local
-  esdata01:
-     driver: local
-  kibanadata:
-    driver: local
-  metricbeatdata01:
-    driver: local
-  filebeatdata01:
-    driver: local
-  logstashdata01:
-    driver: local
