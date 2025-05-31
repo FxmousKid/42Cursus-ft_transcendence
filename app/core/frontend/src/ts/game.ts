@@ -13,6 +13,7 @@ class PongGame {
     private id: number = 0;
 
     private type: string = 'local';
+    private finish: boolean = false;
     // Game dimensions
     private readonly ASPECT_RATIO = 16 / 10;
     private readonly MIN_WIDTH = 320;
@@ -85,6 +86,7 @@ class PongGame {
 
     public setInit(type: string) {
         this.type = type;
+        this.finish = false;
         
         switch (type) {
             case 'tournament': this.initTournament(); break;
@@ -275,6 +277,10 @@ class PongGame {
         this.ball.vy = Math.sin(angle) * this.ball.speed;
     }
     
+    public getFinish() {
+        return this.finish;
+    }
+
     private update(): void {
         if (this.gameState !== 'playing') return;
         
@@ -518,11 +524,13 @@ class PongGame {
         this.winner = winner;
         this.gameState = 'gameover';
         if (this.type == 'tournament') {
+            this.finish = true;
             this.goToNextRound(this.paddles.left.score, this.paddles.right.score);
             return ;
         }
         if (this.type == 'friend') {
             this.finishGameFriend();
+            this.finish = true;
             this.elements.startBtn.textContent = 'Recommencer';
             return ;
         }
@@ -557,7 +565,8 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") {
     // User left the page (switched tab or minimized)
-    pongGame.stopGame();
+    if (!pongGame.getFinish())
+        pongGame.stopGame();
   }
 });
 
