@@ -144,8 +144,8 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
                     player2_id: m.player2_id,
                     player1_score: m.player1_score,
                     player2_score: m.player2_score,
-                    player1_username: m.player1?.username || 'Unknown',
-                    player2_username: m.player2?.username || 'Unknown',
+                    player1_username: m.player1?.username || '[deleted]',
+                    player2_username: m.player2?.username || '[deleted]',
                     status: m.status,
                     match_date: m.match_date, // This will be the Paris time when match was completed
                     created_at: m.createdAt,
