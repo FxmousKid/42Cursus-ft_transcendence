@@ -436,15 +436,184 @@ export function registerUserRoutes(fastify: FastifyInstance) {
     preHandler: fastify.authenticate,
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const user = await fastify.db.models.User.findByPk(request.user!.id);
+        const userId = request.user!.id;
+        const user = await fastify.db.models.User.findByPk(userId);
         
         if (!user) {
           return reply.status(404).send({ success: false, message: 'User not found' });
         }
 
-        await user.destroy();
+        // Start a transaction to ensure data consistency
+        const transaction = await fastify.db.sequelize.transaction();
 
-        return { success: true, message: 'Account deleted successfully' };
+        try {
+          // 1. Delete user blocks (where user is blocker or blocked)
+          await fastify.db.models.UserBlock.destroy({
+            where: {
+              [Op.or]: [
+                { blocker_id: userId },
+                { blocked_id: userId }
+              ]
+            },
+            transaction
+          });
+
+          // 2. Delete chat messages (where user is sender or receiver)
+          await fastify.db.models.ChatMessage.destroy({
+            where: {
+              [Op.or]: [
+                { sender_id: userId },
+                { receiver_id: userId }
+              ]
+            },
+            transaction
+          });
+
+          // 3. Delete friendships (where user is user_id or friend_id)
+          await fastify.db.models.Friendship.destroy({
+            where: {
+              [Op.or]: [
+                { user_id: userId },
+                { friend_id: userId }
+              ]
+            },
+            transaction
+          });
+
+          // 4. Handle tournaments created by user - DELETE COMPLETELY
+          // First, get tournaments hosted by user
+          const userTournaments = await fastify.db.models.Tournament.findAll({
+            where: { host_id: userId },
+            attributes: ['id'],
+            transaction
+          });
+
+          // Delete all match_tournaments for tournaments hosted by this user
+          if (userTournaments.length > 0) {
+            const tournamentIds = userTournaments.map(t => t.id);
+            await fastify.db.models.MatchTournament.destroy({
+              where: { tournament_id: { [Op.in]: tournamentIds } },
+              transaction
+            });
+          }
+
+          // Delete tournaments hosted by user
+          await fastify.db.models.Tournament.destroy({
+            where: { host_id: userId },
+            transaction
+          });
+
+          // 5. Anonymize user in match_tournaments (for tournaments NOT created by this user)
+          // These are tournaments where user participated but didn't host
+          await fastify.db.models.MatchTournament.update(
+            { player1_name: '[deleted]' },
+            {
+              where: { 
+                player1_name: user.username,
+                tournament_id: { 
+                  [Op.notIn]: userTournaments.length > 0 ? userTournaments.map(t => t.id) : [0] 
+                }
+              },
+              transaction
+            }
+          );
+          
+          await fastify.db.models.MatchTournament.update(
+            { player2_name: '[deleted]' },
+            {
+              where: { 
+                player2_name: user.username,
+                tournament_id: { 
+                  [Op.notIn]: userTournaments.length > 0 ? userTournaments.map(t => t.id) : [0] 
+                }
+              },
+              transaction
+            }
+          );
+          
+          await fastify.db.models.MatchTournament.update(
+            { winner_name: '[deleted]' },
+            {
+              where: { 
+                winner_name: user.username,
+                tournament_id: { 
+                  [Op.notIn]: userTournaments.length > 0 ? userTournaments.map(t => t.id) : [0] 
+                }
+              },
+              transaction
+            }
+          );
+
+          // 6. Remove user from tournaments participants lists (where they are not host)
+          const allTournaments = await fastify.db.models.Tournament.findAll({
+            where: { host_id: { [Op.ne]: userId } }, // Exclude tournaments hosted by user (already deleted)
+            transaction
+          });
+
+          for (const tournament of allTournaments) {
+            const users = tournament.users as string[];
+            const updatedUsers = users.filter(username => username !== user.username);
+            
+            if (users.length !== updatedUsers.length) {
+              tournament.users = updatedUsers;
+              await tournament.save({ transaction });
+            }
+          }
+
+          // 7. Anonymize user in normal matches - PRESERVE MATCHES for other users' statistics
+          // Find or create a special "[deleted]" user to replace references
+          let deletedUser = await fastify.db.models.User.findOne({
+            where: { username: '[deleted]' },
+            transaction
+          });
+          
+          if (!deletedUser) {
+            deletedUser = await fastify.db.models.User.create({
+              username: '[deleted]',
+              email: `deleted_${Date.now()}@system.local`,
+              status: 'offline'
+            }, { transaction });
+          }
+          
+          // Update matches where user was player1 - replace with [deleted] user
+          await fastify.db.models.Match.update(
+            { player1_id: deletedUser.id },
+            {
+              where: { player1_id: userId },
+              transaction
+            }
+          );
+          
+          // Update matches where user was player2 - replace with [deleted] user
+          await fastify.db.models.Match.update(
+            { player2_id: deletedUser.id },
+            {
+              where: { player2_id: userId },
+              transaction
+            }
+          );
+          
+          // Remove user as winner (set to null since match result becomes ambiguous)
+          await fastify.db.models.Match.update(
+            { winner_id: undefined },
+            {
+              where: { winner_id: userId },
+              transaction
+            }
+          );
+
+          // 8. Finally, delete the user account
+          await user.destroy({ transaction });
+
+          // Commit the transaction
+          await transaction.commit();
+
+          return { success: true, message: 'Account anonymized and deleted successfully' };
+        } catch (error) {
+          // Rollback the transaction on error
+          await transaction.rollback();
+          throw error;
+        }
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });
