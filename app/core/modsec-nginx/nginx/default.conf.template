@@ -20,6 +20,15 @@ server {
 		proxy_set_header	X-Forwarded-Proto	$scheme;
 	}
 	
+	location = /api/auth/google/callback {
+		modsecurity off;
+
+		proxy_pass http://backend:3000/auth/google/callback;
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-Proto $scheme;
+	}
+
     # ── API ─────────────────────────────────────
     location /api/ {
         proxy_pass         	http://backend:3000/; # ← env BACKEND=http://backend:3000
@@ -27,8 +36,6 @@ server {
         proxy_set_header   	X-Real-IP         	$remote_addr;
         proxy_set_header   	X-Forwarded-Proto 	$scheme;
     }
-
-
 
     # ── Websocket ─────────────────────────────────────
 	location /socket.io/ {
