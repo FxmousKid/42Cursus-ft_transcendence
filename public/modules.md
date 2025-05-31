@@ -7,8 +7,8 @@
 - [X] - Major module: Store the score of a tournament in the Blockchain - Avalanche / Solidity - @Joey
 
 ## User Management 2
-- [X] - Major module: Standard user management, authentication, users across tournaments - Online/Offline Status @Genaro add upload PP
-- [X] - Major module: Implementing a remote authentication - Google Sign-In - @Theo
+- [X] - Major module: Standard user management, authentication, users across tournaments - @Joey/@Genaro
+- [X] - Major module: Implementing a remote authentication - Google Sign-In - @Joey
 
 ## Gameplay and user experience 1
 - [ ] - Major module: Remote players
@@ -19,15 +19,15 @@
 
 ## AI-Algo
 - [ ] - Major module: Introduce an AI opponent
-- [ ] - Minor module: User and game stats dashboards @Genaro
+- [ ] - Minor module: User and game stats dashboards
 
-## Cybersecurity 1.5
-- [X] - Major module: Implement WAF/ModSecurity with a hardened configuration and HashiCorp Vault for secrets management
+## Cybersecurity 2.5
+- [X] - Major module: Implement WAF/ModSecurity with a hardened configuration and HashiCorp Vault for secrets management @Iyan
 - [X] - Minor module: GDPR compliance options with user anonymization, local data management, and Account Deletion - @Joey/@Iyan
-- [2FA-TODO] - Major module: Implement Two-Factor Authentication (2FA) and JWT - Iyan/Joey - [JWT already done, normally...]
+- [X] - Major module: Implement Two-Factor Authentication (2FA) and JWT - @Iyan/@Joey
 
 ## Devops 1.5
-- [X] - Major module: Infrastructure setup for log management
+- [X] - Major module: Infrastructure setup for log management @Iyan
 - [X] - Minor module: Monitoring system - @Iyan
 - [ ] - Major module: Designing the backend as microservices
 
@@ -45,6 +45,6 @@
 - [ ] - Major module: Replace basic Pong with server-side Pong and implement an API
 - [ ] - Major module: Enabling Pong gameplay via CLI against web users with API integration
 
-# TOTAL POINTS = 10 | 6 MINORS + 7 MAJORS
+# TOTAL POINTS = 11 | 6 MINORS + 8 MAJORS
 # 100% --> 7 points
 # 125% --> 9.5 points
