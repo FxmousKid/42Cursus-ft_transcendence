@@ -1,18 +1,8 @@
-# core/modsec-nginx/nginx/default.conf.template
-
-# upstream api_up { server ${BACKEND};  }
-# upstream frontend_up  { server ${FRONTEND}; }
-# upstream api_up { server backend:3000;  }
-# upstream frontend_up  { server frontend:5173; }
-
 server {
-    # listen       ${NGINX_SERVER_PORT} default_server;
-    listen			${SSL_PORT} ssl http2 default_server;       # SSL_PORT defaults to 8443
+    listen			${SSL_PORT} ssl http2 default_server;
     server_name		${SERVER_NAME:-localhost};
-	# index			index.html;
-	# root			/app/src/;
 
-    # ── TLS (replace with real certs in core/modsec-nginx/certs) ───────────────────
+    # ── TLS ───────────────────
     ssl_certificate     /etc/nginx/conf/server.crt;
     ssl_certificate_key /etc/nginx/conf/server.key;
 
@@ -22,12 +12,10 @@ server {
 
     # ── Enable ModSecurity ────────────────────────────────────────────────────────
     modsecurity           on;
-    # modsecurity_rules_file /etc/modsecurity/modsecurity.conf;
 
     # ── frontend ──────────────────────────────────────
 	location / {
 		proxy_pass			http://frontend:5173/;
-		# try_files			$uri				/app/src/index.html;
 		proxy_set_header	Host				$host;
 		proxy_set_header	X-Forwarded-Proto	$scheme;
 	}
@@ -40,15 +28,6 @@ server {
         proxy_set_header   	X-Forwarded-Proto 	$scheme;
     }
 
-
-      # TODO: Uncomment when enabling reverse proxy
- #    # ── Kibana ─────────────────────────────────────
-	# location /kibana/ {
-	# 	proxy_pass			http://kibana:5601/kibana/;
-	# 	proxy_set_header	Host				$host;
-	# 	proxy_set_header	X-Real-IP			$remote_addr;	
- #        proxy_set_header   	X-Forwarded-Proto 	$scheme;
-	# }
 
 
     # ── Websocket ─────────────────────────────────────
@@ -66,4 +45,11 @@ server {
 		proxy_read_timeout 3600s;
 		proxy_send_timeout 3600s;
 	}
+
+   	# ── Healthcheck ─────────────────────────────────────
+	location /healthcheck {
+		return 200 'OK';
+		add_header Content-Type text/plain;
+	}
+
 }

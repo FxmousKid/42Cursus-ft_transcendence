@@ -88,6 +88,8 @@ services:
       - ./elasticsearch/entrypoint-wrapper.sh:/entrypoint-wrapper.sh
     ports:
       - 9200:9200
+    # expose:
+    #   - "9200"
     environment:
       - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
       - node.name=es01
@@ -135,12 +137,10 @@ services:
     restart: unless-stopped
     container_name: logging-kibana
 
-    # TODO: Uncomment when enabling reverse proxy
     ports:
       - 5601:5601
     # expose: ["5601"]
     environment:
-      # TODO: Uncomment when enabling reverse proxy
       # - SERVER_BASEPATH=/kibana
       # - SERVER_REWRITEBASEPATH=true
       - TZ=Europe/Paris
