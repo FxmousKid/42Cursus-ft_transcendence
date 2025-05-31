@@ -8,6 +8,7 @@ services:
     restart: unless-stopped
     ports:
       - "8200:8200/tcp"
+    # expose: ["8200"]
     cap_add:
       - IPC_LOCK
     networks:
@@ -30,6 +31,7 @@ services:
       - vault-server
     ports:
       - "8201:8200"
+    # expose: ["8201"]
     volumes:
       - ./agent/config/:/vault/config:ro
       - ./agent/logs/:/vault/logs:ro

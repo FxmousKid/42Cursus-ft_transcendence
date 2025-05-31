@@ -82,6 +82,8 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+      vault-agent:
+        condition: service_healthy
     volumes:
       - ./modsec-nginx/nginx/default.conf.template:/etc/nginx/templates/conf.d/default.conf.template:ro
       - nginx_certs:/etc/nginx/conf/certs/

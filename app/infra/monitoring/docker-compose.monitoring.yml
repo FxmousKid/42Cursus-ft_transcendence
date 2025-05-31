@@ -9,6 +9,8 @@ services:
       - transcendence-network
     ports: 
       - "9090:9090"
+    # expose:
+    #   - "9090"
     volumes:
       - prometheus_data:/prometheus:rw
       - ./prometheus/:/etc/prometheus:rw
@@ -21,7 +23,7 @@ services:
       - '--web.enable-lifecycle'
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL","rm -f index.html healthy && wget http://localhost:9090/-/healthy"]
+      test: ["CMD-SHELL","rm -f index.html healthy && wget http://localhost:9090"]
       interval: 5s
       timeout: 10s
       retries: 20
@@ -34,6 +36,8 @@ services:
       - transcendence-network
     ports:
       - "9091:9091/tcp"
+    # expose:
+    #   - "9091"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
@@ -43,7 +47,6 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_HTTP_PORT=9091
-
     restart: unless-stopped
     depends_on:
       monitoring-prometheus:
@@ -60,14 +63,10 @@ services:
       - ../vault/agent/env/:/tmp/env:ro
     networks:
       - transcendence-network
-    # command:
-    #   - '--es.uri=https://es01:9200'
-    #   - '--es.all'
-    #   - '--es.ca=/tmp/certs/ca/ca.crt'
-      # - '--es.client-private-key=/tmp/certs/ca/ca.key'
-      # - '--es.client-cert=/tmp/certs/es01/es01.crt'
     ports:
       - "9114:9114"
+    # expose:
+    #   - "9114"
     depends_on:
       es01:
         condition: service_healthy
@@ -91,6 +90,8 @@ services:
       - /:/rootfs:ro
     ports:
       - "9100:9100"
+    # expose:
+    #   - "9100"
     restart: unless-stopped
 
   cadvisor:
