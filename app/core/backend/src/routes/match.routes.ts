@@ -22,6 +22,16 @@ function getParisTime(): Date {
   return new Date(new Date().toLocaleString("en-US", {timeZone: "Europe/Paris"}));
 }
 
+// Function to determine winner ID safely (handles null players)
+function determineWinnerId(match: any): number | null {
+  if (match.player1_score > match.player2_score) {
+    return match.player1_id; // Could be null if player was deleted
+  } else if (match.player2_score > match.player1_score) {
+    return match.player2_id; // Could be null if player was deleted
+  }
+  return null; // Draw
+}
+
 export function registerMatchRoutes(fastify: FastifyInstance) {
   // Get all matches
   fastify.get('/matches', {
@@ -37,10 +47,12 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
                 type: 'object',
                 properties: {
                   id: { type: 'number' },
-                  player1_id: { type: 'number' },
-                  player2_id: { type: 'number' },
+                  player1_id: { type: ['number', 'null'] },
+                  player2_id: { type: ['number', 'null'] },
                   player1_score: { type: 'number' },
                   player2_score: { type: 'number' },
+                  player1_username: { type: 'string' },
+                  player2_username: { type: 'string' },
                   status: { type: 'string' },
                   match_date: { type: 'string' },
                   created_at: { type: 'string' },
@@ -60,17 +72,38 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
             { 
               model: fastify.db.models.User, 
               as: 'player1',
-              attributes: ['username']
+              attributes: ['username'],
+              required: false // LEFT JOIN to handle null player1_id
             },
             { 
               model: fastify.db.models.User, 
               as: 'player2',
-              attributes: ['username']
+              attributes: ['username'],
+              required: false // LEFT JOIN to handle null player2_id
             }
           ],
           order: [['match_date', 'DESC']]
         });
-        return { success: true, data: matches };
+
+        // Transform matches to include usernames with proper handling of deleted users
+        const transformedMatches = matches.map((match: any) => {
+          const m = match.toJSON();
+          return {
+            id: m.id,
+            player1_id: m.player1_id,
+            player2_id: m.player2_id,
+            player1_score: m.player1_score,
+            player2_score: m.player2_score,
+            player1_username: m.player1?.username || '[user deleted]',
+            player2_username: m.player2?.username || '[user deleted]',
+            status: m.status,
+            match_date: m.match_date,
+            created_at: m.createdAt,
+            updated_at: m.updatedAt
+          };
+        });
+
+        return { success: true, data: transformedMatches };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });
@@ -92,8 +125,8 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
                             type: 'object',
                             properties: {
                                 id: { type: 'number' },
-                                player1_id: { type: 'number' },
-                                player2_id: { type: 'number' },
+                                player1_id: { type: ['number', 'null'] },
+                                player2_id: { type: ['number', 'null'] },
                                 player1_score: { type: 'number' },
                                 player2_score: { type: 'number' },
                                 player1_username: { type: 'string' },
@@ -124,12 +157,14 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
                     { 
                         model: fastify.db.models.User, 
                         as: 'player1',
-                        attributes: ['username']
+                        attributes: ['username'],
+                        required: false // LEFT JOIN to handle null player1_id
                     },
                     { 
                         model: fastify.db.models.User, 
                         as: 'player2',
-                        attributes: ['username']
+                        attributes: ['username'],
+                        required: false // LEFT JOIN to handle null player2_id
                     }
                 ],
                 order: [['match_date', 'DESC']]
@@ -144,8 +179,8 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
                     player2_id: m.player2_id,
                     player1_score: m.player1_score,
                     player2_score: m.player2_score,
-                    player1_username: m.player1?.username || '[deleted]',
-                    player2_username: m.player2?.username || '[deleted]',
+                    player1_username: m.player1?.username || '[user deleted]',
+                    player2_username: m.player2?.username || '[user deleted]',
                     status: m.status,
                     match_date: m.match_date, // This will be the Paris time when match was completed
                     created_at: m.createdAt,
@@ -159,7 +194,7 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
             return reply.status(400).send({ success: false, message: error.message });
         }
     }
-  }),
+  });
 
   // Get match by ID
   fastify.get('/matches/:id', {
@@ -180,10 +215,12 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 id: { type: 'number' },
-                player1_id: { type: 'number' },
-                player2_id: { type: 'number' },
+                player1_id: { type: ['number', 'null'] },
+                player2_id: { type: ['number', 'null'] },
                 player1_score: { type: 'number' },
                 player2_score: { type: 'number' },
+                player1_username: { type: 'string' },
+                player2_username: { type: 'string' },
                 status: { type: 'string' },
                 match_date: { type: 'string' },
                 created_at: { type: 'string' },
@@ -197,13 +234,43 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
     preHandler: fastify.authenticate,
     handler: async (request: FastifyRequest<{ Params: { id: number } }>, reply: FastifyReply) => {
       try {
-        const match = await fastify.db.models.Match.findByPk(request.params.id);
+        const match = await fastify.db.models.Match.findByPk(request.params.id, {
+          include: [
+            { 
+              model: fastify.db.models.User, 
+              as: 'player1',
+              attributes: ['username'],
+              required: false // LEFT JOIN to handle null player1_id
+            },
+            { 
+              model: fastify.db.models.User, 
+              as: 'player2',
+              attributes: ['username'],
+              required: false // LEFT JOIN to handle null player2_id
+            }
+          ]
+        });
         
         if (!match) {
           return reply.status(404).send({ success: false, message: 'Match not found' });
         }
+
+        const m = match.toJSON() as any;
+        const transformedMatch = {
+          id: m.id,
+          player1_id: m.player1_id,
+          player2_id: m.player2_id,
+          player1_score: m.player1_score,
+          player2_score: m.player2_score,
+          player1_username: m.player1?.username || '[user deleted]',
+          player2_username: m.player2?.username || '[user deleted]',
+          status: m.status,
+          match_date: m.match_date,
+          created_at: m.createdAt,
+          updated_at: m.updatedAt
+        };
         
-        return { success: true, data: match };
+        return { success: true, data: transformedMatch };
       } catch (error) {
         fastify.log.error(error);
         return reply.status(400).send({ success: false, message: error.message });
@@ -242,8 +309,8 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 id: { type: 'number' },
-                player1_id: { type: 'number' },
-                player2_id: { type: 'number' },
+                player1_id: { type: ['number', 'null'] },
+                player2_id: { type: ['number', 'null'] },
                 player1_score: { type: 'number' },
                 player2_score: { type: 'number' },
                 status: { type: 'string' },
@@ -321,8 +388,8 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 id: { type: 'number' },
-                player1_id: { type: 'number' },
-                player2_id: { type: 'number' },
+                player1_id: { type: ['number', 'null'] },
+                player2_id: { type: ['number', 'null'] },
                 player1_score: { type: 'number' },
                 player2_score: { type: 'number' },
                 status: { type: 'string' },
@@ -361,7 +428,7 @@ export function registerMatchRoutes(fastify: FastifyInstance) {
 
         // Set winner_id based on scores
         if (updateData.player1_score !== undefined && updateData.player2_score !== undefined) {
-          match.winner_id = (match.player1_score >= match.player2_score) ? match.player1_id : match.player2_id;
+          match.winner_id = determineWinnerId(match);
         }
 
         // IMPORTANT: Update match_date to Paris time when match is completed
