@@ -3,10 +3,11 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     container_name: frontend
-    ports:
-      - "5173:5173"
+    # ports:
+    #   - "5173:5173"
+    expose: ["5173"]
     volumes:
       - ./frontend:/app
       - ../infra/vault/agent/env/:/app/env:rw
@@ -14,39 +15,60 @@ services:
     networks:
       - transcendence-network
     depends_on:
-      kibana:
+      vault-agent:
         condition: service_healthy
-      modsec-nginx:
-        condition: service_healthy
+    command: >
+      zsh -c '
+        while [ ! -f /app/env/.env ]; do
+          echo "Waiting for .env file to be created..."
+          sleep 1
+        done
+        if [ -f /app/env/.env ]; then
+          set -o allexport
+          . /app/env/.env
+          set +o allexport
+        fi
+        echo "Starting frontend..."
+        npm run dev
+      '
 
   backend:
     build:
       context: ./backend
-      dockerfile: ./docker/dockerfile
+      dockerfile: ./docker/Dockerfile
     container_name: backend
     depends_on:
-      # filebeat:
-        # condition: service_healthy
-      kibana:
+      vault-agent:
         condition: service_healthy
-
     restart: unless-stopped
-    ports:
-      - "3001:3001"
+    expose: ["3000"]
     networks:
       - transcendence-network
     volumes:
       - ./backend/data:/app/data
       - ../infra/vault/agent/env/:/app/env:rw
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -X GET 'http://localhost:3001'"
-        ]
+      test: ["CMD-SHELL", "curl 'http://localhost:3000/api-docs'"]
       interval: 10s
-      timeout: 3s
+      timeout: 2s
       retries: 50
+    command: >
+      sh -c '
+        while [ ! -f /app/env/.env ]; do
+          echo "Waiting for .env file to be created..."
+          sleep 1
+        done
+        if [ -f /app/env/.env ]; then
+          set -o allexport
+          set -a
+          source /app/env/.env
+          set +o allexport
+          set +a
+        fi
+        echo "Starting backend..."
+        npm run dev
+      '
+
 
   modsec-nginx:
     image: owasp/modsecurity-crs:nginx
@@ -54,22 +76,26 @@ services:
     restart: unless-stopped
     user: root
     ports:
-      # - "80:80"
       - "443:8443"
     networks:
       - transcendence-network
     depends_on:
       backend:
         condition: service_healthy
+      vault-agent:
+        condition: service_healthy
     volumes:
-      - ./modsec-nginx/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - ./modsec-nginx/certs/:/etc/nginx/conf:ro
+      - ./modsec-nginx/nginx/default.conf.template:/etc/nginx/templates/conf.d/default.conf.template:ro
       - ./modsec-nginx/logs/nginx/:/var/log/nginx/:rw
+      - ./modsec-nginx/logs/modsec_audit.log:/var/log/modsec_audit.log:rw
+      - ./modsec-nginx/logs/modsec_error.log:/var/log/modsec_error.log:rw
+      - nginx_certs:/etc/nginx/conf/certs/
     environment:
       - PORT=8080
       - SSL_PORT=8443
       - SERVER_NAME=localhost
-      - BACKEND=http://backend:3001
+      - BACKEND=http://backend:3000
+      - FRONTEND=http://frontend:5173
       - MODSEC_AUDIT_ENGINE=on
       - MODSEC_AUDIT_LOG=/var/log/modsec_audit.log
       - LOGLEVEL=warn
@@ -79,7 +105,16 @@ services:
       - ENFORCE_BODYPROC_URLENCODED=1
       - ANOMALY_INBOUND=10
       - ANOMALY_OUTBOUND=5
-      - ALLOWED_METHODS=GET POST PUT
-      - ALLOWED_REQUEST_CONTENT_TYPE=text/xml|application/xml|text/plain|application/json
-      - ALLOWED_REQUEST_CONTENT_TYPE_CHARSET=utf-8|iso-8859-1
-      - ALLOWED_HTTP_VERSIONS=HTTP/1.1 HTTP/2 HTTP/2.0
+    command: >
+      sh -c '
+        if [ ! -f /etc/nginx/conf/certs/server.crt ]; then
+          echo "Generating self-signed certificates..."
+          mkdir -p /etc/nginx/conf/certs
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+          -keyout /etc/nginx/conf/certs/server.key \
+          -out /etc/nginx/conf/certs/server.crt \
+          -subj "/C=FR/ST=France/L=Paris/O=Transcendence/OU=Transcendence/CN=localhost" \
+          -addext "subjectAltName=DNS:localhost"
+        fi
+        exec /docker-entrypoint.sh nginx -g "daemon off;"
+      '

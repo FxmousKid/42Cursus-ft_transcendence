@@ -1,0 +1,90 @@
+<header class="bg-dark-700 border-b border-dark-600 shadow-md">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center py-4">
+            <!-- Logo and site name -->
+            <div class="flex items-center">
+                <a href="/" class="flex items-center group">
+                    <!-- Texte simple et design -->
+                    <span class="text-xl font-semibold text-white group-hover:text-primary-300 transition-colors duration-300">ft_transcendence</span>
+                </a>
+            </div>
+            
+            <!-- Primary navigation -->
+            <nav class="hidden md:flex space-x-2">
+                <a href="/" class="relative px-4 py-2 text-gray-300 hover:text-white font-medium transition-all duration-300 rounded-lg hover:bg-dark-600/50 group">
+                    <span class="relative z-10">Accueil</span>
+                    <div class="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-full"></div>
+                </a>
+            </nav>
+            
+            <!-- Auth buttons -->
+            <div class="flex items-center space-x-4">
+                <a href="/login.html" class="hidden md:inline-block px-4 py-2 text-gray-300 font-medium hover:text-primary-300 transition-all duration-300 rounded-lg hover:bg-dark-600/30">
+                    Connexion
+                </a>
+                <a href="/register.html" class="hidden md:inline-block px-4 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-medium rounded-lg transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-primary-500/25">
+                    Inscription
+                </a>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="menu-toggle" class="text-gray-400 hover:text-white focus:outline-none p-2 rounded-lg hover:bg-dark-600/50 transition-all duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="md:hidden hidden pb-4">
+            <div class="flex flex-col space-y-1 bg-dark-800/50 rounded-lg p-3 mt-2">
+                <a href="/" class="text-gray-300 hover:text-white hover:bg-dark-600/50 font-medium py-3 px-4 rounded-lg transition-all duration-300">Accueil</a>
+                <a href="/login.html" class="text-gray-300 hover:text-white hover:bg-dark-600/50 font-medium py-3 px-4 rounded-lg transition-all duration-300">Connexion</a>
+                <a href="/register.html" class="text-gray-300 hover:text-white hover:bg-dark-600/50 font-medium py-3 px-4 rounded-lg transition-all duration-300">Inscription</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<script>
+    // Menu mobile toggle
+    const menuToggle = document.getElementById('menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    if (menuToggle && mobileMenu) {
+        menuToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+    
+    // Set active nav link
+    document.addEventListener('DOMContentLoaded', () => {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('nav a, #mobile-menu a');
+        
+        navLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href === currentPath || 
+                (currentPath === '/' && href === '/') || 
+                (href !== '/' && currentPath.includes(href))) {
+                // Ajouter les classes active avec le nouveau design
+                if (link.closest('nav')) {
+                    // Navigation desktop
+                    link.classList.remove('text-gray-300', 'hover:text-white');
+                    link.classList.add('text-white', 'bg-dark-600/70');
+                    const underline = link.querySelector('div');
+                    if (underline) {
+                        underline.classList.remove('scale-x-0');
+                        underline.classList.add('scale-x-100');
+                    }
+                } else {
+                    // Navigation mobile
+                    link.classList.remove('text-gray-300', 'hover:text-white');
+                    link.classList.add('text-white', 'bg-dark-600/70');
+                }
+            }
+        });
+    });
+</script> 

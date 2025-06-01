@@ -1,61 +1,62 @@
-# Pong Arcade
+# Frontend - ft_transcendence
 
-## Project info
+Ce dossier contient le code frontend pour le projet ft_transcendence. Il s'agit d'une interface utilisateur simple construite avec HTML, Tailwind CSS et TypeScript.
 
-This is a Pong game project for 42 Transcendence.
+## Structure du projet
 
-## How can I edit this code?
+```
+frontend/
+├── dist/               # Fichiers compilés (générés)
+├── src/                # Code source
+│   ├── css/            # Fichiers CSS
+│   ├── ts/             # Fichiers TypeScript
+│   └── *.html          # Pages HTML
+├── public/             # Ressources statiques
+├── docker/             # Configuration Docker
+└── node_modules/       # Dépendances (générées)
+```
 
-There are several ways of editing your application.
+## Pages
 
-**Use Lovable**
+- `login.html` - Page de connexion
+- `register.html` - Page d'inscription
+- `index.html` - Page d'accueil
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/127d26a2-c3b2-486d-aa91-90ee251f6bf7) and start prompting.
+## Technologies utilisées
 
-Changes made via Lovable will be committed automatically to this repo.
+- HTML5
+- Tailwind CSS - Pour le styling
+- TypeScript - Pour la logique côté client
+- Fastify Static - Pour servir les fichiers statiques
 
-**Use your preferred IDE**
+## Développement
 
-If you want to work locally using your own IDE, you can clone this repo and push changes.
+1. Installer les dépendances:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```bash
+npm install
+```
 
-Follow these steps:
+2. Démarrer le serveur de développement:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+3. Construire pour la production:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run build
+```
 
-**Use GitHub Codespaces**
+4. Servir les fichiers compilés:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+npm run serve
+```
 
-## What technologies are used for this project?
+## Fonctionnalités
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Authentification utilisateur (connexion/inscription)
+- Interface responsive pour tous les appareils
+- Navigation simple et intuitive 

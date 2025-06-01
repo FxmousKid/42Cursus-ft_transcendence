@@ -1,0 +1,214 @@
+<header class="bg-dark-700 border-b border-dark-600 shadow-md">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center py-4">
+            <!-- Logo and site name -->
+            <div class="flex items-center">
+                <a href="/" class="flex items-center group">
+                    <!-- Texte simple et design -->
+                    <span class="text-xl font-semibold text-white group-hover:text-primary-300 transition-colors duration-300">ft_transcendence</span>
+                </a>
+            </div>
+            
+            <!-- Primary navigation -->
+            <nav class="hidden md:flex space-x-2">
+                <a href="/" class="relative px-4 py-2 text-gray-300 hover:text-white font-medium transition-all duration-300 rounded-lg hover:bg-dark-600/50 group">
+                    <span class="relative z-10">Accueil</span>
+                    <div class="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-full"></div>
+                </a>
+                <a href="/game.html" class="relative px-4 py-2 text-gray-300 hover:text-white font-medium transition-all duration-300 rounded-lg hover:bg-dark-600/50 group" id="nav-game-link" onclick="localStorage.setItem('matchType', JSON.stringify({type: 'local',}));">
+                    <span class="relative z-10">Jouer</span>
+                    <div class="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-full"></div>
+                </a>
+                <a href="/friends.html" class="relative px-4 py-2 text-gray-300 hover:text-white font-medium transition-all duration-300 rounded-lg hover:bg-dark-600/50 group">
+                    <span class="relative z-10">Amis</span>
+                    <div class="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-full"></div>
+                </a>
+                <a href="/tournament.html" class="relative px-4 py-2 text-gray-300 hover:text-white font-medium transition-all duration-300 rounded-lg hover:bg-dark-600/50 group">
+                    <span class="relative z-10">Tournament</span>
+                    <div class="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-full"></div>
+                </a>
+                <a href="/profile.html" class="relative px-4 py-2 text-gray-300 hover:text-white font-medium transition-all duration-300 rounded-lg hover:bg-dark-600/50 group">
+                    <span class="relative z-10">Profil</span>
+                    <div class="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-full"></div>
+                </a>
+            </nav>
+            
+            <!-- User menu -->
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:block">
+                    <a href="/profile.html" class="text-gray-300 hover:text-primary-300 transition-colors duration-300">
+                        <!-- Username -->
+                        <span id="username-display" class="font-medium">Salut, Utilisateur</span> 
+                    </a>
+                </div>
+                
+                <!-- Logout button with clean design -->
+                <button id="header-logout-button" class="hidden md:flex items-center text-gray-300 hover:text-red-400 transition-all duration-300 focus:outline-none ml-2 px-3 py-2 rounded-lg hover:bg-red-500/10 hover:shadow-md" aria-label="Déconnexion">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </button>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="menu-toggle" class="text-gray-400 hover:text-white focus:outline-none p-2 rounded-lg hover:bg-dark-600/50 transition-all duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="md:hidden hidden pb-4">
+            <div class="flex flex-col space-y-1 bg-dark-800/50 rounded-lg p-3 mt-2">
+                <a href="/" class="text-gray-300 hover:text-white hover:bg-dark-600/50 font-medium py-3 px-4 rounded-lg transition-all duration-300">Accueil</a>
+                <a href="/game.html" class="text-gray-300 hover:text-white hover:bg-dark-600/50 font-medium py-3 px-4 rounded-lg transition-all duration-300" id="mobile-nav-game-link" onclick="localStorage.setItem('matchType', JSON.stringify({type: 'local',}));">Jouer</a>
+                <a href="/friends.html" class="text-gray-300 hover:text-white hover:bg-dark-600/50 font-medium py-3 px-4 rounded-lg transition-all duration-300">Amis</a>
+                <a href="/tournament.html" class="text-gray-300 hover:text-white hover:bg-dark-600/50 font-medium py-3 px-4 rounded-lg transition-all duration-300">Tournament</a>
+                <a href="/profile.html" class="text-gray-300 hover:text-white hover:bg-dark-600/50 font-medium py-3 px-4 rounded-lg transition-all duration-300">Mon profil</a>
+                <button id="mobile-logout-button" class="text-red-400 hover:text-red-300 hover:bg-red-500/10 font-medium py-3 px-4 rounded-lg transition-all duration-300 flex items-center text-left w-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </div>
+        
+</header>
+
+<body>
+
+</body>
+
+<script>
+    // Afficher le nom d'utilisateur
+    const authService = window.authService;
+    if (authService && authService.getUsername) {
+        const usernameDisplay = document.getElementById('username-display');
+        if (usernameDisplay) {
+            usernameDisplay.textContent = `Salut, ${authService.getUsername() || 'Utilisateur'}`;
+        }
+    }
+
+    // Handle header logout button
+    const headerLogoutButton = document.getElementById('header-logout-button');
+    const mobileLogoutButton = document.getElementById('mobile-logout-button');
+    
+    const handleLogout = async (e) => {
+        e.preventDefault();
+        try {
+            // Show loading state on the button used
+            const button = e.currentTarget;
+            const originalContent = button.innerHTML;
+            
+            button.innerHTML = `
+                <svg class="animate-spin h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Déconnexion...</span>`;
+            button.disabled = true;
+            
+            // Logout
+            await authService.logout();
+            
+            // Redirect to login page
+            window.location.href = '/login.html';
+        } catch (error) {
+            console.error('Erreur lors de la déconnexion:', error);
+            // Redirect anyway in case of error
+            window.location.href = '/login.html';
+        }
+    };
+    
+    if (authService && authService.logout) {
+        if (headerLogoutButton) {
+            headerLogoutButton.addEventListener('click', handleLogout);
+        }
+        
+        if (mobileLogoutButton) {
+            mobileLogoutButton.addEventListener('click', handleLogout);
+        }
+    }
+    
+    function handleGameClick(e) {
+        console.log('Game link clicked!');
+        e.preventDefault();
+        localStorage.removeItem('matchType');
+        localStorage.setItem('matchType', JSON.stringify({
+            type: 'local',
+        }));
+    }
+
+    // Set active nav link
+
+    function initializeNavigation() {
+
+        const gameNavLink = document.getElementById('nav-game-link');
+        const mobGameNavLink = document.getElementById('mobile-nav-game-link');
+        
+        console.log('Game links found:', {
+            desktop: !!gameNavLink,
+            mobile: !!mobGameNavLink
+        });
+
+        // Add event listeners
+        if (gameNavLink) {
+            gameNavLink.addEventListener('click', handleGameClick);
+            console.log('Desktop game link event listener added');
+        } else {
+            console.error('Desktop game link not found!');
+        }
+
+        if (mobGameNavLink) {
+            mobGameNavLink.addEventListener('click', handleGameClick);
+            console.log('Mobile game link event listener added');
+        } else {
+            console.error('Mobile game link not found!');
+        }
+
+
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('nav a, #mobile-menu a');
+        
+        navLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href === currentPath || 
+                (currentPath === '/' && href === '/') || 
+                (href !== '/' && currentPath.includes(href))) {
+                // Ajouter les classes active avec le nouveau design
+                if (link.closest('nav')) {
+                    // Navigation desktop
+                    link.classList.remove('text-gray-300', 'hover:text-white');
+                    link.classList.add('text-white', 'bg-dark-600/70');
+                    const underline = link.querySelector('div');
+                    if (underline) {
+                        underline.classList.remove('scale-x-0');
+                        underline.classList.add('scale-x-100');
+                    }
+                } else {
+                    // Navigation mobile
+                    link.classList.remove('text-gray-300', 'hover:text-white');
+                    link.classList.add('text-white', 'bg-dark-600/70');
+                }
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        console.log('Waiting for DOM to load...');
+        document.addEventListener('DOMContentLoaded', initializeNavigation);
+    } else {
+        console.log('DOM already ready, initializing now');
+        initializeNavigation();
+    }
+</script> 

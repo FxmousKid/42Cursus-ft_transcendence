@@ -19,12 +19,26 @@
 **/modsec-nginx/logs/nginx/*
 **/modsec-nginx/logs/nginx/.gitkeep
 
+# Blockchain stuff
+app/core/backend/blockchain/artifacts/
+app/core/backend/blockchain/cache/
+app/core/backend/typechain-types/factories/TournamentScores__factory.ts
+
+
 
 # Environment files
 app/infra/vault/agent/env/.env
 
 **/db.sqlite
+**/database.sqlite
 
+# Compiled files
+**/dist/
+**/src/js/**/*.js
+**/src/css/output.css
+# Quand on travaille avec Tailwind et TypeScript, on ne veut jamais commit les fichiers compilés
+**/src/css/*.css
+!**/src/css/input.css
 
 # Logs
 *.log
@@ -158,7 +172,12 @@ dist
 .yarn/install-state.gz
 .pnp.*
 app/.env
-backend/.env
+app/core/backend/.env
+app/core/frontend/.env.production
+app/core/frontend/.env.testnet
+app/core/frontend/.env
+app/core/frontend/src/js
 
 app/core/frontend/package-lock.json
 app/core/backend/package-lock.json
+app/core/frontend/src/css/output.css

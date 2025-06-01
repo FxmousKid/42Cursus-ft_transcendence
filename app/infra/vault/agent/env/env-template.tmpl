@@ -2,6 +2,7 @@
 ELASTIC_USER={{ with secret "kv/data/elk/elasticsearch" }}{{ .Data.data.username }}{{ end }}
 ELASTIC_USERNAME={{ with secret "kv/data/elk/elasticsearch" }}{{ .Data.data.username }}{{ end }}
 ELASTIC_PASSWORD={{ with secret "kv/data/elk/elasticsearch" }}{{ .Data.data.password }}{{ end }}
+ELASTICSEARCH_PASSWORD={{ with secret "kv/data/elk/elasticsearch" }}{{ .Data.data.password }}{{ end }}
 
 # Kibana creds
 KIBANA_USER={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.username }}{{ end }}
@@ -9,62 +10,69 @@ KIBANA_USERNAME={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.username }}{
 KIBANA_PASSWORD={{ with secret "kv/data/elk/kibana" }}{{ .Data.data.password }}{{ end }}
 
 
+# Version of Elastic products
+STACK_VERSION={{ with secret "kv/data/elk/stack_version" }}{{ .Data.data.version }}{{ end }}
+
+# Set the cluster name for elasticsearch
+CLUSTER_NAME={{ with secret "kv/data/elk/elastic_cluster_name" }}{{ .Data.data.name }}{{ end }}
+
+# Set to 'basic' or 'trial' to automatically start the 30-day trial of es-cloud
+LICENSE=basic
+
+ES_PORT={{ with secret "kv/data/elk/es_port" }}{{ .Data.data.port }}{{ end }}
+KIBANA_PORT={{ with secret "kv/data/elk/kibana_port" }}{{ .Data.data.port }}{{ end }}
+
+# SAMPLE Predefined Key only to be used in POC environments
+ENCRYPTION_KEY={{ with secret "kv/data/elk/encryption_key" }}{{ .Data.data.key }}{{ end }}
+XPACK_SECURITY_ENCRYPTIONKEY={{ with secret "kv/data/elk/encryption_key" }}{{ .Data.data.key }}{{ end }}
+XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY={{ with secret "kv/data/elk/encryption_key" }}{{ .Data.data.key }}{{ end }}
+XPACK_REPORTING_ENCRYPTIONKEY={{ with secret "kv/data/elk/encryption_key" }}{{ .Data.data.key }}{{ end }}
+ 
+
 # Frontend configuration
-VITE_APP_NAME=Transcendence
-FRONTEND_PORT=5173
-FRONTEND_URL=http://localhost:5173
+VITE_APP_NAME={{ with secret "kv/data/frontend/app_name" }}{{ .Data.data.name }}{{ end }}
+FRONTEND_PORT={{ with secret "kv/data/frontend/port" }}{{ .Data.data.port }}{{ end }}
+FRONTEND_URL={{ with secret "kv/data/frontend/url" }}{{ .Data.data.url }}{{ end }}
+
 
 # Backend configuration
-BACKEND_PORT=3000
-BACKEND_URL=http://localhost:3000
+BACKEND_PORT={{ with secret "kv/data/backend/port" }}{{ .Data.data.port }}{{ end }}
+BACKEND_URL={{ with secret "kv/data/backend/url" }}{{ .Data.data.url }}{{ end }}
 
-# Pour l'accès aux API (utilisée par le frontend)
-# En local
-API_URL=http://localhost:3001
-# En Docker (le nom du service dans docker-compose)
-VITE_API_URL=http://backend:3001
-VITE_APP_NAME=Transcendence 
+# Pour l'accès aux API (utilisée par le frontend) 
+API_URL={{ with secret "kv/data/backend/api_url" }}{{ .Data.data.url }}{{ end }}
+VITE_API_URL={{ with secret "kv/data/backend/vite_api_url" }}{{ .Data.data.url }}{{ end }}
 
-# Server configuration
-PORT=3000
-HOST=0.0.0.0
+# Server Configuration
+NGINX_SERVER_PORT={{ with secret "kv/data/backend/port" }}{{ .Data.data.port }}{{ end }}
+HOST={{ with secret "kv/data/server/host" }}{{ .Data.data.host }}{{ end }}
 
 # Database Configuration
-DATABASE_URL="sqlite:./db.sqlite"
+DATABASE_URL={{ with secret "kv/data/database/url" }}{{ .Data.data.url }}{{ end }}
+DATABASE_PATH={{ with secret "kv/data/database/path" }}{{ .Data.data.path }}{{ end }}
 
 # JWT Configuration
-JWT_SECRET=transcendence_jwt_secret_key
-JWT_EXPIRATION="1d"
-NODE_ENV=development
+JWT_SECRET={{ with secret "kv/data/backend/jwt_secret" }}{{ .Data.data.secret }}{{ end }}
+JWT_EXPIRATION={{ with secret "kv/data/backend/jwt_expiration" }}{{ .Data.data.expiration }}{{ end }}
+JWT_EXPIRES_IN={{ with secret "kv/data/backend/jwt_expiration" }}{{ .Data.data.expiration }}{{ end }}
+NODE_ENV={{ with secret "kv/data/backend/node_env" }}{{ .Data.data.env }}{{ end }}
 
 # CORS Configuration
-CORS_ORIGIN="http://localhost:5173"
+CORS_ORIGIN={{ with secret "kv/data/backend/cors_origin" }}{{ .Data.data.origin }}{{ end }}
 
 # API Configuration
 API_PREFIX="/api"
 SWAGGER_PATH="/docs" 
 
-# Version of Elastic products
-STACK_VERSION=8.18.0
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID={{ with secret "kv/data/google_oauth/client_id" }}{{ .Data.data.id }}{{ end }}
+GOOGLE_CLIENT_SECRET={{ with secret "kv/data/google_oauth/client_secret" }}{{ .Data.data.secret }}{{ end }}
+GOOGLE_CALLBACK_URL={{ with secret "kv/data/google_oauth/callback_url" }}{{ .Data.data.url }}{{ end }}
 
-# Set the cluster name for elasticsearch
-CLUSTER_NAME=docker-cluster
+# Session
+SESSION_SECRET={{ with secret "kv/data/session/secret" }}{{ .Data.data.secret }}{{ end }}
 
-# Set to 'basic' or 'trial' to automatically start the 30-day trial of es-cloud
-LICENSE=basic
-#LICENSE=trial
-
-# Port to expose Elasticsearch HTTP API to the host
-ES_PORT=9200
-
-# Port to expose Kibana to the host
-KIBANA_PORT=5601
-
-## SAMPLE Predefined Key only to be used in POC environments
-ENCRYPTION_KEY=c34d38b3a14956121ff2170e5030b471551370178f43e5626eec58b04a30fae2
-
-ELASTICSEARCH_PASSWORD=$KIBANA_PASSWORD
-XPACK_SECURITY_ENCRYPTIONKEY=$ENCRYPTION_KEY
-XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=$ENCRYPTION_KEY
-XPACK_REPORTING_ENCRYPTIONKEY=$ENCRYPTION_KEY
- 
+# Blockchain
+AVALANCHE_RPC_URL={{ with secret "kv/data/blockchain/avalanche_rpc_url" }}{{ .Data.data.url }}{{ end }}
+BLOCKCHAIN_PRIVATE_KEY={{ with secret "kv/data/blockchain/private_key" }}{{ .Data.data.key }}{{ end }}
+TOURNAMENT_CONTRACT_ADDRESS={{ with secret "kv/data/blockchain/tournament_private_addr" }}{{ .Data.data.addr }}{{ end }}

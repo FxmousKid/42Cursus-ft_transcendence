@@ -1,10 +1,8 @@
-# core/modsec-nginx/nginx/default.conf.template
 server {
-    listen       ${PORT} default_server;      # PORT defaults to 8080
-    listen       ${SSL_PORT} ssl http2;       # SSL_PORT defaults to 8443
-    server_name  ${SERVER_NAME};
+    listen			${SSL_PORT} ssl http2 default_server;
+    server_name		${SERVER_NAME:-localhost};
 
-    # ── TLS (replace with real certs in core/modsec-nginx/certs) ───────────────────
+    # ── TLS ───────────────────
     ssl_certificate     /etc/nginx/conf/server.crt;
     ssl_certificate_key /etc/nginx/conf/server.key;
 
@@ -13,15 +11,54 @@ server {
     add_header X-Content-Type-Options nosniff   always;
 
     # ── Enable ModSecurity ────────────────────────────────────────────────────────
-    modsecurity           on;
-    modsecurity_rules_file /etc/modsecurity/modsecurity.conf;
+	modsecurity           on;
 
-    # ── Reverse‑proxy to the NestJS back‑end ──────────────────────────────────────
-    location / {
-        proxy_pass         ${BACKEND};        # ← env BACKEND=http://backend:3001
-        proxy_set_header   Host              $host;
-        proxy_set_header   X-Real-IP         $remote_addr;
-        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
+
+    # ── Websocket ─────────────────────────────────────
+	location /socket.io/ {
+		modsecurity off;
+		proxy_pass http://backend:3000/socket.io/;
+
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection "upgrade";
+		
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-Proto $scheme;
+
+		proxy_read_timeout 3600s;
+		proxy_send_timeout 3600s;
+	}
+
+    # ── frontend ──────────────────────────────────────
+	location / {
+		proxy_pass			http://frontend:5173/;
+		proxy_set_header	Host				$host;
+		proxy_set_header	X-Forwarded-Proto	$scheme;
+	}
+	
+	location = /api/auth/google/callback {
+		modsecurity off;
+
+		proxy_pass http://backend:3000/auth/google/callback;
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-Proto $scheme;
+	}
+
+    # ── API ─────────────────────────────────────
+    location /api/ {
+        proxy_pass         	http://backend:3000/; # ← env BACKEND=http://backend:3000
+        proxy_set_header   	Host              	$host;
+        proxy_set_header   	X-Real-IP         	$remote_addr;
+        proxy_set_header   	X-Forwarded-Proto 	$scheme;
     }
+
+   	# ── Healthcheck ─────────────────────────────────────
+	location /healthcheck {
+		return 200 'OK';
+		add_header Content-Type text/plain;
+	}
+
 }

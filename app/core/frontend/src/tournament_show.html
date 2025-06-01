@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tournament Results - ft_transcendence</title>
+  <link rel="stylesheet" href="css/output.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-dark-800">
+
+  <!-- En-tête -->
+  <div id="header-container"></div>
+
+  <!-- Contenu principal -->
+  <main class="flex-grow flex flex-col items-center justify-center text-center px-4">
+		<h1 class="text-3xl font-bold text-white mb-8 bg-dark-800/70 backdrop-blur-md rounded-xl shadow-xl border border-dark-700/70 p-6 text-center relative overflow-hidden">
+			<!-- Top accent line -->
+			<div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
+			Tournament Results
+			<!-- Bottom accent line -->
+			<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
+		</h1>
+		
+		<h1 class="text-2xl font-bold text-white mb-8 bg-dark-800/70 backdrop-blur-md rounded-xl shadow-xl 0 p-6 text-center relative overflow-hidden" id="nb-round">
+				Round 
+		</h1>
+
+
+    <div class="w-full max-w-4xl space-y-4" id="matches-container">
+      <!-- Matches will be dynamically inserted here -->
+    </div>
+
+    <button id="back-tournament" class="mt-12 mb-16 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-8 rounded-xl text-xl transition-all duration-300 transform hover:scale-105 border border-blue-500/50 shadow-lg hover:shadow-blue-500/25 flex items-center justify-center">
+      <i class="fas fa-arrow-right mr-3"></i>
+      Next Match
+    </button>
+  </main>
+
+  <!-- Pied de page -->
+  <div id="footer-container"></div>
+  <script>
+        // Chargement du footer
+        fetch('components/footer.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('footer-container').innerHTML = data;
+            })
+            .catch(error => console.error('Erreur lors du chargement du footer:', error));
+    </script>
+
+  <!-- Scripts -->
+  <script src="js/app.js"></script>
+  <script src="js/header-loader.js"></script>
+  <script src="js/route-guard.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/websocket.js"></script>
+  <script type="module" src="js/tournament_show.js"></script>
+</body>
+</html>
