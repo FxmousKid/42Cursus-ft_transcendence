@@ -8,9 +8,6 @@ all: build up
 
 # Build all services
 build:
-	@mkdir -p ./app/core/modsec-nginx/logs/nginx
-	@touch ./app/core/modsec-nginx/logs/modsec_audit.log
-	@touch ./app/core/modsec-nginx/logs/modsec_erorr.log
 	$(DOCC) -f $(MAIN_COMPOSE) build
 
 
