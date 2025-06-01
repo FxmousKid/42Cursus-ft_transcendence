@@ -1,5 +1,6 @@
 # include the compsoe of every provided type of service
 include:
+  - path: ./core/docker-compose.core.yml                    # Core HTTPS service (nginx + node)
   - path: ./infra/vault/docker-compose.vault.yml            # Hashicorp Vault services
   - path: ./infra/logging/docker-compose.logging.yml        # ELK stack services
   - path: ./infra/monitoring/docker-compose.monitoring.yml  # Monitoring services

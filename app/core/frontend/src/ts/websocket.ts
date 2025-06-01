@@ -1,10 +1,5 @@
-// WebSocket URL configuration
-const WS_URL = ( 
-  window.location.hostname === 'localhost' &&
-  window.location.port === '5173'
-)
-  ? 'http://localhost:3000'
-  : window.location.origin; // Use current origin instead of just '/api'
+// WebSocket URL configuration - SECURE HTTPS/WSS ONLY
+const WS_URL = window.location.origin; // Always use current origin for HTTPS/WSS
 
 // Log the WebSocket URL for debugging
 console.log('[Socket.io] Using WebSocket URL:', WS_URL);
@@ -103,7 +98,7 @@ class WebSocketService {
 
   // Initialize Socket.io connection
   private initializeSocket(token: string, resolve: (value: boolean) => void, reject: (reason?: any) => void) {
-    console.log('[Socket.io] Initializing connection');
+    console.log('[Socket.io] Initializing secure WSS connection');
     try {
       // Log the original token format for debugging
       console.log('[Socket.io] Original token format:', token.startsWith('Bearer ') ? 'Has Bearer prefix' : 'No Bearer prefix');
@@ -115,18 +110,22 @@ class WebSocketService {
         ? cleanToken.substring(0, 15) + '...' + cleanToken.substring(cleanToken.length - 5)
         : cleanToken;
       
-      console.log('[Socket.io] Token prepared for connection:', tokenPreview);
+      console.log('[Socket.io] Token prepared for secure connection:', tokenPreview);
       
       // Connect to Socket.io server with clean token (no Bearer prefix)
+      // Force secure connection (wss://) by using HTTPS origin
       this.socket = io(WS_URL, {
         auth: { token: cleanToken },
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: this.reconnectDelay,
         timeout: 10000,
-        path: WS_URL.includes('localhost:3000') ? '/socket.io/' : '/api/socket.io/',
+        path: '/api/socket.io/', // Always use API path for production HTTPS setup
         transports: ['websocket', 'polling'], // Allow fallback to polling if WebSocket fails
-        forceNew: true // Force a new connection
+        forceNew: true, // Force a new connection
+        secure: true, // Force secure connection (wss://)
+        upgrade: true,
+        rememberUpgrade: true
       });
 
       // Connection success

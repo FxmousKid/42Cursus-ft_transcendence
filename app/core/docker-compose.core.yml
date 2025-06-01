@@ -1,0 +1,36 @@
+services:
+  # Service principal avec multi-stage build (nginx + node)
+  transcendence-core:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: transcendence-core
+    restart: unless-stopped
+    ports:
+      - "443:443"  # HTTPS seulement
+      - "80:80"    # Pour redirection HTTP -> HTTPS
+    environment:
+      # Variables d'environnement pour le backend
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=127.0.0.1
+      # SSL Configuration
+      - SSL_CERT_PATH=/etc/nginx/ssl/server.crt
+      - SSL_KEY_PATH=/etc/nginx/ssl/server.key
+    volumes:
+      # Volumes pour les certificats SSL (optionnel pour certificats personnalisés)
+      - nginx_certs:/etc/nginx/ssl
+      # Volumes pour les logs
+      - ./logs/nginx:/var/log/nginx
+      - ./logs/backend:/app/backend/logs
+    networks:
+      - transcendence-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "https://localhost:443/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      vault-agent:
+        condition: service_healthy 

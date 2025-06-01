@@ -4,7 +4,7 @@
   "description": "Frontend for ft_transcendence project",
   "main": "index.js",
   "scripts": {
-    "build": "webpack && mkdir -p ./dist && tailwindcss -i ./src/css/input.css -o ./src/css/output.css && cp -r ./src/*.html ./dist/ && cp -r ./src/components ./dist/ && cp -r ./src/css ./dist/",
+    "build": "webpack && mkdir -p ./dist && tailwindcss -i ./src/css/input.css -o ./src/css/output.css && cp -r ./src/*.html ./dist/ && cp -r ./src/components ./dist/ && cp -r ./src/css ./dist/ && cp -r ./src/js ./dist/ && cp -r ./src/ts ./dist/ && cp -r ./src/websocket ./dist/ && cp -r ./src/auth ./dist/ && [ -f ./src/favicon.ico ] && cp ./src/favicon.ico ./dist/ || true",
     "dev": "concurrently \"webpack --watch\" \"tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch\" \"serve src -p 5173\"",
     "serve": "fastify static -r ./src",
     "start": "npm run build && serve src -p 5173",
