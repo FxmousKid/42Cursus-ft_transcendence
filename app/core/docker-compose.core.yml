@@ -105,10 +105,6 @@ services:
       - ENFORCE_BODYPROC_URLENCODED=1
       - ANOMALY_INBOUND=10
       - ANOMALY_OUTBOUND=5
-      - ALLOWED_METHODS=GET POST PUT
-      - ALLOWED_REQUEST_CONTENT_TYPE=text/xml|application/xml|text/plain|application/json
-      - ALLOWED_REQUEST_CONTENT_TYPE_CHARSET=utf-8|iso-8859-1
-      - ALLOWED_HTTP_VERSIONS=HTTP/1.1 HTTP/2 HTTP/2.0
     command: >
       sh -c '
         if [ ! -f /etc/nginx/conf/certs/server.crt ]; then
