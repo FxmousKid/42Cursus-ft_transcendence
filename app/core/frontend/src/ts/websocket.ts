@@ -4,7 +4,7 @@ const WS_URL = (
   window.location.port === '5173'
 )
   ? 'http://localhost:3000'
-  : '/api';
+  : 'https://localhost/';
 
 // Log the WebSocket URL for debugging
 console.log('[Socket.io] Using WebSocket URL:', WS_URL);

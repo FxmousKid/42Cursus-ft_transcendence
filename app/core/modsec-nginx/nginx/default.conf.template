@@ -11,7 +11,7 @@ server {
     add_header X-Content-Type-Options nosniff   always;
 
     # ── Enable ModSecurity ────────────────────────────────────────────────────────
-    modsecurity           on;
+	modsecurity           on;
 
 
     # ── Websocket ─────────────────────────────────────
