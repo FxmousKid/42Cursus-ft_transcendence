@@ -31,11 +31,47 @@ server {
 		proxy_send_timeout 3600s;
 	}
 
+    # ── WebSocket for API path ─────────────────────────────────
+	location /api/socket.io/ {
+		modsecurity off;
+		proxy_pass http://backend:3000/socket.io/;
+
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection "upgrade";
+		
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-Proto $scheme;
+
+		proxy_read_timeout 3600s;
+		proxy_send_timeout 3600s;
+	}
+
     # ── frontend ──────────────────────────────────────
 	location / {
 		proxy_pass			http://frontend:5173/;
 		proxy_set_header	Host				$host;
 		proxy_set_header	X-Forwarded-Proto	$scheme;
+	}
+
+	# ── Static assets with proper MIME types ──────────────────────────────────────
+	location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+		proxy_pass			http://frontend:5173;
+		proxy_set_header	Host				$host;
+		proxy_set_header	X-Forwarded-Proto	$scheme;
+		
+		# Add proper MIME type headers
+		location ~* \.js$ {
+			add_header Content-Type application/javascript;
+		}
+		location ~* \.css$ {
+			add_header Content-Type text/css;
+		}
+		
+		# Cache static assets
+		expires 1h;
+		add_header Cache-Control "public, immutable";
 	}
 	
 	location = /api/auth/google/callback {

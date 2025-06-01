@@ -4,7 +4,7 @@ const WS_URL = (
   window.location.port === '5173'
 )
   ? 'http://localhost:3000'
-  : '/api';
+  : window.location.origin; // Use current origin instead of just '/api'
 
 // Log the WebSocket URL for debugging
 console.log('[Socket.io] Using WebSocket URL:', WS_URL);
@@ -123,7 +123,10 @@ class WebSocketService {
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: this.reconnectDelay,
-        timeout: 10000
+        timeout: 10000,
+        path: WS_URL.includes('localhost:3000') ? '/socket.io/' : '/api/socket.io/',
+        transports: ['websocket', 'polling'], // Allow fallback to polling if WebSocket fails
+        forceNew: true // Force a new connection
       });
 
       // Connection success
@@ -144,6 +147,12 @@ class WebSocketService {
       // Connection error
       this.socket.on('connect_error', (error: any) => {
         console.error('[Socket.io] Connection error:', error);
+        console.error('[Socket.io] Error details:', {
+          message: error.message,
+          description: error.description,
+          context: error.context,
+          type: error.type
+        });
         this.reconnectAttempts++;
         
         if (this.reconnectAttempts > this.maxReconnectAttempts) {
@@ -304,6 +313,40 @@ class WebSocketService {
     return this.isConnecting;
   }
 
+  // Diagnostic function to help debug WebSocket issues
+  diagnose() {
+    console.log('[Socket.io] WebSocket Diagnostic Information:');
+    console.log('- WS_URL:', WS_URL);
+    console.log('- Current hostname:', window.location.hostname);
+    console.log('- Current port:', window.location.port);
+    console.log('- Current protocol:', window.location.protocol);
+    console.log('- Current origin:', window.location.origin);
+    console.log('- Socket connected:', this.isConnected());
+    console.log('- Socket connecting:', this.isCurrentlyConnecting());
+    console.log('- Backend available:', this.isBackendAvailable);
+    console.log('- Reconnect attempts:', this.reconnectAttempts);
+    console.log('- Max reconnect attempts:', this.maxReconnectAttempts);
+    
+    if (this.socket) {
+      console.log('- Socket.io transport:', this.socket.io?.engine?.transport?.name);
+      console.log('- Socket.io readyState:', this.socket.io?.engine?.readyState);
+    }
+    
+    // Test basic connectivity
+    const testUrl = WS_URL.includes('localhost:3000') ? 
+      'http://localhost:3000/health' : 
+      `${window.location.origin}/api/health`;
+    
+    console.log('- Testing backend connectivity to:', testUrl);
+    fetch(testUrl)
+      .then(response => {
+        console.log('- Backend connectivity test result:', response.status, response.statusText);
+      })
+      .catch(error => {
+        console.error('- Backend connectivity test failed:', error);
+      });
+  }
+
   // Reattach all event listeners after reconnect
   private reattachListeners() {
     if (!this.socket || !this.socket.connected) return;
@@ -355,6 +398,9 @@ export { websocketService };
 
 // Make it globally available
 (window as any).websocketService = websocketService;
+
+// Make diagnose function globally available for debugging
+(window as any).diagnoseWebSocket = () => websocketService.diagnose();
 
 // Auto-connect if user is authenticated
 document.addEventListener('DOMContentLoaded', async () => {
