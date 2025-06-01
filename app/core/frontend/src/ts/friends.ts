@@ -281,6 +281,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (response.success && response.data) {
                 const friends = response.data;
                 
+                // Store friends list globally for checking - SIMPLE!
+                (window as any).currentFriends = friends;
+                
                 if (friends.length > 0) {
                     // Hide no friends message
                     noFriends.classList.add('hidden');
@@ -301,6 +304,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             console.error('Error loading friends:', error);
         }
+    }
+    
+    // Helper function to check if a user is already a friend - SIMPLE!
+    function isUserAlreadyFriend(userId: number): boolean {
+        const currentFriends = (window as any).currentFriends || [];
+        return currentFriends.some((friend: any) => friend.id === userId);
     }
     
     // Function to add a friend to the UI
@@ -1028,170 +1037,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         friendRequestsContainer.appendChild(requestElement);
     }
     
-    // Function to search for users
-    async function searchUsers(username: string) {
-        try {
+    // Function to search for users and display results - SIMPLIFIED!
+    function searchUsers(query: string) {
+        // Clear previous results
+        searchResults.innerHTML = '';
+        
+        // Show loading state
+        searchResults.innerHTML = `
+            <div class="flex items-center justify-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <span class="ml-3 text-gray-400">Recherche en cours...</span>
+            </div>
+        `;
+        
+        searchResultsContainer.classList.remove('hidden');
+        
+        // Perform search
+        api.user.searchUsers(query).then(response => {
+            // Clear loading state
             searchResults.innerHTML = '';
             
-            if (!username.trim()) {
-                searchResultsContainer.classList.add('hidden');
-                return;
+            if (response.success && response.data && response.data.length > 0) {
+                // Add each user to search results
+                response.data.forEach((user: any) => {
+                    addSearchResultToUI(user);
+                });
+            } else {
+                // Show no results message
+                searchResults.innerHTML = `
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fas fa-search text-4xl mb-4 opacity-50"></i>
+                        <p class="font-medium">Aucun utilisateur trouvé</p>
+                        <p class="text-sm mt-2">Essayez avec un autre nom d'utilisateur</p>
+                    </div>
+                `;
             }
-            
-            // Show loading state
+        }).catch(error => {
+            console.error('Error searching users:', error);
             searchResults.innerHTML = `
-                <div class="text-center py-4">
-                    <svg class="animate-spin h-8 w-8 mx-auto text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p class="mt-2 text-gray-400">Recherche en cours...</p>
+                <div class="text-center py-8 text-red-400">
+                    <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+                    <p class="font-medium">Erreur de recherche</p>
+                    <p class="text-sm mt-2">Veuillez réessayer plus tard</p>
                 </div>
             `;
-            searchResultsContainer.classList.remove('hidden');
-            
-            // First check if the exact username exists
-            const checkResponse = await api.user.checkUsername(username);
-            
-            // If exact username exists, highlight it
-            if (checkResponse.success && checkResponse.exists && checkResponse.user) {
-                const exactUser = checkResponse.user;
-                searchResults.innerHTML = '';
-                
-                // Add the exact match with special highlighting
-                const resultElement = document.createElement('div');
-                resultElement.className = 'search-result-item exact-match p-3 mb-3 bg-blue-900/20 border border-blue-600/30 rounded-lg flex items-center justify-between cursor-pointer transition duration-200 hover:bg-dark-600';
-                resultElement.dataset.id = exactUser.id.toString();
-                
-                resultElement.innerHTML = `
-                    <div class="flex items-center">
-                        <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
-                            ${exactUser.avatar_url ? createAvatarHTML(exactUser, 'medium') : '<i class="fas fa-user text-white text-xl"></i>'}
-                        </div>
-                        <div>
-                            <p class="font-medium text-white">${exactUser.username} <i class="fas fa-check-circle text-purple-400 ml-1"></i></p>
-                            <div class="flex items-center text-sm">
-                                <span class="status-indicator ${exactUser.status === 'online' ? 'bg-blue-400' : 'bg-gray-500'} w-2 h-2 rounded-full mr-2"></span>
-                                <span class="text-gray-400">${exactUser.status === 'online' ? 'En ligne' : 'Hors ligne'}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="add-friend-button px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition duration-150 ease-in-out flex items-center">
-                        <i class="fas fa-user-plus mr-2"></i>
-                        Ajouter
-                    </button>
-                `;
-                
-                // Add event listener for the add button
-                const addButton = resultElement.querySelector('.add-friend-button') as HTMLButtonElement;
-                addButton.addEventListener('click', async () => {
-                    try {
-                        // Disable button to prevent multiple clicks
-                        addButton.disabled = true;
-                        addButton.classList.add('opacity-50');
-                        addButton.innerHTML = '<span class="spinner inline-block w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></span> Envoi...';
-                        
-                        // Send friend request via WebSocket or API
-                        if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
-                            websocketService.send('friend-request', { friendId: exactUser.id });
-                        } else {
-                            await api.friendship.sendFriendRequest(exactUser.id);
-                        }
-                        
-                        // Update UI to show success
-                        resultElement.innerHTML = `
-                            <div class="flex items-center justify-between w-full">
-                                <div class="flex items-center">
-                                    <div class="result-avatar w-12 h-12 bg-dark-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
-                                        ${exactUser.avatar_url ? createAvatarHTML(exactUser, 'medium') : '<i class="fas fa-user text-white text-xl"></i>'}
-                                    </div>
-                                    <div>
-                                        <p class="font-medium text-white">${exactUser.username}</p>
-                                        <div class="flex items-center text-sm">
-                                            <span class="text-purple-400">Demande d'ami envoyée</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="animate-pulse">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                            </div>
-                        `;
-                        
-                        // Afficher une notification
-                        showNotification(`Demande d'ami envoyée à ${exactUser.username}`, 'success');
-                        
-                        // Hide search results after a delay
-                        setTimeout(() => {
-                            searchResultsContainer.classList.add('hidden');
-                            searchUserForm.reset();
-                        }, 2000);
-                    } catch (error) {
-                        console.error('Error sending friend request:', error);
-                        addButton.disabled = false;
-                        addButton.classList.remove('opacity-50');
-                        addButton.innerHTML = '<i class="fas fa-user-plus mr-2"></i> Ajouter';
-                        showNotification('Erreur lors de l\'envoi de la demande d\'ami', 'error');
-                    }
-                });
-                
-                searchResults.appendChild(resultElement);
-                
-                // Also search for similar users for convenience
-                const response = await api.user.searchUsers(username);
-                
-                if (response.success && response.data && response.data.length > 1) {
-                    // Add a separator
-                    const separator = document.createElement('div');
-                    separator.className = 'my-3 text-gray-500 text-sm font-medium px-2 border-t border-dark-600 pt-3';
-                    separator.textContent = 'Autres utilisateurs similaires';
-                    searchResults.appendChild(separator);
-                    
-                    // Add other similar users
-                    response.data.slice(1).forEach((user: any) => {
-                        addSearchResultToUI(user);
-                    });
-                }
-            } else {
-                // Standard search
-                const response = await api.user.searchUsers(username);
-                
-                if (response.success) {
-                    const data = response.data;
-                    searchResults.innerHTML = '';
-                    
-                    if (data.length > 0) {
-                        data.forEach((user: any) => {
-                            addSearchResultToUI(user);
-                        });
-                    } else {
-                        searchResults.innerHTML = `
-                            <div class="text-center py-6 bg-dark-700/40 rounded-lg">
-                                <i class="fas fa-search text-gray-500 text-3xl mb-2"></i>
-                                <p class="text-gray-400 mt-2">Aucun utilisateur trouvé pour "${username}"</p>
-                            </div>
-                        `;
-                    }
-                } else {
-                    throw new Error(response.message || 'Failed to search users');
-                }
-            }
-        } catch (error) {
-            console.error('Error searching users:', error);
-            searchResults.innerHTML = '';
-            searchError.classList.remove('hidden');
-            searchErrorText.textContent = 'Erreur lors de la recherche. Veuillez réessayer.';
-            
-            // Hide error after 3 seconds
-            setTimeout(() => {
-                searchError.classList.add('hidden');
-            }, 3000);
-        }
+        });
     }
     
-    // Function to add a search result to the UI
+    // Function to add a search result to the UI - SIMPLIFIED!
     function addSearchResultToUI(user: any) {
         const resultElement = document.importNode(searchResultTemplate.content, true);
         
@@ -1220,114 +1113,61 @@ document.addEventListener('DOMContentLoaded', async () => {
         const resultItem = resultElement.querySelector('.search-result-item') as HTMLElement;
         resultItem.dataset.id = user.id.toString();
         
-        // Add event listener to send button
-        sendButton.addEventListener('click', async () => {
-            try {
-                // Check if user ID is available
-                if (!user.id) {
-                    console.error('User ID not found');
-                    return;
-                }
-                
-                // Désactiver le bouton pour éviter les clics multiples
-                sendButton.disabled = true;
-                sendButton.classList.add('opacity-50');
-                sendButton.innerHTML = '<span class="spinner inline-block w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></span> Envoi...';
-                
-                // Utiliser WebSocket si disponible
-                const websocketService = (window as any).websocketService;
-                if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
-                    console.log('Sending friend request via WebSocket');
-                    websocketService.send('friend-request', { friendId: user.id });
+        // SIMPLE CHECK: Is user already a friend?
+        if (isUserAlreadyFriend(user.id)) {
+            sendButton.innerHTML = '<i class="fas fa-check mr-1.5"></i> Déjà ami';
+            sendButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            sendButton.classList.add('bg-green-600', 'cursor-not-allowed');
+            sendButton.disabled = true;
+        } else {
+            // Can send friend request
+            sendButton.addEventListener('click', async () => {
+                try {
+                    // Disable button to prevent multiple clicks
+                    sendButton.disabled = true;
+                    sendButton.classList.add('opacity-50');
+                    sendButton.innerHTML = '<span class="spinner inline-block w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></span> Envoi...';
                     
-                    // Remplacer le résultat de recherche par un message de confirmation
-                    resultItem.innerHTML = `
-                        <div class="flex items-center justify-between w-full">
-                            <div class="flex items-center">
-                                <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
-                                    ${avatar.innerHTML}
-                                </div>
-                                <div>
-                                    <p class="font-medium text-white">${user.username}</p>
-                                    <div class="flex items-center text-sm">
-                                        <span class="text-purple-400">Demande d'ami envoyée</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="animate-pulse">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Afficher une notification
-                    showNotification(`Demande d'ami envoyée à ${user.username}`, 'success');
-                    
-                    // Après 3 secondes, cacher les résultats de recherche et réinitialiser le formulaire
-                    setTimeout(() => {
-                        searchResultsContainer.classList.add('hidden');
-                        searchUserForm.reset();
-                        // Réinitialisez le résultat après quelques secondes
-                        searchResults.innerHTML = '';
-                    }, 2000);
-                } else {
-                    // Fallback à l'API REST
-                    console.log('WebSocket not available, using REST API');
-                    const response = await api.friendship.sendFriendRequest(user.id);
-                    
-                    if (response.success) {
-                        // Remplacer le résultat de recherche par un message de confirmation
-                        resultItem.innerHTML = `
-                            <div class="flex items-center justify-between w-full">
-                                <div class="flex items-center">
-                                    <div class="result-avatar w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mr-4 flex items-center justify-center overflow-hidden border border-dark-500">
-                                        ${avatar.innerHTML}
-                                    </div>
-                                    <div>
-                                        <p class="font-medium text-white">${user.username}</p>
-                                        <div class="flex items-center text-sm">
-                                            <span class="text-purple-400">Demande d'ami envoyée</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="animate-pulse">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                            </div>
-                        `;
+                    // Send friend request via WebSocket or API
+                    if (websocketService && websocketService.isConnected && websocketService.isConnected()) {
+                        console.log('Sending friend request via WebSocket');
+                        websocketService.send('friend-request', { friendId: user.id });
                         
-                        // Afficher une notification
+                        // Update button to show request sent
+                        sendButton.innerHTML = '<i class="fas fa-clock mr-1.5"></i> Demande envoyée';
+                        sendButton.classList.remove('bg-blue-600');
+                        sendButton.classList.add('bg-yellow-600', 'cursor-not-allowed');
+                        
                         showNotification(`Demande d'ami envoyée à ${user.username}`, 'success');
-                        
-                        // Après 3 secondes, cacher les résultats de recherche et réinitialiser le formulaire
-                        setTimeout(() => {
-                            searchResultsContainer.classList.add('hidden');
-                            searchUserForm.reset();
-                            // Réinitialisez le résultat après quelques secondes
-                            searchResults.innerHTML = '';
-                        }, 2000);
                     } else {
-                        console.error('Failed to send friend request:', response.message);
-                        showNotification(`Erreur: ${response.message}`, 'error');
-                        // Réactiver le bouton en cas d'erreur
-                        sendButton.disabled = false;
-                        sendButton.classList.remove('opacity-50');
-                        sendButton.innerHTML = '<i class="fas fa-user-plus mr-1.5"></i> Ajouter';
+                        // Fallback à l'API REST
+                        const response = await api.friendship.sendFriendRequest(user.id);
+                        
+                        if (response.success) {
+                            sendButton.innerHTML = '<i class="fas fa-clock mr-1.5"></i> Demande envoyée';
+                            sendButton.classList.remove('bg-blue-600');
+                            sendButton.classList.add('bg-yellow-600', 'cursor-not-allowed');
+                            
+                            showNotification(`Demande d'ami envoyée à ${user.username}`, 'success');
+                        } else {
+                            console.error('Failed to send friend request:', response.message);
+                            showNotification(`Erreur: ${response.message}`, 'error');
+                            // Réactiver le bouton en cas d'erreur
+                            sendButton.disabled = false;
+                            sendButton.classList.remove('opacity-50');
+                            sendButton.innerHTML = '<i class="fas fa-user-plus mr-1.5"></i> Ajouter';
+                        }
                     }
+                } catch (error) {
+                    console.error('Error sending friend request:', error);
+                    showNotification('Une erreur est survenue', 'error');
+                    // Réactiver le bouton en cas d'erreur
+                    sendButton.disabled = false;
+                    sendButton.classList.remove('opacity-50');
+                    sendButton.innerHTML = '<i class="fas fa-user-plus mr-1.5"></i> Ajouter';
                 }
-            } catch (error) {
-                console.error('Error sending friend request:', error);
-                showNotification('Une erreur est survenue', 'error');
-                // Réactiver le bouton en cas d'erreur
-                sendButton.disabled = false;
-                sendButton.classList.remove('opacity-50');
-                sendButton.innerHTML = '<i class="fas fa-user-plus mr-1.5"></i> Ajouter';
-            }
-        });
+            });
+        }
         
         searchResults.appendChild(resultElement);
     }
