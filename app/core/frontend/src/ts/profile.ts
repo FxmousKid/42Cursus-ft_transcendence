@@ -2,13 +2,13 @@ import { api, getAvatarUrl } from './api';
 
 interface MatchData {
     id: number;
-    player1_id: number;
-    player2_id: number;
+    player1_id: number | null;
+    player2_id: number | null;
     player1_username: string;
     player2_username: string;
     player1_score: number;
     player2_score: number;
-    winner_id?: number;
+    winner_id?: number | null;
     status: string;
     match_date?: string;
     createdAt?: string;
@@ -377,7 +377,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const matchFragment = document.importNode(matchTemplate.content, true);
         const matchElement = matchFragment.querySelector('.match-item') as HTMLElement;
         
-        const isPlayer1 = match.player1_id.toString() === userId;
+        // Handle null player IDs - if player1_id is null, user must be player2
+        const isPlayer1 = match.player1_id !== null && match.player1_id.toString() === userId;
         const currentPlayerScore = isPlayer1 ? match.player1_score : match.player2_score;
         const opponentScore = isPlayer1 ? match.player2_score : match.player1_score;
         const opponentName = isPlayer1 ? match.player2_username : match.player1_username;

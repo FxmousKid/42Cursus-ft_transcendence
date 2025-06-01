@@ -20,13 +20,13 @@ export interface UserProfile {
 
 export interface MatchData {
   id: number;
-  player1_id: number;
-  player2_id: number;
+  player1_id: number | null;
+  player2_id: number | null;
   player1_username: string;
   player2_username: string;
   player1_score: number;
   player2_score: number;
-  winner_id?: number;
+  winner_id?: number | null;
   status: string;
   match_date?: string; // Added for Paris timezone match completion time
   created_at?: string;

@@ -12,11 +12,11 @@ import { User } from './user.model';
 
 interface MatchAttributes {
   id?: number;
-  player1_id: number;
-  player2_id: number;
+  player1_id: number | null;
+  player2_id: number | null;
   player1_score: number;
   player2_score: number;
-  winner_id?: number;
+  winner_id?: number | null;
   status: string; // 'scheduled', 'in_progress', 'completed', 'cancelled'
   match_date: Date;
   created_at?: Date;
@@ -29,14 +29,14 @@ interface MatchAttributes {
 })
 export class Match extends Model<MatchAttributes> {
   @ForeignKey(() => User)
-  @AllowNull(false)
+  @AllowNull(true)
   @Column(DataType.INTEGER)
-  declare player1_id: number;
+  declare player1_id: number | null;
 
   @ForeignKey(() => User)
-  @AllowNull(false)
+  @AllowNull(true)
   @Column(DataType.INTEGER)
-  declare player2_id: number;
+  declare player2_id: number | null;
 
   @AllowNull(false)
   @Default(0)
@@ -51,7 +51,7 @@ export class Match extends Model<MatchAttributes> {
   @ForeignKey(() => User)
   @AllowNull(true)
   @Column(DataType.INTEGER)
-  declare winner_id: number;
+  declare winner_id: number | null;
 
   @AllowNull(false)
   @Default('scheduled')

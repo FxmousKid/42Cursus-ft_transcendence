@@ -294,8 +294,6 @@ export function registerUserRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // In your user.routes.ts file, find the '/users/matches' route and update it:
-
   //get user matches
   fastify.get('/users/matches', {
     preHandler: fastify.authenticate,
@@ -315,12 +313,14 @@ export function registerUserRoutes(fastify: FastifyInstance) {
             { 
               model: fastify.db.models.User, 
               as: 'player1',
-              attributes: ['username']
+              attributes: ['username'],
+              required: false // LEFT JOIN to handle null player1_id
             },
             { 
               model: fastify.db.models.User, 
               as: 'player2',
-              attributes: ['username']
+              attributes: ['username'],
+              required: false // LEFT JOIN to handle null player2_id
             }
           ],
           order: [['createdAt', 'DESC']]
@@ -335,8 +335,8 @@ export function registerUserRoutes(fastify: FastifyInstance) {
             player2_id: m.player2_id,
             player1_score: m.player1_score,
             player2_score: m.player2_score,
-            player1_username: m.player1?.username || '[deleted]',
-            player2_username: m.player2?.username || '[deleted]',
+            player1_username: m.player1?.username || '[Utilisateur supprimé]',
+            player2_username: m.player2?.username || '[Utilisateur supprimé]',
             winner_id: m.winner_id,
             status: m.status,
             createdAt: m.createdAt,
@@ -558,12 +558,31 @@ export function registerUserRoutes(fastify: FastifyInstance) {
             }
           }
 
-          // 7. Anonymize user in normal matches - PRESERVE MATCHES for other users' statistics
-          // Keep original IDs in matches, handle [deleted] display in frontend/queries when user not found
-          // No need to create system user or modify match records
-          
-          // Note: Matches keep original player1_id, player2_id, winner_id
-          // Frontend/API will display "[deleted]" when user ID doesn't exist in database
+          // 7. Anonymize user in normal matches - REPLACE USER IDs WITH NULL
+          // This preserves matches for other users' statistics while anonymizing the deleted user
+          await fastify.db.models.Match.update(
+            { player1_id: null },
+            {
+              where: { player1_id: userId },
+              transaction
+            }
+          );
+
+          await fastify.db.models.Match.update(
+            { player2_id: null },
+            {
+              where: { player2_id: userId },
+              transaction
+            }
+          );
+
+          await fastify.db.models.Match.update(
+            { winner_id: null },
+            {
+              where: { winner_id: userId },
+              transaction
+            }
+          );
 
           // 8. Finally, delete the user account completely
           await user.destroy({ transaction });
