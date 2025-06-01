@@ -1,9 +1,9 @@
 # ft_transcendence - Modules
 
 ## Web - 3
-- [X] - Major module: Use a framework to build the backend - Fastify
-- [X] - Minor module: Use a framework or a toolkit to build the frontend - TailwindCSS
-- [X] - Minor module: Use a database for the backend - SQLite
+- [X] - Major module: Use a framework to build the backend - Fastify @everyone
+- [X] - Minor module: Use a framework or a toolkit to build the frontend - TailwindCSS @everyone
+- [X] - Minor module: Use a database for the backend - SQLite @everyone
 - [X] - Major module: Store the score of a tournament in the Blockchain - Avalanche / Solidity - @Joey
 
 ## User Management 2
