@@ -2,8 +2,8 @@
 include:
   - path: ./core/docker-compose.core.yml              # Core services (e.g., database, cache)
   - path: ./infra/vault/docker-compose.vault.yml            # Hashicorp Vault services
-  - path: ./infra/logging/docker-compose.logging.yml        # ELK stack services
-  - path: ./infra/monitoring/docker-compose.monitoring.yml  # Monitoring services
+  # - path: ./infra/logging/docker-compose.logging.yml        # ELK stack services
+  # - path: ./infra/monitoring/docker-compose.monitoring.yml  # Monitoring services
 
 
 # Global network
