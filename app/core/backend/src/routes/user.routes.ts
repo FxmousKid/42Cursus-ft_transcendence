@@ -335,14 +335,12 @@ export function registerUserRoutes(fastify: FastifyInstance) {
             player2_id: m.player2_id,
             player1_score: m.player1_score,
             player2_score: m.player2_score,
-            player1_username: m.player1?.username || 'Unknown',
-            player2_username: m.player2?.username || 'Unknown',
+            player1_username: m.player1?.username || '[deleted]',
+            player2_username: m.player2?.username || '[deleted]',
             winner_id: m.winner_id,
             status: m.status,
-            created_at: m.createdAt,      // ← This is the key change
-            updated_at: m.updatedAt,      // ← This is the key change  
-            createdAt: m.createdAt,       // ← Add both formats
-            updatedAt: m.updatedAt        // ← Add both formats
+            createdAt: m.createdAt,
+            updatedAt: m.updatedAt
           };
         });
         
@@ -561,48 +559,13 @@ export function registerUserRoutes(fastify: FastifyInstance) {
           }
 
           // 7. Anonymize user in normal matches - PRESERVE MATCHES for other users' statistics
-          // Find or create a special "[deleted]" user to replace references
-          let deletedUser = await fastify.db.models.User.findOne({
-            where: { username: '[deleted]' },
-            transaction
-          });
+          // Keep original IDs in matches, handle [deleted] display in frontend/queries when user not found
+          // No need to create system user or modify match records
           
-          if (!deletedUser) {
-            deletedUser = await fastify.db.models.User.create({
-              username: '[deleted]',
-              email: `deleted_${Date.now()}@system.local`,
-              status: 'offline'
-            }, { transaction });
-          }
-          
-          // Update matches where user was player1 - replace with [deleted] user
-          await fastify.db.models.Match.update(
-            { player1_id: deletedUser.id },
-            {
-              where: { player1_id: userId },
-              transaction
-            }
-          );
-          
-          // Update matches where user was player2 - replace with [deleted] user
-          await fastify.db.models.Match.update(
-            { player2_id: deletedUser.id },
-            {
-              where: { player2_id: userId },
-              transaction
-            }
-          );
-          
-          // Remove user as winner (set to null since match result becomes ambiguous)
-          await fastify.db.models.Match.update(
-            { winner_id: undefined },
-            {
-              where: { winner_id: userId },
-              transaction
-            }
-          );
+          // Note: Matches keep original player1_id, player2_id, winner_id
+          // Frontend/API will display "[deleted]" when user ID doesn't exist in database
 
-          // 8. Finally, delete the user account
+          // 8. Finally, delete the user account completely
           await user.destroy({ transaction });
 
           // Commit the transaction
