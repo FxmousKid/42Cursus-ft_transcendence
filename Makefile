@@ -10,7 +10,7 @@ all: build up
 build:
 	@mkdir -p ./app/core/modsec-nginx/logs/nginx
 	@touch ./app/core/modsec-nginx/logs/modsec_audit.log
-	@touch ./app/core/modsec-nginx/logs/modsec_erorr.log
+	@touch ./app/core/modsec-nginx/logs/modsec_error.log
 	$(DOCC) -f $(MAIN_COMPOSE) build
 
 

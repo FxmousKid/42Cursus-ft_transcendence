@@ -13,6 +13,24 @@ server {
     # ── Enable ModSecurity ────────────────────────────────────────────────────────
     modsecurity           on;
 
+
+    # ── Websocket ─────────────────────────────────────
+	location /socket.io/ {
+		modsecurity off;
+		proxy_pass http://backend:3000/socket.io/;
+
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection "upgrade";
+		
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-Proto $scheme;
+
+		proxy_read_timeout 3600s;
+		proxy_send_timeout 3600s;
+	}
+
     # ── frontend ──────────────────────────────────────
 	location / {
 		proxy_pass			http://frontend:5173/;
@@ -36,22 +54,6 @@ server {
         proxy_set_header   	X-Real-IP         	$remote_addr;
         proxy_set_header   	X-Forwarded-Proto 	$scheme;
     }
-
-    # ── Websocket ─────────────────────────────────────
-	location /socket.io/ {
-		proxy_pass http://backend:3000/socket.io/;
-
-		proxy_http_version 1.1;
-		proxy_set_header Upgrade $http_upgrade;
-		proxy_set_header Connection "upgrade";
-		
-		proxy_set_header Host $host;
-		proxy_set_header X-Real-IP $remote_addr;
-		proxy_set_header X-Forwarded-Proto $scheme;
-
-		proxy_read_timeout 3600s;
-		proxy_send_timeout 3600s;
-	}
 
    	# ── Healthcheck ─────────────────────────────────────
 	location /healthcheck {

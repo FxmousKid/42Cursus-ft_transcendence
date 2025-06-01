@@ -86,8 +86,10 @@ services:
         condition: service_healthy
     volumes:
       - ./modsec-nginx/nginx/default.conf.template:/etc/nginx/templates/conf.d/default.conf.template:ro
-      - nginx_certs:/etc/nginx/conf/certs/
       - ./modsec-nginx/logs/nginx/:/var/log/nginx/:rw
+      - ./modsec-nginx/logs/modsec_audit.log:/var/log/modsec_audit.log:rw
+      - ./modsec-nginx/logs/modsec_error.log:/var/log/modsec_error.log:rw
+      - nginx_certs:/etc/nginx/conf/certs/
     environment:
       - PORT=8080
       - SSL_PORT=8443
