@@ -201,24 +201,21 @@ class PongGame {
     }
     
     private handleStartButton(): void {
-        switch(this.gameState) {
-            case 'menu':
-            case 'gameover':
-                this.startGame();
-                break;
-            case 'playing':
-                this.pauseGame();
-                break;
-            case 'paused':
-                this.resumeGame();
-                break;
+        if (this.gameState === 'menu') {
+            this.startGame();
+        } else if (this.gameState === 'playing') {
+            this.pauseGame();
+        } else if (this.gameState === 'paused') {
+            this.resumeGame();
+        } else if (this.gameState === 'gameover') {
+            this.resetGame();
         }
     }
     
     private startGame(): void {
         this.resetGame();
         this.gameState = 'playing';
-        this.elements.startBtn.textContent = 'Pause';
+        this.elements.startBtn.innerHTML = '<i class="fas fa-pause mr-2"></i>Pause';
         this.serveBall();
     }
 
@@ -232,12 +229,12 @@ class PongGame {
     
     private pauseGame(): void {
         this.gameState = 'paused';
-        this.elements.startBtn.textContent = 'Reprendre';
+        this.elements.startBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Reprendre';
     }
     
     private resumeGame(): void {
         this.gameState = 'playing';
-        this.elements.startBtn.textContent = 'Pause';
+        this.elements.startBtn.innerHTML = '<i class="fas fa-pause mr-2"></i>Pause';
     }
     
     private togglePause(): void {
@@ -261,7 +258,7 @@ class PongGame {
         
         if (this.gameState === 'gameover') {
             this.gameState = 'menu';
-            this.elements.startBtn.textContent = 'Commencer';
+            this.elements.startBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Commencer';
         }
     }
     
@@ -474,18 +471,75 @@ class PongGame {
         const { width, height } = this.canvas;
         const ctx = this.ctx;
         
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        // Semi-transparent dark background
+        ctx.fillStyle = 'rgba(17, 24, 39, 0.95)'; // dark-900 with opacity
         ctx.fillRect(0, 0, width, height);
         
-        ctx.fillStyle = 'white';
-        ctx.font = `bold ${width * 0.06}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        // Create glassmorphism card
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const cardWidth = width * 0.5;
+        const cardHeight = height * 0.35;
+        const cardX = centerX - cardWidth / 2;
+        const cardY = centerY - cardHeight / 2;
+        const borderRadius = 16;
         
+        // Card background with gradient
+        const gradient = ctx.createLinearGradient(cardX, cardY, cardX, cardY + cardHeight);
+        gradient.addColorStop(0, 'rgba(31, 41, 55, 0.9)'); // dark-800
+        gradient.addColorStop(1, 'rgba(17, 24, 39, 0.9)'); // dark-900
+        
+        // Draw rounded rectangle
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(cardX, cardY, cardWidth, cardHeight, borderRadius);
+        ctx.fill();
+        
+        // Add border
+        ctx.strokeStyle = 'rgba(75, 85, 99, 0.5)'; // dark-600
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Add top accent line
+        const accentGradient = ctx.createLinearGradient(cardX + 20, cardY, cardX + cardWidth - 20, cardY);
+        accentGradient.addColorStop(0, 'rgba(59, 130, 246, 0)');
+        accentGradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.8)');
+        accentGradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+        
+        ctx.strokeStyle = accentGradient;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cardX + 20, cardY);
+        ctx.lineTo(cardX + cardWidth - 20, cardY);
+        ctx.stroke();
+        
+        // Handle different overlay types
         const lines = text.split('\n');
-        lines.forEach((line, i) => {
-            ctx.fillText(line, width / 2, height / 2 + (i - 0.5) * width * 0.08);
-        });
+        
+        if (lines.length === 2 && lines[0] === 'PARTIE TERMINÉE') {
+            // Extract winner name and display it elegantly
+            const winnerText = lines[1].replace(' gagne!', '');
+            
+            // Display "WINNER" text
+            ctx.fillStyle = 'rgba(156, 163, 175, 1)'; // gray-400
+            ctx.font = `600 ${width * 0.03}px system-ui, -apple-system, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('WINNER', centerX, centerY - height * 0.05);
+            
+            // Display winner name in green
+            ctx.fillStyle = 'rgba(34, 197, 94, 1)'; // green-500
+            ctx.font = `bold ${width * 0.06}px system-ui, -apple-system, sans-serif`;
+            ctx.fillText(winnerText, centerX, centerY + height * 0.03);
+            
+        } else if (text === 'PAUSE') {
+            // Simple pause display
+            ctx.fillStyle = 'rgba(59, 130, 246, 1)'; // blue-500
+            ctx.font = `600 ${width * 0.05}px system-ui, -apple-system, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('PAUSE', centerX, centerY);
+        }
     }
     
     private updateScore(): void {
@@ -494,8 +548,8 @@ class PongGame {
     }
     
     private highlightWinner(card: HTMLElement): void {
-        card.classList.add('scoring');
-        setTimeout(() => card.classList.remove('scoring'), 500);
+        card.classList.add('animate-score-highlight');
+        setTimeout(() => card.classList.remove('animate-score-highlight'), 400);
     }
     
     private delay(ms: number): Promise<void> {
@@ -531,10 +585,10 @@ class PongGame {
         if (this.type == 'friend') {
             this.finishGameFriend();
             this.finish = true;
-            this.elements.startBtn.textContent = 'Recommencer';
+            this.elements.startBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Recommencer';
             return ;
         }
-        this.elements.startBtn.textContent = 'Nouvelle Partie';
+        this.elements.startBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Nouvelle Partie';
     }
     
     private gameLoop = (timestamp: number = 0): void => {
@@ -569,18 +623,3 @@ document.addEventListener("visibilitychange", () => {
         pongGame.stopGame();
   }
 });
-
-// Add CSS for scoring animation
-const style = document.createElement('style');
-style.textContent = `
-    .scoring {
-        animation: scoreFlash 0.5s ease-out;
-    }
-    
-    @keyframes scoreFlash {
-        0% { box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
-        50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
-        100% { box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
-    }
-`;
-document.head.appendChild(style);

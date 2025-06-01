@@ -37,30 +37,31 @@
     </div>
 
     <!-- Contenu principal -->
-    <main class="flex-grow flex items-center justify-center p-4 relative z-10">
-        <div class="text-center relative">
+    <main class="flex-grow flex items-center justify-center p-4 relative z-10 select-none">
+        <div class="text-center relative select-none">
 
             <!-- Trophy -->
-            <div class="trophy text-8xl mb-6 inline-block"></div>
-            <i class="fas fa-trophy mr-2 text-green-400 md:text-9xl"></i>
+            <div class="trophy text-8xl mb-6 inline-block select-none"></div>
+            <i class="fas fa-trophy mr-2 text-green-400 md:text-9xl select-none"></i>
             
             <!-- Winner Text -->
-            <h1 class="text-6xl md:text-8xl font-bold text-green-400 winner-glow mb-8">
+            <h1 class="text-6xl md:text-8xl font-bold text-green-400 winner-glow mb-8 select-none">
                 WINNER
             </h1>
             
             <!-- Winner Name -->
-            <div class="mb-12">
-                <p class="text-4xl md:text-6xl font-semibold text-gray-200 mb-4">
-                    <span id="winner-name">Player Name</span>
+            <div class="mb-12 select-none">
+                <p class="text-4xl md:text-6xl font-semibold text-gray-200 mb-4 select-none">
+                    <span id="winner-name" class="select-none">Player Name</span>
                 </p>
-                <p class="text-xl text-gray-400">
+                <p class="text-xl text-gray-400 select-none">
                     Congratulations! 
                 </p>
             </div>
 
             <!-- Back Button -->
-            <button id="back-button" type="button" class="bg-blue-800 hover:bg-blue-600 text-white py-4 px-8 rounded-lg text-xl font-bold transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button id="back-button" type="button" class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 px-8 rounded-xl text-xl font-bold transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-blue-500/50 shadow-lg hover:shadow-blue-500/25 select-none">
+                <i class="fas fa-home mr-3"></i>
                 Back to Menu
             </button>
         </div>

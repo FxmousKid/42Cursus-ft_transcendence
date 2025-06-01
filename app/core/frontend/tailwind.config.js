@@ -41,9 +41,20 @@ module.exports = {
         'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
         'card': '0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03)',
         'inner-light': 'inset 0 2px 4px 0 rgba(255, 255, 255, 0.05)',
+        'glow-blue': '0 0 15px rgba(59, 130, 246, 0.5)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+      },
+      animation: {
+        'score-highlight': 'score-highlight 0.4s ease-out',
+      },
+      keyframes: {
+        'score-highlight': {
+          '0%': { transform: 'scale(1)', boxShadow: '0 0 0 rgba(59, 130, 246, 0)' },
+          '50%': { transform: 'scale(1.02)', boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)' },
+          '100%': { transform: 'scale(1)', boxShadow: '0 0 0 rgba(59, 130, 246, 0)' },
+        },
       }
     },
   },
