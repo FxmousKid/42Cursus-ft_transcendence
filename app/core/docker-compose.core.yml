@@ -1,0 +1,70 @@
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: docker/Dockerfile
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - ../infra/vault/agent/env/:/app/env:rw
+      - /app/node_modules
+    networks:
+      - transcendence-network
+    depends_on:
+      vault-agent:
+        condition: service_healthy
+    command: >
+      zsh -c '
+        while [ ! -f /app/env/.env ]; do
+          echo "Waiting for .env file to be created..."
+          sleep 1
+        done
+        if [ -f /app/env/.env ]; then
+          set -o allexport
+          . /app/env/.env
+          set +o allexport
+        fi
+        echo "Starting frontend..."
+        npm run dev
+      '
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ./docker/Dockerfile
+    container_name: backend
+    depends_on:
+      vault-agent:
+        condition: service_healthy
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - transcendence-network
+    volumes:
+      - ./backend/data:/app/data
+      - ../infra/vault/agent/env/:/app/env:rw
+    healthcheck:
+      test: ["CMD-SHELL", "curl 'http://localhost:3000/api-docs'"]
+      interval: 10s
+      timeout: 2s
+      retries: 50
+    command: >
+      sh -c '
+        while [ ! -f /app/env/.env ]; do
+          echo "Waiting for .env file to be created..."
+          sleep 1
+        done
+        if [ -f /app/env/.env ]; then
+          set -o allexport
+          set -a
+          source /app/env/.env
+          set +o allexport
+          set +a
+        fi
+        echo "Starting backend..."
+        npm run dev
+      '
