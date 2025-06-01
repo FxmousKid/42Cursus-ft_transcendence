@@ -33,6 +33,19 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Auth service not available or missing init method');
     }
     
+    // Restore remember me preference from localStorage
+    if (rememberMeCheckbox) {
+        const savedRememberMe = localStorage.getItem('remember_me');
+        if (savedRememberMe !== null) {
+            rememberMeCheckbox.checked = savedRememberMe === 'true';
+            console.log('Login: Restored remember me preference:', rememberMeCheckbox.checked);
+        } else {
+            // Default to true if no preference is saved
+            rememberMeCheckbox.checked = true;
+            console.log('Login: Using default remember me preference: true');
+        }
+    }
+    
     // Get redirect URL from query params if present
     const urlParams = new URLSearchParams(window.location.search);
     const redirectUrl = urlParams.get('redirect') || '/index.html';
